@@ -16,6 +16,7 @@ export function RegistrationTable({ applications, emptyTitle = 'No applications'
         <tr>
           <Th>Application</Th>
           <Th>Company</Th>
+          <Th>District</Th>
           <Th>Point of contact</Th>
           <Th>Automated checks</Th>
           <Th>Status</Th>
@@ -34,6 +35,7 @@ export function RegistrationTable({ applications, emptyTitle = 'No applications'
                 <Link to={`/registrations/${a.id}`} className="font-medium text-slate-900 hover:underline">{a.companyName}</Link>
                 <p className="text-xs text-slate-500">{a.cacNumber}</p>
               </Td>
+              <Td>{a.district}</Td>
               <Td>
                 <p>{a.poc.name}</p>
                 <p className="whitespace-nowrap text-xs text-slate-500">{a.poc.countryCode} {a.poc.phone}</p>

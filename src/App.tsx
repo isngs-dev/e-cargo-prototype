@@ -3,6 +3,8 @@ import { StoreProvider } from '@/app/store'
 import { AppShell } from '@/components/layout/AppShell'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { BookingsPage } from '@/features/bookings/BookingsPage'
+import { BookingDetailPage } from '@/features/bookings/BookingDetailPage'
+import { NewBookingPage } from '@/features/bookings/NewBookingPage'
 import { RegistrationsPage } from '@/features/registrations/RegistrationsPage'
 import { CustomersPage } from '@/features/customers/CustomersPage'
 import { CompanyProfilePage } from '@/features/customers/CompanyProfilePage'
@@ -25,7 +27,8 @@ export default function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="bookings" element={guarded('bookings', <BookingsPage />)} />
-            <Route path="bookings/new" element={guarded('new_booking', <PlannedPage area="new_booking" />)} />
+            <Route path="bookings/new" element={guarded('new_booking', <NewBookingPage />)} />
+            <Route path="bookings/:id" element={guarded('bookings', <BookingDetailPage />)} />
             <Route path="registrations" element={guarded('registrations', <RegistrationsPage />)} />
             <Route path="registrations/:id" element={<RegistrationDetailPage />} />
             <Route path="registrations/:id/edit" element={<EditRegistrationPage />} />

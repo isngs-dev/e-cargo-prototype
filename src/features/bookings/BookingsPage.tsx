@@ -3,7 +3,8 @@ import { Search } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { customerName, routeLabel, visibleBookings } from '@/app/selectors'
 import { PageHeader } from '@/components/ui/blocks'
-import { Card, Input, Select } from '@/components/ui/primitives'
+import { buttonClass, Card, Input, Select } from '@/components/ui/primitives'
+import { Link } from 'react-router'
 import { bookingStatusMeta } from '@/lib/status'
 import type { BookingStatus } from '@/types/domain'
 import { BookingTable } from './BookingTable'
@@ -30,7 +31,8 @@ export function BookingsPage() {
     <>
       <PageHeader
         title={isFacilitator ? 'My bookings' : 'Bookings'}
-        description={isFacilitator ? 'Bookings submitted by your company.' : 'Bookings visible to your role. Detailed review screens arrive in later phases.'}
+        description={isFacilitator ? 'Bookings submitted by your company.' : 'Bookings visible to your role. Approval and dispatch actions arrive in Phases 5 and 6.'}
+        actions={isFacilitator && persona.customerId ? <Link to="/bookings/new" className={buttonClass('primary')}>New booking</Link> : undefined}
       />
       <Card>
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row">

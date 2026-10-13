@@ -64,6 +64,8 @@ Frontend-only, interactive prototype demonstrating: facilitator onboarding, capa
 Facilitator submits → District Supervisor verifies → Director sets eligibility & approves → credentials generated (simulated email)
 ```
 
+**Districts (client update, 2026-10-13):** two districts — **Lagos** and **Ibadan**. The facilitator selects a **District** (mandatory) on the registration form. A District Supervisor sees and acts only on applications from their own district; Director and Super Admin see all. Customers inherit the district.
+
 **Form (mandatory):** Company Name · Registered Address · CAC Number · Mode of Operations (Containerized / Non-Containerized, multi) · Services (Clearance / Loading-Offloading / Documentation / Multi-modal) · POC Name · POC Email · Country Code + POC phone.
 **Documents:** CAC Certificate (mandatory) · Company Profile (mandatory) · Tax Certificate (optional, configurable). View uploaded docs; re-upload before submission (and after send-back — assumption A-7).
 

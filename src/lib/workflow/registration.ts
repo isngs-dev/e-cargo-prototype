@@ -1,6 +1,7 @@
 import type {
   AppData,
   AuditEntry,
+  District,
   Customer,
   CustomerCategory,
   CustomerEligibility,
@@ -29,6 +30,7 @@ function load(data: AppData, id: string, actor: Actor, role: Role, statuses: Reg
   const next = structuredClone(data)
   const app = next.applications.find((a) => a.id === id)
   if (!app) return fail('Application not found.')
+  if (role === 'district_supervisor' && actor.district !== app.district) return fail(`This application belongs to the ${app.district} district. You can only act on ${actor.district ?? 'your own'} district applications.`)
   if (!statuses.includes(app.status)) return fail(`Cannot ${verb}: application is "${app.status.replace(/_/g, ' ')}".`)
   return { next, app }
 }
@@ -59,7 +61,7 @@ export function submitRegistration(
   const seq = next.counters.nextRegistrationSeq++
   const app: RegistrationApplication = {
     id: `reg-${seq}`, reference: `REG-2026-${String(seq).padStart(4, '0')}`, ...input,
-    status: 'pending_district_verification', submittedAt: now, updatedAt: now, isDemo: true,
+    district: input.district as District, status: 'pending_district_verification', submittedAt: now, updatedAt: now, isDemo: true,
   }
   next.applications.push(app)
   appendAudit(next, {
@@ -79,7 +81,7 @@ export function resubmitRegistration(
   if (Object.keys(errors).length) return fail(Object.values(errors)[0]!)
 
   const { next, app } = loaded
-  Object.assign(app, input)
+  Object.assign(app, { ...input, district: input.district as District })
   move(next, app, actor, 'pending_district_verification', 'Registration corrected and resubmitted', now)
   return { ok: true, data: next, applicationId: app.id }
 }
@@ -151,7 +153,7 @@ export function directorApprove(
   let username = base
   for (let n = 2; next.customers.some((c) => c.username === username); n++) username = `${base}${n}`
   const customer: Customer = {
-    id: `cus-${username}`, companyName: app.companyName, cacNumber: app.cacNumber, registeredAddress: app.registeredAddress,
+    id: `cus-${username}`, companyName: app.companyName, cacNumber: app.cacNumber, registeredAddress: app.registeredAddress, district: app.district,
     modes: app.modes, services: app.services, poc: app.poc, eligibility, accountStatus: 'active', activatedAt: now, username, isDemo: true,
   }
   next.customers.push(customer)
@@ -196,6 +198,7 @@ export function addInternalRemark(data: AppData, appId: string, actor: Actor, re
   const next = structuredClone(data)
   const app = next.applications.find((a) => a.id === appId)
   if (!app) return fail('Application not found.')
+  if (actor.role === 'district_supervisor' && actor.district !== app.district) return fail(`This application belongs to the ${app.district} district.`)
   appendAudit(next, {
     at: now, actorName: actor.name, actorRole: actor.role, entityType: 'registration', entityId: app.id, entityRef: app.reference,
     action: 'Internal remark added', remarks: remark.trim(), internal: true,

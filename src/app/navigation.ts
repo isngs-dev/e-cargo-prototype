@@ -31,7 +31,7 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { area: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, phase: 2, built: true },
   { area: 'my_registration', path: '/my-registration', label: 'My Registration', icon: FilePen, phase: 3, built: true },
-  { area: 'new_booking', path: '/bookings/new', label: 'New Booking', icon: Plus, phase: 4, built: false },
+  { area: 'new_booking', path: '/bookings/new', label: 'New Booking', icon: Plus, phase: 4, built: true },
   {
     area: 'bookings', path: '/bookings', icon: Package, phase: 2, built: true,
     label: { default: 'Bookings', cargo_facilitator: 'My Bookings', head_of_cargo: 'Booking Reviews', head_port_operations: 'All Bookings' },
@@ -49,16 +49,6 @@ export const navItems: NavItem[] = [
 ]
 
 export const planDescriptions: Partial<Record<Area, { title: string; scope: string[] }>> = {
-  new_booking: {
-    title: 'New Booking',
-    scope: [
-      'Booking date, cargo type, route from Route & Freight Rate Master',
-      'Multiple container lines (20ft / 40ft / Reefer) or wagons',
-      'Weight, commodity, hazardous flag with compliance document upload',
-      'Mandatory documents and Fair Cargo Policy declaration',
-      'Live indicative price breakdown; blocked when no rate exists',
-    ],
-  },
   dispatch: {
     title: 'Dispatch Queue',
     scope: [

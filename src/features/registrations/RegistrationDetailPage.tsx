@@ -38,12 +38,14 @@ export function RegistrationDetailPage() {
 
   const app = data.applications.find((a) => a.id === id)
   const isOwnApplicant = !!persona.isApplicant && applicantAppId === id
-  const allowed = canAccessPersona(persona, 'registrations') || isOwnApplicant
+  const wrongDistrict = persona.role === 'district_supervisor' && !!app && app.district !== persona.district
+  const allowed = (canAccessPersona(persona, 'registrations') && !wrongDistrict) || isOwnApplicant
 
+  if (wrongDistrict && app) return <Notice tone="warning" title={`This application belongs to the ${app.district} district`}>District Supervisors can only view applications from their own district ({persona.district}). <Link to="/registrations" className="underline">Back to your queue</Link></Notice>
   if (!allowed) return <Notice tone="warning" title="You do not have access to this application.">Switch demo role to view it.</Notice>
   if (!app) return <Notice tone="warning" title="Application not found.">It may have been removed by “Reset demo”. <Link to="/dashboard" className="underline">Back to dashboard</Link></Notice>
 
-  const actor: Actor = { name: persona.name, role: persona.role }
+  const actor: Actor = { name: persona.name, role: persona.role, district: persona.district }
   const isDS = persona.role === 'district_supervisor'
   const isDir = persona.role === 'director_operations'
   const isNrcReviewer = isDS || isDir
@@ -54,7 +56,7 @@ export function RegistrationDetailPage() {
   const dsOpen = app.status === 'pending_district_verification' || app.status === 'sent_back_to_district'
   const dirOpen = app.status === 'pending_director_approval'
 
-  const run = <T extends { applicationId?: string }>(fn: (d: typeof data) => WorkflowResult<T>, success: string): string | null => {
+  const run = <T extends object>(fn: (d: typeof data) => WorkflowResult<T>, success: string): string | null => {
     const r = act(fn)
     if (!r.ok) return r.error
     setFlash(success)
@@ -75,7 +77,7 @@ export function RegistrationDetailPage() {
   }
 
   const rows: [string, string][] = [
-    ['Company name', app.companyName], ['CAC number', app.cacNumber], ['Registered address', app.registeredAddress],
+    ['Company name', app.companyName], ['CAC number', app.cacNumber], ['Registered address', app.registeredAddress], ['District', app.district],
     ['Mode of operations', app.modes.join(', ')], ['Services provided', app.services.join(', ')],
     ['Point of contact', app.poc.name], ['Email', app.poc.email], ['Phone', `${app.poc.countryCode} ${app.poc.phone}`],
     ['Submitted', formatDateTime(app.submittedAt)], ['Last updated', formatDateTime(app.updatedAt)],

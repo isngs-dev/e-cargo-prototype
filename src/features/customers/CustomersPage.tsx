@@ -19,6 +19,7 @@ export function CustomersPage() {
             <tr>
               <Th>Company</Th>
               <Th>Status</Th>
+              <Th>District</Th>
               <Th>Category</Th>
               <Th>Discount</Th>
               <Th>Credit</Th>
@@ -36,6 +37,7 @@ export function CustomersPage() {
                     <p className="text-xs text-slate-500">{c.cacNumber} · since {formatDate(c.activatedAt)}</p>
                   </Td>
                   <Td><Badge tone={e.isPriority ? 'success' : 'neutral'}>{e.isPriority ? 'Priority' : 'Non-Priority'}</Badge></Td>
+                  <Td>{c.district}</Td>
                   <Td>{e.category}</Td>
                   <Td>{e.isPriority ? `≤ ${formatBp(e.eligibleDiscountBp)}` : '—'}</Td>
                   <Td>{e.isPriority && e.eligibleCreditMonths ? `≤ ${e.eligibleCreditMonths} mo` : '—'}</Td>

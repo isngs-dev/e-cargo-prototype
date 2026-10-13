@@ -16,6 +16,7 @@ export function CompanyProfilePage() {
     ['Company name', customer.companyName],
     ['CAC number', customer.cacNumber],
     ['Registered address', customer.registeredAddress],
+    ['District', customer.district],
     ['Mode of operations', customer.modes.join(', ')],
     ['Services provided', customer.services.join(', ')],
     ['Point of contact', customer.poc.name],

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { useStore } from '@/app/store'
+import { visibleApplications } from '@/app/selectors'
 import { Notice, PageHeader } from '@/components/ui/blocks'
 import { Card, Input, Select } from '@/components/ui/primitives'
 import { registrationStatusMeta } from '@/lib/status'
@@ -11,7 +12,7 @@ export function RegistrationsPage() {
   const { data, persona } = useStore()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<RegistrationStatus | 'all'>('all')
-  const all = [...data.applications].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
+  const all = visibleApplications(data, persona)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -22,7 +23,10 @@ export function RegistrationsPage() {
 
   return (
     <>
-      <PageHeader title="Registrations" description="Cargo facilitator onboarding applications." />
+      <PageHeader title="Registrations" description={persona.role === 'district_supervisor' ? `Cargo facilitator applications for the ${persona.district} district.` : 'Cargo facilitator onboarding applications from all districts.'} />
+      {persona.role === 'district_supervisor' && (
+        <div className="mb-4"><Notice title={`${persona.district} district only`}>You see only applications from facilitators who selected the {persona.district} district. The Director and Super Admin see all districts.</Notice></div>
+      )}
       {persona.role === 'super_admin' && (
         <div className="mb-4">
           <Notice title="View only">Super Admin can view applications for support purposes but cannot verify or approve them.</Notice>

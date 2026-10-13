@@ -14,24 +14,24 @@ import {
   type RegistrationErrors,
   type RegistrationInput,
 } from '@/lib/registration'
-import type { DocumentKind, UploadedDocument } from '@/types/domain'
+import { DISTRICTS, type District, type DocumentKind, type UploadedDocument } from '@/types/domain'
 import { DocumentUploader } from './DocumentUploader'
 
 export const emptyRegistration = (): RegistrationInput => ({
-  companyName: '', cacNumber: '', registeredAddress: '', modes: [], services: [],
+  companyName: '', cacNumber: '', registeredAddress: '', district: '', modes: [], services: [],
   poc: { name: '', email: '', countryCode: '+234', phone: '' }, documents: [],
 })
 
 /** Sample values so stakeholders can demo the form quickly. */
 export const demoRegistration = (): RegistrationInput => ({
-  companyName: 'Harbour Link Logistics Ltd', cacNumber: 'RC 3412207', registeredAddress: '12 Marine Road, Apapa, Lagos',
+  companyName: 'Harbour Link Logistics Ltd', cacNumber: 'RC 3412207', registeredAddress: '12 Marine Road, Apapa, Lagos', district: 'Lagos',
   modes: ['Containerized'], services: ['Clearance', 'Multi-modal'],
   poc: { name: 'Zainab Lawal', email: 'zainab.lawal@harbourlink.demo', countryCode: '+234', phone: '803 555 0142' }, documents: [],
 })
 
 const stepLabels = ['Company details', 'Documents', 'Review & submit']
 const stepFields: Record<number, (keyof RegistrationErrors)[]> = {
-  0: ['companyName', 'cacNumber', 'registeredAddress', 'modes', 'services', 'pocName', 'pocEmail', 'pocPhone'],
+  0: ['companyName', 'cacNumber', 'registeredAddress', 'district', 'modes', 'services', 'pocName', 'pocEmail', 'pocPhone'],
   1: ['documents'],
   2: [],
 }
@@ -90,6 +90,13 @@ export function RegistrationForm({ initial, submitLabel, onSubmit }: { initial: 
             <Field label="Company name" required error={show('companyName')}><Input value={v.companyName} onChange={(e) => set({ companyName: e.target.value })} autoComplete="organization" /></Field>
             <Field label="CAC number" required error={show('cacNumber')} hint="e.g. RC 1234567"><Input value={v.cacNumber} onChange={(e) => set({ cacNumber: e.target.value })} /></Field>
             <Field label="Registered address" required error={show('registeredAddress')} className="sm:col-span-2"><Input value={v.registeredAddress} onChange={(e) => set({ registeredAddress: e.target.value })} /></Field>
+            <Field label="District" required error={show('district')} hint="Your application is verified by the District Supervisor of this district.">
+              <Select value={v.district} onChange={(e) => set({ district: e.target.value as District | '' })}>
+                <option value="">Select a district…</option>
+                {DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
+              </Select>
+            </Field>
+            <div className="hidden sm:block" />
             <CheckboxGroup legend="Mode of operations" required options={allModes} value={v.modes} onChange={(modes) => set({ modes })} error={show('modes')} />
             <CheckboxGroup legend="Services provided" required options={allServices} value={v.services} onChange={(services) => set({ services })} error={show('services')} />
             <Field label="Point of contact name" required error={show('pocName')}><Input value={v.poc.name} onChange={(e) => setPoc({ name: e.target.value })} autoComplete="name" /></Field>
@@ -126,7 +133,7 @@ export function RegistrationForm({ initial, submitLabel, onSubmit }: { initial: 
           <CardHeader title="Review & submit" description="Check your details. Your application goes to the District Supervisor for document verification." />
           <dl className="grid gap-x-6 gap-y-3 p-5 text-sm sm:grid-cols-2">
             {([
-              ['Company name', v.companyName], ['CAC number', v.cacNumber], ['Registered address', v.registeredAddress],
+              ['Company name', v.companyName], ['CAC number', v.cacNumber], ['Registered address', v.registeredAddress], ['District', v.district],
               ['Mode of operations', v.modes.join(', ')], ['Services', v.services.join(', ')],
               ['Point of contact', v.poc.name], ['Email', v.poc.email], ['Phone', `${v.poc.countryCode} ${v.poc.phone}`],
               ['Documents', v.documents.map((d) => documentLabels[d.kind]).join(', ') || '—'],

@@ -18,7 +18,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import { useStore } from '@/app/store'
-import { customerName, visibleBookings } from '@/app/selectors'
+import { customerName, visibleApplications, visibleBookings } from '@/app/selectors'
 import { DemoTag, EmptyState, KpiCard, Notice, PageHeader, RegistrationStatusBadge } from '@/components/ui/blocks'
 import { buttonClass, Card, CardHeader } from '@/components/ui/primitives'
 import { BookingTable } from '@/features/bookings/BookingTable'
@@ -86,8 +86,8 @@ function FacilitatorDashboard() {
 }
 
 function DistrictSupervisorDashboard() {
-  const { data } = useStore()
-  const apps = data.applications
+  const { data, persona } = useStore()
+  const apps = visibleApplications(data, persona)
   const queue = apps.filter((a) => a.status === 'pending_district_verification' || a.status === 'sent_back_to_district')
   return (
     <>
@@ -98,7 +98,7 @@ function DistrictSupervisorDashboard() {
         <KpiCard label="Rejected" value={apps.filter((a) => a.status === 'rejected').length} icon={CircleX} tone="danger" />
       </Grid>
       <Card className="mt-6">
-        <CardHeader title="Verification queue" description="Verify documents against submitted details. Eligibility is decided by the Director, not here." action={viewAll('/registrations')} />
+         <CardHeader title={`Verification queue — ${persona.district} district`} description="Verify documents against submitted details. Eligibility is decided by the Director, not here." action={viewAll('/registrations')} />
         <RegistrationTable applications={queue} emptyTitle="No applications awaiting verification" />
       </Card>
     </>
@@ -212,7 +212,7 @@ function SuperAdminDashboard() {
 
 const greeting: Record<string, string> = {
   cargo_facilitator: 'Track your bookings, pricing and AWBs.',
-  district_supervisor: 'Verify new facilitator registrations.',
+  district_supervisor: 'Verify new facilitator registrations for your district.',
   head_of_cargo: 'Review cargo bookings before final approval.',
   director_operations: 'Final business approvals, eligibility and payment terms.',
   head_port_operations: 'Physical verification, dispatch and AWB generation.',
@@ -224,7 +224,7 @@ export function DashboardPage() {
   const subtitle = persona.customerId ? `${customerName(data, persona.customerId)} · ${greeting[persona.role]}` : greeting[persona.role]
   return (
     <>
-      <PageHeader title={`${roleLabels[persona.role]} dashboard`} description={<span className="inline-flex flex-wrap items-center gap-2">{subtitle} <DemoTag /></span>} />
+      <PageHeader actions={persona.customerId ? <Link to="/bookings/new" className={buttonClass('primary')}>New booking</Link> : undefined} title={`${roleLabels[persona.role]} dashboard`} description={<span className="inline-flex flex-wrap items-center gap-2">{subtitle} <DemoTag /></span>} />
       {persona.role === 'cargo_facilitator' && (persona.isApplicant ? <ApplicantDashboard /> : <FacilitatorDashboard />)}
       {persona.role === 'district_supervisor' && <DistrictSupervisorDashboard />}
       {persona.role === 'head_of_cargo' && <HeadOfCargoDashboard />}

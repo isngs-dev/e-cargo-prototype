@@ -1,4 +1,4 @@
-import type { Customer, DocumentKind, ModeOfOperation, RegistrationApplication, ServiceProvided } from '@/types/domain'
+import type { Customer, DocumentKind, District, ModeOfOperation, RegistrationApplication, ServiceProvided } from '@/types/domain'
 
 /** Automated validation checks shown to the District Supervisor (baseline §3.2). */
 export interface RegistrationCheck {
@@ -70,10 +70,11 @@ export const documentLabels: Record<DocumentKind, string> = {
   hazardous_compliance: 'Hazardous Compliance Document',
 }
 
+/** Form values. `district` is empty until the facilitator chooses one (required before submission). */
 export type RegistrationInput = Pick<
   RegistrationApplication,
   'companyName' | 'cacNumber' | 'registeredAddress' | 'modes' | 'services' | 'poc' | 'documents'
->
+> & { district: District | '' }
 
 export const allModes: ModeOfOperation[] = ['Containerized', 'Non-Containerized']
 export const allServices: ServiceProvided[] = ['Clearance', 'Loading/Offloading', 'Documentation', 'Multi-modal']
@@ -83,7 +84,7 @@ export const countryCodes = ['+234', '+233', '+229', '+228', '+225', '+27', '+44
 export const CAC_PATTERN = /^(RC|BN|IT)\s?\d{4,8}$/i
 
 export type RegistrationErrors = Partial<Record<
-  'companyName' | 'registeredAddress' | 'cacNumber' | 'modes' | 'services' | 'pocName' | 'pocEmail' | 'pocPhone' | 'documents',
+  'companyName' | 'registeredAddress' | 'district' | 'cacNumber' | 'modes' | 'services' | 'pocName' | 'pocEmail' | 'pocPhone' | 'documents',
   string
 >>
 
@@ -91,6 +92,7 @@ export function validateRegistration(v: RegistrationInput, taxCertificateRequire
   const e: RegistrationErrors = {}
   if (v.companyName.trim().length < 2) e.companyName = 'Enter the company name.'
   if (v.registeredAddress.trim().length < 5) e.registeredAddress = 'Enter the registered address.'
+  if (!v.district) e.district = 'Select the district you operate in.'
   if (!v.cacNumber.trim()) e.cacNumber = 'Enter the CAC number.'
   else if (!CAC_PATTERN.test(v.cacNumber.trim())) e.cacNumber = 'CAC number should look like RC 1234567 (RC, BN or IT followed by digits).'
   if (v.modes.length === 0) e.modes = 'Select at least one mode of operation.'

@@ -1,5 +1,5 @@
 import type { AppData } from '@/types/domain'
-import type { Booking, Persona } from '@/types/domain'
+import type { Booking, Persona, RegistrationApplication } from '@/types/domain'
 
 export function customerName(data: AppData, id: string): string {
   return data.customers.find((c) => c.id === id)?.companyName ?? 'Unknown customer'
@@ -28,4 +28,10 @@ export function visibleBookings(data: AppData, persona: Persona): Booking[] {
         ? data.bookings.filter((b) => !!b.approved)
         : data.bookings.filter((b) => b.status !== 'draft')
   return [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+}
+
+/** Registrations visible to the persona: District Supervisors see only their own district; Director / Super Admin see all. */
+export function visibleApplications(data: AppData, persona: Persona): RegistrationApplication[] {
+  const list = persona.role === 'district_supervisor' ? data.applications.filter((a) => a.district === persona.district) : data.applications
+  return [...list].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
 }

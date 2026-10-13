@@ -51,7 +51,7 @@ interface StoreValue {
    * Run a pure workflow function against current data; on success the new data is committed.
    * `claimApplication` makes the demo applicant persona track the application the action created.
    */
-  act: <T extends { applicationId?: string }>(fn: (data: AppData) => WorkflowResult<T>, opts?: { claimApplication?: boolean }) => WorkflowResult<T>
+  act: <T extends object>(fn: (data: AppData) => WorkflowResult<T>, opts?: { claimApplication?: boolean }) => WorkflowResult<T>
 }
 
 const StoreContext = createContext<StoreValue | null>(null)
@@ -76,7 +76,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const act = useCallback<StoreValue['act']>((fn, opts) => {
     const result = fn(latest.current.data)
     if (result.ok) {
-      const next = { ...latest.current, data: result.data, applicantAppId: opts?.claimApplication && result.applicationId ? result.applicationId : latest.current.applicantAppId }
+      const next = { ...latest.current, data: result.data, applicantAppId: opts?.claimApplication && 'applicationId' in result && typeof result.applicationId === 'string' ? result.applicationId : latest.current.applicantAppId }
       latest.current = next
       dispatch({ type: 'set_data', data: result.data, applicantAppId: next.applicantAppId })
     }

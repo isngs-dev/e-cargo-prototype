@@ -29,7 +29,7 @@ import { calculatePrice } from '@/lib/pricing'
 import { indicativeDiscountBp } from '@/lib/eligibility'
 import { demoVerificationRef, formatAwbNumber } from '@/lib/awb'
 
-export const SEED_VERSION = 2
+export const SEED_VERSION = 3
 
 export const config: PlatformConfig = {
   tax: { vatBp: 750, stampDutyBp: 75, insuranceBp: 150, basis: 'net' },
@@ -66,8 +66,9 @@ export const freightRates: FreightRate[] = [
 ]
 
 export const staff: StaffAccount[] = [
-  { id: 'st-ds', name: 'Chukwuemeka Obi', email: 'c.obi@nrc.demo', role: 'district_supervisor', status: 'active', lastLoginAt: '2026-10-13T08:12:00+01:00' },
-  { id: 'st-ds2', name: 'Hauwa Garba', email: 'h.garba@nrc.demo', role: 'district_supervisor', status: 'suspended', lastLoginAt: '2026-08-02T10:40:00+01:00' },
+  { id: 'st-ds', name: 'Chukwuemeka Obi', email: 'c.obi@nrc.demo', role: 'district_supervisor', district: 'Lagos', status: 'active', lastLoginAt: '2026-10-13T08:12:00+01:00' },
+  { id: 'st-ds-ibadan', name: 'Olumide Adeyemi', email: 'o.adeyemi@nrc.demo', role: 'district_supervisor', district: 'Ibadan', status: 'active', lastLoginAt: '2026-10-13T08:30:00+01:00' },
+  { id: 'st-ds2', name: 'Hauwa Garba', email: 'h.garba@nrc.demo', role: 'district_supervisor', district: 'Lagos', status: 'suspended', lastLoginAt: '2026-08-02T10:40:00+01:00' },
   { id: 'st-hoc', name: 'Funmilayo Adebayo', email: 'f.adebayo@nrc.demo', role: 'head_of_cargo', status: 'active', lastLoginAt: '2026-10-13T07:55:00+01:00' },
   { id: 'st-dir', name: 'Aliyu Bello', email: 'a.bello@nrc.demo', role: 'director_operations', status: 'active', lastLoginAt: '2026-10-12T16:20:00+01:00' },
   { id: 'st-hop', name: 'Grace Etim', email: 'g.etim@nrc.demo', role: 'head_port_operations', status: 'active', lastLoginAt: '2026-10-13T06:45:00+01:00' },
@@ -93,37 +94,37 @@ const nonPriority = (category: CustomerEligibility['category']): CustomerEligibi
 
 export const customers: Customer[] = [
   {
-    id: 'cus-lagoon', companyName: 'Lagoon Freight & Logistics Ltd', cacNumber: 'RC 1458327',
+    id: 'cus-lagoon', district: 'Lagos', companyName: 'Lagoon Freight & Logistics Ltd', cacNumber: 'RC 1458327',
     registeredAddress: '14 Wharf Road, Apapa, Lagos', modes: ['Containerized'], services: ['Clearance', 'Multi-modal'],
     poc: { name: 'Adaeze Okafor', email: 'adaeze.okafor@lagoonfreight.demo', countryCode: '+234', phone: '803 412 7781' },
     eligibility: priority(10, 2, 5_000_000, 'Strategic'), accountStatus: 'active', activatedAt: '2026-03-18T11:20:00+01:00', username: 'lagoonfreight', isDemo: true,
   },
   {
-    id: 'cus-gateway', companyName: 'Apapa Gateway Clearing Services Ltd', cacNumber: 'RC 2210984',
+    id: 'cus-gateway', district: 'Lagos', companyName: 'Apapa Gateway Clearing Services Ltd', cacNumber: 'RC 2210984',
     registeredAddress: '7 Creek Road, Apapa, Lagos', modes: ['Containerized', 'Non-Containerized'], services: ['Clearance', 'Documentation'],
     poc: { name: 'Ibrahim Musa', email: 'i.musa@apapagateway.demo', countryCode: '+234', phone: '806 220 1194' },
     eligibility: nonPriority('SME'), accountStatus: 'active', activatedAt: '2026-05-04T09:05:00+01:00', username: 'apapagateway', isDemo: true,
   },
   {
-    id: 'cus-northbound', companyName: 'Northbound Agro Haulage Ltd', cacNumber: 'RC 0987654',
+    id: 'cus-northbound', district: 'Ibadan', companyName: 'Northbound Agro Haulage Ltd', cacNumber: 'RC 0987654',
     registeredAddress: 'Plot 22, Oyo Road, Ibadan, Oyo State', modes: ['Containerized'], services: ['Loading/Offloading', 'Multi-modal'],
     poc: { name: 'Bola Ajayi', email: 'b.ajayi@northboundagro.demo', countryCode: '+234', phone: '805 771 0032' },
     eligibility: priority(8, 1, 3_000_000, 'Bulk'), accountStatus: 'active', activatedAt: '2026-02-10T14:30:00+01:00', username: 'northboundagro', isDemo: true,
   },
   {
-    id: 'cus-fgra', companyName: 'Federal Grains Reserve Agency', cacNumber: 'RC 1102233',
+    id: 'cus-fgra', district: 'Lagos', companyName: 'Federal Grains Reserve Agency', cacNumber: 'RC 1102233',
     registeredAddress: 'Federal Secretariat Annex, Ikoyi, Lagos', modes: ['Containerized'], services: ['Multi-modal'],
     poc: { name: 'Nkechi Eze', email: 'n.eze@fgra.demo', countryCode: '+234', phone: '809 300 4410' },
     eligibility: priority(5, 3, 20_000_000, 'Government'), accountStatus: 'active', activatedAt: '2026-01-22T10:00:00+01:00', username: 'fgra', isDemo: true,
   },
   {
-    id: 'cus-ikorodu', companyName: 'Ikorodu Multimodal Ventures Ltd', cacNumber: 'RC 3011876',
+    id: 'cus-ikorodu', district: 'Lagos', companyName: 'Ikorodu Multimodal Ventures Ltd', cacNumber: 'RC 3011876',
     registeredAddress: '3 Lagos Road, Ikorodu, Lagos', modes: ['Non-Containerized'], services: ['Loading/Offloading'],
     poc: { name: 'Kunle Bakre', email: 'k.bakre@ikorodumm.demo', countryCode: '+234', phone: '802 118 5523' },
     eligibility: nonPriority('SME'), accountStatus: 'suspended', activatedAt: '2026-04-01T12:00:00+01:00', username: 'ikorodumm', isDemo: true,
   },
   {
-    id: 'cus-deltaswift', companyName: 'Delta Swift Movers Ltd', cacNumber: 'RC 2776120',
+    id: 'cus-deltaswift', district: 'Lagos', companyName: 'Delta Swift Movers Ltd', cacNumber: 'RC 2776120',
     registeredAddress: '19 Warri-Sapele Road, Warri, Delta State', modes: ['Non-Containerized'], services: ['Loading/Offloading'],
     poc: { name: 'Ese Omonigho', email: 'ops@deltaswift.demo', countryCode: '+234', phone: '807 640 9981' },
     eligibility: nonPriority('SME'), accountStatus: 'blacklisted', activatedAt: '2025-11-15T12:00:00+01:00', username: 'deltaswift', isDemo: true,
@@ -134,6 +135,7 @@ export const customers: Customer[] = [
 
 const actors: Record<string, { name: string; role: Role | 'system' }> = {
   ds: { name: 'Chukwuemeka Obi', role: 'district_supervisor' },
+  ds2: { name: 'Olumide Adeyemi', role: 'district_supervisor' },
   hoc: { name: 'Funmilayo Adebayo', role: 'head_of_cargo' },
   dir: { name: 'Aliyu Bello', role: 'director_operations' },
   hop: { name: 'Grace Etim', role: 'head_port_operations' },
@@ -169,14 +171,14 @@ const regDocs = (at: string, opts: { profile?: boolean; tax?: boolean } = {}) =>
 ]
 
 function reg(
-  id: string, reference: string, base: Pick<RegistrationApplication, 'companyName' | 'cacNumber' | 'registeredAddress' | 'modes' | 'services' | 'poc'>,
+  id: string, reference: string, base: Pick<RegistrationApplication, 'companyName' | 'cacNumber' | 'registeredAddress' | 'district' | 'modes' | 'services' | 'poc'>,
   status: RegistrationStatus, submittedAt: string, updatedAt: string, documents: UploadedDocument[], extra: Partial<RegistrationApplication> = {},
 ): RegistrationApplication {
   return { id, reference, ...base, status, submittedAt, updatedAt, documents, isDemo: true, ...extra }
 }
 
 const fromCustomer = (c: Customer) => ({
-  companyName: c.companyName, cacNumber: c.cacNumber, registeredAddress: c.registeredAddress, modes: c.modes, services: c.services, poc: c.poc,
+  companyName: c.companyName, cacNumber: c.cacNumber, registeredAddress: c.registeredAddress, district: c.district, modes: c.modes, services: c.services, poc: c.poc,
 })
 
 const cust = (id: string) => customers.find((c) => c.id === id)!
@@ -187,26 +189,31 @@ export const applications: RegistrationApplication[] = [
   reg('reg-lagoon', 'REG-2026-0034', fromCustomer(cust('cus-lagoon')), 'activated', '2026-03-09T13:45:00+01:00', '2026-03-18T11:20:00+01:00', regDocs('2026-03-09T13:45:00+01:00', { tax: true }), { customerId: 'cus-lagoon' }),
   reg('reg-gateway', 'REG-2026-0051', fromCustomer(cust('cus-gateway')), 'activated', '2026-04-27T08:30:00+01:00', '2026-05-04T09:05:00+01:00', regDocs('2026-04-27T08:30:00+01:00'), { customerId: 'cus-gateway' }),
   reg('reg-ogun', 'REG-2026-0101', {
+    district: 'Ibadan',
     companyName: 'Ogun Valley Logistics Ltd', cacNumber: 'RC 3348810', registeredAddress: '41 Abeokuta Expressway, Sango-Ota, Ogun State',
     modes: ['Containerized'], services: ['Clearance', 'Loading/Offloading'],
     poc: { name: 'Temitope Salami', email: 't.salami@ogunvalley.demo', countryCode: '+234', phone: '813 552 0917' },
   }, 'pending_district_verification', '2026-10-12T15:22:00+01:00', '2026-10-12T15:22:00+01:00', regDocs('2026-10-12T15:22:00+01:00', { tax: true })),
   reg('reg-ekobulk', 'REG-2026-0102', {
+    district: 'Lagos',
     companyName: 'Eko Bulk Terminals Ltd', cacNumber: 'RC 3360042', registeredAddress: '9 Point Road, Tin Can Island, Lagos',
     modes: ['Non-Containerized'], services: ['Loading/Offloading'],
     poc: { name: 'Yusuf Danjuma', email: 'y.danjuma@ekobulk.demo', countryCode: '+234', phone: '816 004 3381' },
   }, 'pending_district_verification', '2026-10-13T08:40:00+01:00', '2026-10-13T08:40:00+01:00', regDocs('2026-10-13T08:40:00+01:00', { profile: false })),
   reg('reg-swiftdelta', 'REG-2026-0107', {
+    district: 'Lagos',
     companyName: 'Swift Delta Movers Nig. Ltd', cacNumber: 'RC 2776120', registeredAddress: '2 Airport Road, Effurun, Delta State',
     modes: ['Non-Containerized'], services: ['Loading/Offloading'],
     poc: { name: 'Ese Omonigho', email: 'ese@swiftdelta.demo', countryCode: '+234', phone: '807 640 9981' },
   }, 'pending_district_verification', '2026-10-13T09:15:00+01:00', '2026-10-13T09:15:00+01:00', regDocs('2026-10-13T09:15:00+01:00')),
   reg('reg-transsahel', 'REG-2026-0103', {
+    district: 'Lagos',
     companyName: 'Trans-Sahel Freight Nigeria Ltd', cacNumber: 'RC 1890275', registeredAddress: '55 Herbert Macaulay Way, Yaba, Lagos',
     modes: ['Containerized', 'Non-Containerized'], services: ['Clearance', 'Documentation', 'Multi-modal'],
     poc: { name: 'Halima Sani', email: 'h.sani@transsahel.demo', countryCode: '+234', phone: '803 990 2210' },
   }, 'pending_director_approval', '2026-10-08T11:00:00+01:00', '2026-10-10T14:05:00+01:00', regDocs('2026-10-08T11:00:00+01:00', { tax: true })),
   reg('reg-marina', 'REG-2026-0104', {
+    district: 'Lagos',
     companyName: 'Marina Clearing Agency', cacNumber: 'BN 4419027', registeredAddress: '120 Broad Street, Lagos Island, Lagos',
     modes: ['Containerized'], services: ['Clearance', 'Documentation'],
     poc: { name: 'Obinna Chukwu', email: 'obinna@marinaclearing.demo', countryCode: '+234', phone: '802 771 6604' },
@@ -214,6 +221,7 @@ export const applications: RegistrationApplication[] = [
     latestRemark: 'CAC certificate scan is illegible and the registration number cannot be confirmed. Please re-upload a clear copy.',
   }),
   reg('reg-coastline', 'REG-2026-0105', {
+    district: 'Lagos',
     companyName: 'Coastline Cargo Partners Ltd', cacNumber: 'RC 2210984', registeredAddress: '7B Creek Road, Apapa, Lagos',
     modes: ['Containerized'], services: ['Clearance'],
     poc: { name: 'Peter Okon', email: 'p.okon@coastlinecargo.demo', countryCode: '+234', phone: '805 118 4402' },
@@ -221,6 +229,7 @@ export const applications: RegistrationApplication[] = [
     latestRemark: 'CAC number RC 2210984 is already registered to an active customer. Application rejected.',
   }),
   reg('reg-beninore', 'REG-2026-0106', {
+    district: 'Ibadan',
     companyName: 'Benin-Ore Haulage Ltd', cacNumber: 'RC 2054117', registeredAddress: '88 Sapele Road, Benin City, Edo State',
     modes: ['Non-Containerized'], services: ['Loading/Offloading', 'Multi-modal'],
     poc: { name: 'Osaro Igbinedion', email: 'osaro@beninore.demo', countryCode: '+234', phone: '808 225 7713' },
@@ -259,7 +268,8 @@ for (const a of applications) {
       )
       break
   }
-  chain('registration', a.id, a.reference, undefined, steps)
+  // District Supervisor entries are attributed to the supervisor of the application's district.
+  chain('registration', a.id, a.reference, undefined, steps.map((st) => (st[1] === 'ds' && a.district === 'Ibadan' ? [st[0], 'ds2', ...st.slice(2)] as Step : st)))
 }
 
 // ---------------------------------------------------------------- bookings

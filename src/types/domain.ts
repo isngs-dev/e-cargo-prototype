@@ -6,6 +6,9 @@ export type BasisPoints = number
 export type ISODate = string // YYYY-MM-DD
 export type ISODateTime = string
 
+export type District = 'Lagos' | 'Ibadan'
+export const DISTRICTS: readonly District[] = ['Lagos', 'Ibadan']
+
 export type Role =
   | 'cargo_facilitator'
   | 'district_supervisor'
@@ -23,6 +26,8 @@ export interface Persona {
   customerId?: string
   /** Demo applicant: no activated company yet; tracks one registration application. */
   isApplicant?: boolean
+  /** District Supervisors only see and act on applications from their own district. */
+  district?: District
 }
 
 // ---------------------------------------------------------------- Customers
@@ -53,6 +58,7 @@ export interface Customer {
   services: ServiceProvided[]
   poc: { name: string; email: string; countryCode: string; phone: string }
   eligibility: CustomerEligibility
+  district: District
   accountStatus: CustomerAccountStatus
   activatedAt: ISODateTime
   username: string
@@ -95,6 +101,8 @@ export interface RegistrationApplication {
   companyName: string
   cacNumber: string
   registeredAddress: string
+  /** District chosen by the facilitator; determines which District Supervisor verifies it. */
+  district: District
   modes: ModeOfOperation[]
   services: ServiceProvided[]
   poc: { name: string; email: string; countryCode: string; phone: string }
@@ -267,6 +275,7 @@ export interface StaffAccount {
   name: string
   email: string
   role: Exclude<Role, 'cargo_facilitator'>
+  district?: District
   status: StaffStatus
   lastLoginAt?: ISODateTime
 }

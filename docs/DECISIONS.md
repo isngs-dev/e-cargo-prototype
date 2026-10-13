@@ -31,6 +31,7 @@
 | X-7 | Registration timeline: Submitted → Review → HQ Approval → Activated | Submitted → District Verification → Director Approval → Activated | [B] |
 | X-8 | Booking timeline has generic "Payment"/"Port Validation" | Explicit statuses incl. Awaiting Payment / Credit Approved / Pending Dispatch | [B] |
 | X-9 | Admin panel edits priority status, credit days, discount structures | §2.3: Super Admin cannot set discounts/credit | [B §2.3]; see D-14 |
+| X-11 | District Supervisor role is not scoped by district | **Client update 2026-10-13:** DS only sees applications of their own district (Lagos or Ibadan); facilitator selects the district on the registration form | Implemented |
 | X-10 | Registration emails to Customer + DS/HoC | Customer + DS | [B] |
 
 ## 3. Unresolved business rules (require NRC confirmation)
@@ -55,6 +56,7 @@ Items 1–11 are [B §12] open items. Values shown are **proposals**, not approv
 | D-14 | Access matrix gives Super Admin "✅ correct" on priority/discount/credit, but §2.3 forbids it | Super Admin **cannot** change eligibility in prototype; record-correction scope to be confirmed |
 | D-15 | Credit-period payment link: who/what triggers at period end; settlement of credit | Simulated manual "credit period ended" action |
 | D-16 | Non-containerized pricing unit (per wagon vs per ton) | Per wagon (formula says × quantity of containers/wagons) |
+| D-18 | Do bookings, dispatch or Head of Cargo / Port roles also need district scoping? Not specified — currently national | Not scoped |
 | D-17 | Public landing page, FAQ, live train widget [O] | Not in baseline; optional Phase 8 |
 
 ## 4. Demonstration assumptions
@@ -75,4 +77,12 @@ Items 1–11 are [B §12] open items. Values shown are **proposals**, not approv
 | A-13 | Director's eligibility on approval: Non-Priority forces discount/credit/threshold to zero; Priority requires a threshold when credit months > 0; discount 0–100% (no NRC ceiling stated) |
 | A-14 | Temporary passwords are never generated or displayed; credential issuance is shown as a simulated email |
 | A-15 | A demo "applicant" persona represents a not-yet-registered public applicant; customers created by approval have no persona in the role switcher |
+| A-16 | Booking mandatory documents: Bill of Lading, Packing List, Invoice (+ hazardous compliance if hazardous). Radiation Certificate and Customs Clearance are optional uploads (D-7) |
+| A-17 | Booking date cannot be in the past; no lead-time or capacity rule applied (D-6) |
+| A-18 | Same container type may appear once per booking; containerized = 20ft/40ft/Reefer lines, non-containerized = Wagon only |
+| A-19 | Booking creation is blocked for suspended/blacklisted customers and when outstanding credit exceeds the threshold; no mode-of-operation restriction is enforced against the company's registered modes |
+| A-20 | Drafts are not modelled; the form submits straight to Pending Head of Cargo Review. Commodity is free text with suggestions (Commodity Master not built) |
+| A-21 | Districts are exactly Lagos and Ibadan (client). Exactly one District Supervisor persona per district in the demo; Head of Cargo / Port / Director remain national |
+| A-22 | District is chosen by the facilitator and cannot be changed by the District Supervisor; if a facilitator picks the wrong district the supervisor sends it back (no inter-district transfer built) — to confirm with NRC |
+| A-23 | Seed districts are demo assignments (e.g. Ogun Valley and Benin-Ore placed under Ibadan) |
 | A-9 | Seed date context is October 2026; seeded timestamps are fixed |

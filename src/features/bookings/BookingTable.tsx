@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { useStore } from '@/app/store'
 import { bookingAmount, containerSummary, customerName, routeLabel } from '@/app/selectors'
 import { BookingStatusBadge, EmptyState, PaymentStatusBadge } from '@/components/ui/blocks'
@@ -41,7 +42,7 @@ export function BookingTable({
           return (
             <tr key={b.id} className="hover:bg-slate-50/60">
               <Td>
-                <p className="whitespace-nowrap font-mono text-xs font-medium text-slate-900">{b.reference}</p>
+                <Link to={`/bookings/${b.id}`} className="whitespace-nowrap font-mono text-xs font-medium text-brand-700 underline-offset-2 hover:underline">{b.reference}</Link>
                 <p className="whitespace-nowrap text-xs text-slate-500">For {formatDate(b.bookingDate)}</p>
               </Td>
               {showCustomer && <Td className="max-w-56 truncate">{customerName(data, b.customerId)}</Td>}

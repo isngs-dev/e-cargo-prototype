@@ -54,7 +54,7 @@ export function EditRegistrationPage() {
     <>
       <PageHeader title="Correct and resubmit" description={`${app.reference} · ${app.companyName}`} />
       {app.latestRemark && <div className="mb-4"><Notice tone="warning" title="District Supervisor’s comments">{app.latestRemark}</Notice></div>}
-      <RegistrationForm initial={{ companyName: app.companyName, cacNumber: app.cacNumber, registeredAddress: app.registeredAddress, modes: app.modes, services: app.services, poc: app.poc, documents: app.documents }} submitLabel="Resubmit application" onSubmit={onSubmit} />
+      <RegistrationForm initial={{ companyName: app.companyName, cacNumber: app.cacNumber, registeredAddress: app.registeredAddress, district: app.district, modes: app.modes, services: app.services, poc: app.poc, documents: app.documents }} submitLabel="Resubmit application" onSubmit={onSubmit} />
     </>
   )
 }

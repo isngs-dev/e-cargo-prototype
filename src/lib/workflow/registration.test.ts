@@ -10,7 +10,8 @@ import {
 import type { Actor, WorkflowResult } from './result'
 
 const fac: Actor = { name: 'Zainab Lawal', role: 'cargo_facilitator' }
-const ds: Actor = { name: 'Chukwuemeka Obi', role: 'district_supervisor' }
+const ds: Actor = { name: 'Chukwuemeka Obi', role: 'district_supervisor', district: 'Lagos' }
+const dsIbadan: Actor = { name: 'Olumide Adeyemi', role: 'district_supervisor', district: 'Ibadan' }
 const dir: Actor = { name: 'Aliyu Bello', role: 'director_operations' }
 const sa: Actor = { name: 'Tunde Bakare', role: 'super_admin' }
 
@@ -62,6 +63,35 @@ describe('submission', () => {
     const before = base.applications.length
     submitRegistration(base, valid(base), fac)
     expect(base.applications.length).toBe(before)
+  })
+})
+
+describe('districts', () => {
+  it('requires the facilitator to choose a district', () => {
+    expect(validateRegistration({ ...demoRegistration(), district: '' }, false).district).toBeDefined()
+    const base = createSeedData()
+    expect(submitRegistration(base, { ...valid(base), district: '' }, fac).ok).toBe(false)
+  })
+  it('stores the chosen district on the application and the resulting customer', () => {
+    const base = createSeedData()
+    const sub = ok(submitRegistration(base, { ...valid(base), district: 'Ibadan' }, fac))
+    expect(sub.data.applications.find((a) => a.id === sub.applicationId)!.district).toBe('Ibadan')
+    const fwd = ok(districtForward(sub.data, sub.applicationId, dsIbadan))
+    const approved = ok(directorApprove(fwd.data, sub.applicationId, dir, priorityInput))
+    expect(approved.data.customers.find((c) => c.id === approved.customerId)!.district).toBe('Ibadan')
+  })
+  it('stops a District Supervisor from acting on another district', () => {
+    const { data, id } = submitted() // Lagos
+    expect(districtForward(data, id, dsIbadan).ok).toBe(false)
+    expect(districtSendBack(data, id, dsIbadan, 'x').ok).toBe(false)
+    expect(addInternalRemark(data, id, dsIbadan, 'x').ok).toBe(false)
+    expect(districtForward(data, id, { ...ds, district: undefined }).ok).toBe(false)
+    expect(districtForward(data, id, ds).ok).toBe(true)
+  })
+  it('seed data has applications in both districts', () => {
+    const d = createSeedData()
+    expect(d.applications.filter((a) => a.status === 'pending_district_verification' && a.district === 'Lagos').length).toBeGreaterThan(0)
+    expect(d.applications.filter((a) => (a.status === 'pending_district_verification' || a.status === 'sent_back_to_district') && a.district === 'Ibadan').length).toBeGreaterThan(0)
   })
 })
 
