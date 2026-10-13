@@ -17,7 +17,7 @@ const COMMODITIES = ['Packaged beverages', 'Bagged cement', 'Bagged maize', 'Bui
 const steps = ['Shipment', 'Documents', 'Review & submit']
 const stepFields: Record<number, (keyof BookingErrors)[]> = { 0: ['bookingDate', 'routeId', 'containers', 'weightTons', 'commodity'], 1: ['documents'], 2: ['declaration'] }
 
-export function BookingForm({ customer, initial, onSubmit }: { customer: Customer; initial: BookingInput; onSubmit: (v: BookingInput) => string | null }) {
+export function BookingForm({ customer, initial, onSubmit, submitLabel = 'Submit booking' }: { customer: Customer; initial: BookingInput; onSubmit: (v: BookingInput) => string | null; submitLabel?: string }) {
   const { data } = useStore()
   const [v, setV] = useState<BookingInput>(initial)
   const [step, setStep] = useState(0)
@@ -172,7 +172,7 @@ export function BookingForm({ customer, initial, onSubmit }: { customer: Custome
 
         <div className="flex items-center justify-between gap-2 border-t border-slate-100 bg-slate-50 px-5 py-3">
           <Button variant="secondary" disabled={step === 0} onClick={() => { setTouched(false); setSubmitError(''); setStep((s) => s - 1) }}><ArrowLeft className="size-4" /> Back</Button>
-          {step < 2 ? <Button onClick={next}>Next <ArrowRight className="size-4" /></Button> : <Button onClick={submit} disabled={!!priceError}><Send className="size-4" /> Submit booking</Button>}
+          {step < 2 ? <Button onClick={next}>Next <ArrowRight className="size-4" /></Button> : <Button onClick={submit} disabled={!!priceError}><Send className="size-4" /> {submitLabel}</Button>}
         </div>
       </Card>
 

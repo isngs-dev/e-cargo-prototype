@@ -31,6 +31,7 @@ export const registrationStatusMeta: Record<RegistrationStatus, { label: string;
 export const paymentStatusMeta: Record<PaymentStatus, { label: string; tone: Tone }> = {
   not_due: { label: 'Not yet due', tone: 'neutral' },
   pending: { label: 'Payment pending', tone: 'warning' },
+  processing: { label: 'Payment processing (simulated)', tone: 'info' },
   paid: { label: 'Paid (simulated)', tone: 'success' },
   failed: { label: 'Payment failed (simulated)', tone: 'danger' },
   credit_outstanding: { label: 'On credit — outstanding', tone: 'accent' },

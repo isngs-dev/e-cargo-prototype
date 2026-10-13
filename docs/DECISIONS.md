@@ -85,4 +85,10 @@ Items 1–11 are [B §12] open items. Values shown are **proposals**, not approv
 | A-21 | Districts are exactly Lagos and Ibadan (client). Exactly one District Supervisor persona per district in the demo; Head of Cargo / Port / Director remain national |
 | A-22 | District is chosen by the facilitator and cannot be changed by the District Supervisor; if a facilitator picks the wrong district the supervisor sends it back (no inter-district transfer built) — to confirm with NRC |
 | A-23 | Seed districts are demo assignments (e.g. Ogun Valley and Benin-Ore placed under Ibadan) |
+| A-24 | Credit approval is blocked when outstanding credit plus the booking total would exceed the customer's credit threshold ("maximum outstanding balance permitted"); the Director can choose Payment Link Now instead |
+| A-25 | Invoice number = `INV-2026-` + the booking number; simulated payment reference = `DEMO-PSK-` + the booking number. Neither is an NRC or Paystack format |
+| A-26 | Payment simulation: the facilitator picks the outcome (success / failure / stays pending). "Stays pending" is reconciled by Super Admin (simulated webhook). 24h reminder, payment-window auto-cancel and credit-period end are Super Admin demo buttons because there is no clock/back-end |
+| A-27 | A failed simulated payment keeps the booking Awaiting Payment and the link usable until the window elapses; the facilitator may retry |
+| A-28 | Credit bookings that reach dispatch are not blocked by the credit-period payment link; settlement is separate. What happens if credit is never settled is not specified (D-15) |
+| A-29 | Head of Cargo / Director rejection before payment sets payment to "Cancelled" (no refund path needed) |
 | A-9 | Seed date context is October 2026; seeded timestamps are fixed |

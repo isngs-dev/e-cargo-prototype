@@ -131,3 +131,40 @@ export function createBooking(
   })
   return { ok: true, data: next, bookingId: booking.id }
 }
+
+/** Facilitator corrects and resubmits a booking sent back by the Head of Cargo. Keeps the reference. */
+export function resubmitBooking(
+  data: AppData, bookingId: string, input: BookingInput, actor: Actor, now = new Date().toISOString(), today = todayISO(),
+): WorkflowResult<{ bookingId: string }> {
+  if (actor.role !== 'cargo_facilitator' || !actor.customerId) return fail('Only an activated cargo facilitator can resubmit bookings.')
+  const original = data.bookings.find((b) => b.id === bookingId)
+  if (!original || original.customerId !== actor.customerId) return fail('You can only resubmit your own bookings.')
+  if (original.status !== 'sent_back_to_facilitator') return fail('Only bookings sent back for correction can be resubmitted.')
+  const customer = data.customers.find((c) => c.id === actor.customerId)
+  if (!customer) return fail('Customer account not found.')
+  const blocked = bookingBlock(data, customer)
+  if (blocked) return fail(blocked)
+  const route = data.routes.find((r) => r.id === input.routeId)
+  if (!route || !route.active) return fail('Selected route is not available.')
+  const errors = validateBooking(input, today)
+  if (Object.keys(errors).length) return fail(Object.values(errors)[0]!)
+  const priced = indicativePrice(data, customer, input)
+  if (!priced.ok) return fail(priced.error)
+
+  const next = structuredClone(data)
+  const b = next.bookings.find((x) => x.id === bookingId)!
+  Object.assign(b, {
+    bookingDate: input.bookingDate, cargoType: input.cargoType, routeId: input.routeId, containers: input.containers,
+    weightTons: input.weightTons, commodity: input.commodity.trim(), hazardous: input.hazardous,
+    specialHandling: input.specialHandling.trim() || undefined, remarks: input.remarks.trim() || undefined,
+    documents: input.documents.filter((d) => input.hazardous || d.kind !== 'hazardous_compliance'),
+    indicativePrice: priced.price, status: 'pending_hoc_review', updatedAt: now,
+  })
+  next.audit.push({
+    id: `au-${String(next.audit.length + 1).padStart(4, '0')}`, at: now, actorName: actor.name, actorRole: actor.role,
+    entityType: 'booking', entityId: b.id, entityRef: b.reference, action: 'Booking corrected and resubmitted',
+    fromStatus: 'sent_back_to_facilitator', toStatus: 'pending_hoc_review',
+    remarks: `Indicative total ${formatKobo(priced.price.totalPayable)} accepted by facilitator. No payment taken.`,
+  })
+  return { ok: true, data: next, bookingId: b.id }
+}

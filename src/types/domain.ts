@@ -182,6 +182,7 @@ export type PaymentTerms = 'pay_now' | 'pay_after_credit'
 export type PaymentStatus =
   | 'not_due' // before Director approval
   | 'pending' // link issued, awaiting payment
+  | 'processing' // payment attempted, awaiting gateway confirmation / reconciliation (simulated)
   | 'paid'
   | 'failed'
   | 'credit_outstanding'
@@ -258,7 +259,17 @@ export interface Booking {
     /** Snapshot of the eligibility in force at approval. */
     eligibilitySnapshot: CustomerEligibility
   }
-  payment: { status: PaymentStatus; dueBy?: ISODateTime; paidAt?: ISODateTime; reference?: string }
+  payment: {
+    status: PaymentStatus
+    dueBy?: ISODateTime
+    paidAt?: ISODateTime
+    reference?: string
+    /** Generated at Director approval (simulated invoice). */
+    invoiceNumber?: string
+    /** Credit bookings: set when the credit period ends and the (simulated) payment link is issued. */
+    linkIssuedAt?: ISODateTime
+    reminderSentAt?: ISODateTime
+  }
   dispatch?: DispatchDetails
   awb?: Awb
   createdAt: ISODateTime

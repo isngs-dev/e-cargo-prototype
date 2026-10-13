@@ -4,6 +4,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { BookingsPage } from '@/features/bookings/BookingsPage'
 import { BookingDetailPage } from '@/features/bookings/BookingDetailPage'
+import { EditBookingPage } from '@/features/bookings/EditBookingPage'
 import { NewBookingPage } from '@/features/bookings/NewBookingPage'
 import { RegistrationsPage } from '@/features/registrations/RegistrationsPage'
 import { CustomersPage } from '@/features/customers/CustomersPage'
@@ -28,6 +29,7 @@ export default function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="bookings" element={guarded('bookings', <BookingsPage />)} />
             <Route path="bookings/new" element={guarded('new_booking', <NewBookingPage />)} />
+            <Route path="bookings/:id/edit" element={guarded('new_booking', <EditBookingPage />)} />
             <Route path="bookings/:id" element={guarded('bookings', <BookingDetailPage />)} />
             <Route path="registrations" element={guarded('registrations', <RegistrationsPage />)} />
             <Route path="registrations/:id" element={<RegistrationDetailPage />} />

@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router'
-import { ArrowLeft, Eye, TriangleAlert, X } from 'lucide-react'
+import { ArrowLeft, Eye, FilePen, TriangleAlert, X } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { containerSummary, customerName, routeLabel, visibleBookings } from '@/app/selectors'
 import { BookingStatusBadge, Notice, PageHeader, PaymentStatusBadge } from '@/components/ui/blocks'
-import { Badge, Button, Card, CardHeader } from '@/components/ui/primitives'
+import { Field, Textarea } from '@/components/ui/fields'
+import { Badge, Button, buttonClass, Card, CardHeader } from '@/components/ui/primitives'
 import { ActivityList } from '@/features/audit/ActivityList'
 import { BookingStages } from '@/features/audit/Timeline'
 import { DocumentPreview } from '@/features/registrations/DocumentPreview'
@@ -12,12 +13,19 @@ import { formatDate, formatDateTime } from '@/lib/format'
 import { formatBp, formatKobo } from '@/lib/money'
 import { documentLabels } from '@/lib/registration'
 import type { UploadedDocument } from '@/types/domain'
+import { addBookingRemark } from '@/lib/workflow/bookingApproval'
+import type { Actor } from '@/lib/workflow/result'
+import { DirectorPanel, HeadOfCargoPanel } from './ApprovalPanels'
+import { FacilitatorPaymentPanel, SuperAdminPaymentControls } from './PaymentPanels'
 import { PriceBreakdown } from './PriceBreakdown'
+import type { Run } from './runTypes'
 
 export function BookingDetailPage() {
   const { id } = useParams()
   const location = useLocation()
-  const { data, persona } = useStore()
+  const { data, persona, act } = useStore()
+  const [note, setNote] = useState('')
+  const [noteError, setNoteError] = useState('')
   const [flash, setFlash] = useState<string | null>((location.state as { flash?: string } | null)?.flash ?? null)
   const [preview, setPreview] = useState<UploadedDocument | null>(null)
 
@@ -30,8 +38,26 @@ export function BookingDetailPage() {
   }
 
   const customer = data.customers.find((c) => c.id === booking.customerId)
+  const actor: Actor = { name: persona.name, role: persona.role, customerId: persona.customerId }
+  const run: Run = (fn, success) => {
+    const r = act(fn)
+    if (!r.ok) return r.error
+    setFlash(success)
+    return null
+  }
+  const isHoc = persona.role === 'head_of_cargo'
+  const isDir = persona.role === 'director_operations'
+  const isSA = persona.role === 'super_admin'
+  const hocOpen = booking.status === 'pending_hoc_review' || booking.status === 'sent_back_to_hoc'
+  const dirOpen = booking.status === 'pending_director_review'
+  const addNote = () => {
+    const err = run((d) => addBookingRemark(d, booking.id, actor, note), 'Internal remark added (not visible to the facilitator).')
+    if (err) return setNoteError(err)
+    setNote('')
+    setNoteError('')
+  }
   const showDiscount = !!(booking.approved ? booking.approved.eligibilitySnapshot.isPriority : customer?.eligibility.isPriority)
-  const timeline = data.audit.filter((e) => e.entityType === 'booking' && e.entityId === booking.id && !e.internal).slice().reverse()
+  const timeline = data.audit.filter((e) => e.entityType === 'booking' && e.entityId === booking.id && !(isFacilitator && e.internal)).slice().reverse()
   const lastRemark = [...timeline].find((e) => e.remarks && (e.toStatus?.startsWith('sent_back') || e.toStatus?.startsWith('rejected')))
 
   const rows: [string, string][] = [
@@ -97,6 +123,27 @@ export function BookingDetailPage() {
         </div>
 
         <div className="space-y-6">
+          {isFacilitator && booking.status === 'sent_back_to_facilitator' && (
+            <Card>
+              <CardHeader title="Action required" description="Correct the issues noted above and resubmit." />
+              <div className="p-5"><Link to={`/bookings/${booking.id}/edit`} className={buttonClass('primary', 'md', 'w-full')}><FilePen className="size-4" /> Correct & resubmit</Link></div>
+            </Card>
+          )}
+          {isFacilitator && <FacilitatorPaymentPanel booking={booking} actor={actor} run={run} />}
+          {isSA && <SuperAdminPaymentControls booking={booking} actor={actor} run={run} />}
+          {isHoc && hocOpen && <HeadOfCargoPanel booking={booking} actor={actor} run={run} />}
+          {isDir && dirOpen && customer && <DirectorPanel booking={booking} customer={customer} data={data} actor={actor} run={run} />}
+          {isDir && hocOpen && <Notice title="With Head of Cargo">This booking reaches you once the Head of Cargo has verified it.</Notice>}
+          {isSA && <Notice title="View only (approvals)">Super Admin cannot approve bookings, set discounts or payment terms. The controls above only stand in for system events.</Notice>}
+          {(isHoc || isDir) && (
+            <Card>
+              <CardHeader title="Internal remark" description="Visible to NRC reviewers only." />
+              <div className="space-y-2 p-5">
+                <Field label="Remark" error={noteError}><Textarea value={note} onChange={(e) => { setNote(e.target.value); setNoteError('') }} /></Field>
+                <Button size="sm" variant="secondary" onClick={addNote}>Add remark</Button>
+              </div>
+            </Card>
+          )}
           {booking.approved ? (
             <PriceBreakdown price={booking.approved.price} showDiscount={showDiscount} mode="frozen" />
           ) : (

@@ -9,12 +9,12 @@ import type { PriceBreakdown as Price } from '@/types/domain'
  */
 export function PriceBreakdown({
   price, showDiscount, mode, error,
-}: { price?: Price; showDiscount: boolean; mode: 'indicative' | 'frozen'; error?: string }) {
+}: { price?: Price; showDiscount: boolean; mode: 'indicative' | 'frozen' | 'preview'; error?: string }) {
   return (
     <Card>
       <CardHeader
-        title={mode === 'frozen' ? 'Approved price' : 'Price breakdown'}
-        action={<Badge tone={mode === 'frozen' ? 'success' : 'info'}>{mode === 'frozen' ? 'Frozen at approval' : 'Indicative'}</Badge>}
+        title={mode === 'frozen' ? 'Approved price' : mode === 'preview' ? 'Price on approval' : 'Price breakdown'}
+        action={<Badge tone={mode === 'frozen' ? 'success' : 'info'}>{mode === 'frozen' ? 'Frozen at approval' : mode === 'preview' ? 'Preview — not yet frozen' : 'Indicative'}</Badge>}
       />
       {error || !price ? (
         <p role="alert" className="px-5 py-4 text-sm text-red-700">{error ?? 'Complete the shipment details to see the price.'}</p>
@@ -30,7 +30,7 @@ export function PriceBreakdown({
           </ul>
           <dl className="mt-3 space-y-1.5 border-t border-slate-100 pt-3">
             <Row label="Base freight" value={formatKobo(price.baseFreight)} />
-            {showDiscount && price.discountBp > 0 && <Row label={`Less: ${mode === 'frozen' ? 'Approved' : 'Indicative'} discount (${formatBp(price.discountBp)})`} value={`−${formatKobo(price.discount)}`} tone="text-emerald-700" />}
+            {showDiscount && price.discountBp > 0 && <Row label={`Less: ${mode === 'indicative' ? 'Indicative' : 'Approved'} discount (${formatBp(price.discountBp)})`} value={`−${formatKobo(price.discount)}`} tone="text-emerald-700" />}
             {showDiscount && price.discountBp > 0 && <Row label="Net freight" value={formatKobo(price.netFreight)} />}
             <Row label={`VAT (${formatBp(price.rates.vatBp)})`} value={formatKobo(price.vat)} />
             <Row label={`Stamp duty (${formatBp(price.rates.stampDutyBp)})`} value={formatKobo(price.stampDuty)} />
@@ -44,7 +44,9 @@ export function PriceBreakdown({
             <li>
               VAT, stamp duty and insurance are calculated on {price.taxBasis === 'net' ? 'net freight (after discount)' : 'gross freight (before discount)'} — basis pending NRC confirmation.
             </li>
-            {mode === 'indicative' ? (
+            {mode === 'preview' ? (
+              <li>Preview of the price that will be frozen when you approve.</li>
+            ) : mode === 'indicative' ? (
               <>
                 {showDiscount && <li>The discount shown is indicative. The Director may reduce it at approval, never increase it.</li>}
                 <li>No payment is taken now. Payment happens only after Director approval.</li>
