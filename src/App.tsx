@@ -7,6 +7,8 @@ import { RegistrationsPage } from '@/features/registrations/RegistrationsPage'
 import { CustomersPage } from '@/features/customers/CustomersPage'
 import { CompanyProfilePage } from '@/features/customers/CompanyProfilePage'
 import { AuditPage } from '@/features/audit/AuditPage'
+import { RegistrationDetailPage } from '@/features/registrations/RegistrationDetailPage'
+import { EditRegistrationPage, MyRegistrationRedirect, NewRegistrationPage } from '@/features/registrations/ApplicantPages'
 import { MasterDataPage } from '@/features/master-data/MasterDataPage'
 import { NotFoundPage, PlannedPage, RequireArea } from '@/features/placeholder/PlannedPage'
 import type { Area } from '@/lib/permissions'
@@ -25,6 +27,10 @@ export default function App() {
             <Route path="bookings" element={guarded('bookings', <BookingsPage />)} />
             <Route path="bookings/new" element={guarded('new_booking', <PlannedPage area="new_booking" />)} />
             <Route path="registrations" element={guarded('registrations', <RegistrationsPage />)} />
+            <Route path="registrations/:id" element={<RegistrationDetailPage />} />
+            <Route path="registrations/:id/edit" element={<EditRegistrationPage />} />
+            <Route path="my-registration" element={guarded('my_registration', <MyRegistrationRedirect />)} />
+            <Route path="register" element={guarded('my_registration', <NewRegistrationPage />)} />
             <Route path="company" element={guarded('company_profile', <CompanyProfilePage />)} />
             <Route path="customers" element={guarded('customers', <CustomersPage />)} />
             <Route path="dispatch" element={guarded('dispatch', <PlannedPage area="dispatch" />)} />

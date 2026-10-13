@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   Building,
   ClipboardCheck,
+  FilePen,
   Database,
   LayoutDashboard,
   Package,
@@ -14,8 +15,8 @@ import {
   UserCog,
   Users,
 } from 'lucide-react'
-import type { Role } from '@/types/domain'
-import { canAccess, type Area } from '@/lib/permissions'
+import type { Persona, Role } from '@/types/domain'
+import { canAccessPersona, type Area } from '@/lib/permissions'
 
 export interface NavItem {
   area: Area
@@ -29,6 +30,7 @@ export interface NavItem {
 
 export const navItems: NavItem[] = [
   { area: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, phase: 2, built: true },
+  { area: 'my_registration', path: '/my-registration', label: 'My Registration', icon: FilePen, phase: 3, built: true },
   { area: 'new_booking', path: '/bookings/new', label: 'New Booking', icon: Plus, phase: 4, built: false },
   {
     area: 'bookings', path: '/bookings', icon: Package, phase: 2, built: true,
@@ -84,6 +86,6 @@ export function navLabel(item: NavItem, role: Role): string {
   return typeof item.label === 'string' ? item.label : (item.label[role] ?? item.label.default)
 }
 
-export function navForRole(role: Role): NavItem[] {
-  return navItems.filter((i) => canAccess(role, i.area))
+export function navForPersona(persona: Persona): NavItem[] {
+  return navItems.filter((i) => canAccessPersona(persona, i.area))
 }

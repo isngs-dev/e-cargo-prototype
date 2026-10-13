@@ -4,7 +4,7 @@ import { planDescriptions, navItems } from '@/app/navigation'
 import { useStore } from '@/app/store'
 import { PageHeader } from '@/components/ui/blocks'
 import { buttonClass, Card } from '@/components/ui/primitives'
-import { canAccess, roleLabels, type Area } from '@/lib/permissions'
+import { canAccessPersona, roleLabels, type Area } from '@/lib/permissions'
 
 /** Honest placeholder for a screen scheduled in a later implementation phase. */
 export function PlannedPage({ area }: { area: Area }) {
@@ -36,7 +36,7 @@ export function PlannedPage({ area }: { area: Area }) {
 
 export function RequireArea({ area, children }: { area: Area; children: React.ReactNode }) {
   const { persona } = useStore()
-  if (canAccess(persona.role, area)) return <>{children}</>
+  if (canAccessPersona(persona, area)) return <>{children}</>
   return (
     <Card className="p-8 text-center">
       <ShieldCheck className="mx-auto size-8 text-slate-400" aria-hidden />

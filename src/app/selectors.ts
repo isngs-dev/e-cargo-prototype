@@ -1,4 +1,4 @@
-import type { AppData } from './store'
+import type { AppData } from '@/types/domain'
 import type { Booking, Persona } from '@/types/domain'
 
 export function customerName(data: AppData, id: string): string {

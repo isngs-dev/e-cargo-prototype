@@ -7,6 +7,7 @@ import type { Persona } from '@/types/domain'
 export const personas: Persona[] = [
   { id: 'p-fac-priority', name: 'Adaeze Okafor', role: 'cargo_facilitator', title: 'Lagoon Freight & Logistics Ltd · Priority', customerId: 'cus-lagoon' },
   { id: 'p-fac-standard', name: 'Ibrahim Musa', role: 'cargo_facilitator', title: 'Apapa Gateway Clearing Services Ltd · Non-Priority', customerId: 'cus-gateway' },
+  { id: 'p-fac-applicant', name: 'Obinna Chukwu', role: 'cargo_facilitator', title: 'Demo applicant · registration in progress (not yet an active customer)', isApplicant: true },
   { id: 'p-ds', name: 'Chukwuemeka Obi', role: 'district_supervisor', title: 'District Supervisor, Lagos District' },
   { id: 'p-hoc', name: 'Funmilayo Adebayo', role: 'head_of_cargo', title: 'Head of Cargo' },
   { id: 'p-dir', name: 'Aliyu Bello', role: 'director_operations', title: 'Director of Operations, NRC HQ' },

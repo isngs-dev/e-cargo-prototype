@@ -69,4 +69,10 @@ Items 1–11 are [B §12] open items. Values shown are **proposals**, not approv
 | A-6 | Head of Cargo and Head of Port see all bookings relevant to their stage (not filtered by district) |
 | A-7 | Facilitator may re-upload documents after a send-back, not only before submission |
 | A-8 | Audit IP address not captured; audit log stored in localStorage and not tamper-proof |
+| A-10 | CAC number format validated as RC / BN / IT + 4–8 digits (format not specified in either document) |
+| A-11 | District Supervisor cannot forward an application with incomplete documents; duplicate-CAC / blacklist flags may be forwarded only with explanatory remarks (documents say checks exist, not what they block) |
+| A-12 | Internal remarks are visible to DS/Director only and hidden from the facilitator timeline; send-back remarks are visible to the facilitator |
+| A-13 | Director's eligibility on approval: Non-Priority forces discount/credit/threshold to zero; Priority requires a threshold when credit months > 0; discount 0–100% (no NRC ceiling stated) |
+| A-14 | Temporary passwords are never generated or displayed; credential issuance is shown as a simulated email |
+| A-15 | A demo "applicant" persona represents a not-yet-registered public applicant; customers created by approval have no persona in the role switcher |
 | A-9 | Seed date context is October 2026; seeded timestamps are fixed |

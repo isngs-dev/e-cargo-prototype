@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
 import { Menu, RotateCcw, TrainFront, X } from 'lucide-react'
 import { useStore } from '@/app/store'
-import { navForRole, navLabel } from '@/app/navigation'
+import { navForPersona, navLabel } from '@/app/navigation'
 import { cn } from '@/lib/cn'
 import { roleLabels } from '@/lib/permissions'
 import { Button } from '@/components/ui/primitives'
@@ -11,7 +11,7 @@ import { RoleSwitcher } from './RoleSwitcher'
 
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { persona } = useStore()
-  const items = navForRole(persona.role)
+  const items = navForPersona(persona)
   return (
     <div className="flex h-full flex-col bg-brand-900 text-brand-50">
       <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">

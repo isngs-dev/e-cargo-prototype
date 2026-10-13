@@ -1,4 +1,5 @@
 import { CircleAlert, CircleCheck } from 'lucide-react'
+import { Link } from 'react-router'
 import { useStore } from '@/app/store'
 import { EmptyState, RegistrationStatusBadge } from '@/components/ui/blocks'
 import { Table, Td, Th } from '@/components/ui/primitives'
@@ -26,11 +27,11 @@ export function RegistrationTable({ applications, emptyTitle = 'No applications'
           return (
             <tr key={a.id} className="hover:bg-slate-50/60">
               <Td>
-                <p className="whitespace-nowrap font-mono text-xs font-medium text-slate-900">{a.reference}</p>
+                <Link to={`/registrations/${a.id}`} className="whitespace-nowrap font-mono text-xs font-medium text-brand-700 underline-offset-2 hover:underline">{a.reference}</Link>
                 <p className="text-xs text-slate-500">{formatDateTime(a.submittedAt)}</p>
               </Td>
               <Td>
-                <p className="font-medium text-slate-900">{a.companyName}</p>
+                <Link to={`/registrations/${a.id}`} className="font-medium text-slate-900 hover:underline">{a.companyName}</Link>
                 <p className="text-xs text-slate-500">{a.cacNumber}</p>
               </Td>
               <Td>

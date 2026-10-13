@@ -19,7 +19,7 @@ import {
 } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { customerName, visibleBookings } from '@/app/selectors'
-import { DemoTag, KpiCard, Notice, PageHeader } from '@/components/ui/blocks'
+import { DemoTag, EmptyState, KpiCard, Notice, PageHeader, RegistrationStatusBadge } from '@/components/ui/blocks'
 import { buttonClass, Card, CardHeader } from '@/components/ui/primitives'
 import { BookingTable } from '@/features/bookings/BookingTable'
 import { RegistrationTable } from '@/features/registrations/RegistrationTable'
@@ -37,6 +37,29 @@ function Grid({ children }: { children: React.ReactNode }) {
 const viewAll = (to: string) => (
   <Link to={to} className={buttonClass('ghost', 'sm')}>View all</Link>
 )
+
+function ApplicantDashboard() {
+  const { data, applicantAppId } = useStore()
+  const app = data.applications.find((a) => a.id === applicantAppId)
+  return (
+    <>
+      <Notice title="Registration required">You are not yet an active customer. Bookings, pricing and AWBs unlock once the Director approves your registration.</Notice>
+      <Card className="mt-6">
+        <CardHeader title="My registration" description="Track your application through verification and approval" action={<Link to="/register" className={buttonClass('secondary', 'sm')}>Start a new application</Link>} />
+        {app ? (
+          <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+            <div>
+              <p className="font-medium text-slate-900">{app.companyName}</p>
+              <p className="mt-0.5 font-mono text-xs text-slate-500">{app.reference}</p>
+              {app.latestRemark && app.status === 'sent_back_to_facilitator' && <p className="mt-2 max-w-xl text-sm text-amber-800">“{app.latestRemark}”</p>}
+            </div>
+            <div className="flex items-center gap-3"><RegistrationStatusBadge status={app.status} /><Link to={`/registrations/${app.id}`} className={buttonClass('primary', 'sm')}>{app.status === 'sent_back_to_facilitator' ? 'Review comments' : 'View application'}</Link></div>
+          </div>
+        ) : <EmptyState title="No application yet" description="Submit your company details and documents to begin." action={<Link to="/register" className={buttonClass('primary', 'sm')}>Register your company</Link>} />}
+      </Card>
+    </>
+  )
+}
 
 function FacilitatorDashboard() {
   const { data, persona } = useStore()
@@ -202,7 +225,7 @@ export function DashboardPage() {
   return (
     <>
       <PageHeader title={`${roleLabels[persona.role]} dashboard`} description={<span className="inline-flex flex-wrap items-center gap-2">{subtitle} <DemoTag /></span>} />
-      {persona.role === 'cargo_facilitator' && <FacilitatorDashboard />}
+      {persona.role === 'cargo_facilitator' && (persona.isApplicant ? <ApplicantDashboard /> : <FacilitatorDashboard />)}
       {persona.role === 'district_supervisor' && <DistrictSupervisorDashboard />}
       {persona.role === 'head_of_cargo' && <HeadOfCargoDashboard />}
       {persona.role === 'director_operations' && <DirectorDashboard />}

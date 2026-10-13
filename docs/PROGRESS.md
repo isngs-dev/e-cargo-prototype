@@ -2,14 +2,14 @@
 
 ## Current phase
 
-**Phase 1 complete · Phase 2 foundation complete** (2026-10-13)
+**Phase 3 (Registration workflow) complete** (2026-10-13). Phases 1–2 deployed to Render.
 
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Requirements review, project setup, docs | ✅ Done |
 | 2 | UI system, shell, navigation, role switcher, seeded dashboards | ✅ Foundation done |
-| 3 | Registration workflow | ⏭ Next |
-| 4 | Booking creation & pricing | Planned |
+| 3 | Registration workflow | ✅ Done |
+| 4 | Booking creation & pricing | ⏭ Next |
 | 5 | Booking approvals & payment simulation | Planned |
 | 6 | Port operations, AWB, refunds | Planned |
 | 7 | Super Admin, master data maintenance, audit | Planned |
@@ -27,31 +27,37 @@
 - Read-only screens: Bookings list (search + status filter, role-scoped), Registrations list (search + filter + automated check flags), Company Profile + eligibility/credit usage, Customers, Routes & Rates (current rates, history, tax config), Audit Log (search + entity filter).
 - Unbuilt areas show an honest "Scheduled for phase N" page; unauthorized routes show an access-denied state.
 
+## Phase 3 — completed
+
+- `src/lib/workflow/registration.ts`: pure transitions (submit, resubmit, DS send-back/forward, Director approve/reject/send-back, internal remarks) with role + status + remark rules; each writes an audit entry. Approval creates the Customer with a unique username.
+- Store `act()` commits workflow results; state version 2 (new `applicantAppId`; old localStorage is reseeded).
+- Multi-step registration form (details → documents → review) with inline validation, simulated upload/preview/re-upload, "Fill demo data".
+- `/registrations/:id` detail: stage tracker, details, document previews, automated checks, timeline (actor/role/time/status/remarks), role-specific action panels, eligibility form, reason dialogs.
+- Applicant persona ("Obinna Chukwu") with dashboard, `/my-registration`, `/register`, `/registrations/:id/edit` (resubmit after send-back).
+- 19 new tests (34 total).
+
 ## Validation results (2026-10-13)
 
 | Command | Result |
 |---|---|
-| `npm test` | ✅ 15/15 passed (pricing examples ₦177,795 / ₦197,550, effective dating, missing rate, eligibility caps, credit block, dispatch gate, AWB check digit, seed integrity) |
-| `npm run typecheck` (`tsc -b`) | ✅ no errors |
-| `npm run build` | ✅ built; JS 380.6 kB (116.8 kB gzip), CSS 27.8 kB |
-| Browser (dev server) | ✅ all 7 personas × 13 routes render; denied routes guarded; persona persists across reload; no console errors; no horizontal overflow at 375px |
-
-No lint configured (ESLint deliberately not added; strict `tsc` covers type safety).
+| `npm test` | ✅ 34/34 passed |
+| `npm run typecheck` | ✅ no errors |
+| `npm run build` | ✅ JS 421.8 kB (127.2 kB gzip), CSS 32.6 kB |
+| Browser (dev server) | ✅ applicant resubmit → DS forward → Director approve (Priority 12% / 2 mo / ₦3M / Strategic) → customer created + audit trail; validation messages; document preview; no console errors |
 
 ## Known bugs / limitations
 
-- Role switcher is not authentication. All data is browser-local (see DEPLOYMENT.md).
-- No workflow actions yet (approve/reject/send-back, booking form, payment, dispatch) — dashboards and lists are read-only.
-- No detail views (booking/registration detail, timeline, document preview) yet.
-- Seed timestamps fixed to Oct 2026; Master Data "rate in force today" uses the real current date.
-- Rendered on SPA rewrite assumption — Render deployment not yet verified.
+- Role switcher is not authentication; data is browser-local.
+- Customers created by approval have no persona (cannot yet "log in" as them); bookings come in Phase 4.
+- Facilitator "Re-upload" uses the browser file picker (name/size only); not automatable in my browser tests — use "Use sample file" for new docs.
+- Eligibility edits for existing customers (upgrade between bookings) not built yet (Phase 7 / Director screen).
+- No lint configured.
 
 ## Next task (exact)
 
-**Phase 3 — Registration workflow:**
-1. `src/lib/workflow/registration.ts`: pure transition functions (submit, DS send-back/forward, Director approve/reject/send-back) that validate role + current status, require remarks where mandated, and return `{ application, customer?, auditEntries }`.
-2. Store actions wired to those functions (audit appended on each).
-3. Public-style multi-step registration form for a *new* applicant (company details → documents with simulated upload/preview/re-upload → review & submit) with validation.
-4. Registration detail page `/registrations/:id`: details, documents preview, automated checks, timeline, remarks; DS actions (send back w/ remarks, forward) and Director actions (eligibility form: priority, discount %, credit months, threshold, category; approve / reject / send back) with dialogs.
-5. On approval: create Customer + simulated credentials notice; facilitator sees status & remarks after send-back and can resubmit.
-6. Tests for every transition and permission; update PROGRESS.md.
+**Phase 4 — Booking creation & pricing:**
+1. `src/lib/workflow/booking.ts` (pure): create booking (validates mandatory fields/docs/hazardous doc/declaration, blocks if no rate or credit blocked or account suspended/blacklisted), computes indicative price via `lib/pricing`.
+2. Multi-step `/bookings/new` form: date, cargo type, route, multiple container/wagon lines, weight, commodity, hazardous (+compliance doc), special handling, documents, live price breakdown (discount line only for Priority), Fair Cargo Policy declaration, preview & submit (no payment).
+3. Booking detail page `/bookings/:id` (read-only for now): summary, pricing breakdown component, documents, timeline.
+4. Tests for validation, missing rate block (APP-MNY non-containerized), credit block, suspended/blacklisted block.
+5. Update PROGRESS.md.

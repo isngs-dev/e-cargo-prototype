@@ -15,7 +15,7 @@ export function ActivityList({ entries }: { entries: AuditEntry[] }) {
         <li key={e.id} className="px-5 py-3">
           <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
             <p className="text-sm text-slate-900">
-              <span className="font-mono text-xs text-slate-500">{e.entityRef}</span> · {e.action}
+              <span className="font-mono text-xs text-slate-500">{e.entityRef}</span> · {e.action}{e.internal && <span className="ml-2 rounded bg-slate-100 px-1.5 py-px text-[10px] font-medium uppercase text-slate-600">Internal</span>}
             </p>
             <time className="text-xs tabular-nums text-slate-500">{formatDateTime(e.at)}</time>
           </div>

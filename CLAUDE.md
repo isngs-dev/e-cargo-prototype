@@ -46,4 +46,5 @@ npm run build      # tsc -b && vite build → dist/
 - Preserve scope: one phase at a time per `docs/PROGRESS.md`. Don't present unresolved decisions as confirmed — add to DECISIONS.md.
 - Avoid new dependencies unless clearly justified. No backend/DB/Docker.
 - After each phase: `npm test`, `npm run build`, update `docs/PROGRESS.md`. Never commit, push or deploy unless asked.
+- Workflow functions live in `src/lib/workflow/` (pure; take AppData, return new AppData or error) and are invoked via `useStore().act(...)`.
 - Bump `SEED_VERSION` in `src/data/seed.ts` when the persisted state shape changes (forces a reseed).

@@ -21,6 +21,8 @@ export interface Persona {
   title: string
   /** Facilitator personas act on behalf of one customer company. */
   customerId?: string
+  /** Demo applicant: no activated company yet; tracks one registration application. */
+  isApplicant?: boolean
 }
 
 // ---------------------------------------------------------------- Customers
@@ -283,6 +285,8 @@ export interface AuditEntry {
   fromStatus?: string
   toStatus?: string
   remarks?: string
+  /** Internal NRC remark — hidden from the facilitator's timeline. */
+  internal?: boolean
   /** Old → new value for configuration / eligibility changes. */
   change?: { field: string; from: string; to: string }
 }
@@ -305,4 +309,20 @@ export interface PaymentException {
   receivedAt: ISODateTime
   issue: string
   resolved: boolean
+}
+
+// ---------------------------------------------------------- Application data
+
+export interface AppData {
+  customers: Customer[]
+  applications: RegistrationApplication[]
+  bookings: Booking[]
+  routes: Route[]
+  freightRates: FreightRate[]
+  staff: StaffAccount[]
+  audit: AuditEntry[]
+  refunds: Refund[]
+  paymentExceptions: PaymentException[]
+  config: PlatformConfig
+  counters: { nextBookingSeq: number; nextRegistrationSeq: number; nextAwbSeq: number }
 }

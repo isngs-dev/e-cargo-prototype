@@ -29,7 +29,7 @@ import { calculatePrice } from '@/lib/pricing'
 import { indicativeDiscountBp } from '@/lib/eligibility'
 import { demoVerificationRef, formatAwbNumber } from '@/lib/awb'
 
-export const SEED_VERSION = 1
+export const SEED_VERSION = 2
 
 export const config: PlatformConfig = {
   tax: { vatBp: 750, stampDutyBp: 75, insuranceBp: 150, basis: 'net' },
