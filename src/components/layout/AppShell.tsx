@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
-import { BookOpen, Menu, RotateCcw, TrainFront, X } from 'lucide-react'
+import { BookOpen, Menu, PanelLeftClose, PanelLeftOpen, RotateCcw, TrainFront, X } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { navForPersona, navLabel } from '@/app/navigation'
 import { cn } from '@/lib/cn'
@@ -9,22 +9,39 @@ import { Button, buttonClass } from '@/components/ui/primitives'
 import { Dialog } from '@/components/ui/dialog'
 import { RoleSwitcher } from './RoleSwitcher'
 
-function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+/** `collapsed` renders a slim icon-only rail (desktop). The mobile drawer always renders the full sidebar. */
+const SIDEBAR_KEY = 'nrc-ecargo-prototype:sidebar-collapsed'
+
+function Sidebar({ onNavigate, collapsed = false, onToggle }: { onNavigate?: () => void; collapsed?: boolean; onToggle?: () => void }) {
   const { persona } = useStore()
   const items = navForPersona(persona)
   return (
     <div className="flex h-full flex-col bg-brand-900 text-brand-50">
-      <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
-        <span className="flex size-8 items-center justify-center rounded-md bg-white/10">
-          <TrainFront className="size-4.5" aria-hidden />
-        </span>
-        <div className="leading-tight">
-          <p className="text-sm font-semibold text-white">NRC e-Cargo</p>
-          <p className="text-[11px] text-brand-200">Operations Platform</p>
-        </div>
+      <div className={cn('flex h-16 items-center border-b border-white/10', collapsed ? 'justify-center px-0' : 'justify-between gap-2 pl-5 pr-3')}>
+        <Link to="/dashboard" onClick={onNavigate} className="flex min-w-0 items-center gap-3 rounded-md focus-visible:outline-brand-200" aria-label="NRC e-Cargo — go to dashboard" title="Go to dashboard">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/10">
+            <TrainFront className="size-4.5" aria-hidden />
+          </span>
+          {!collapsed && (
+            <span className="min-w-0 leading-tight">
+              <span className="block truncate text-sm font-semibold text-white">NRC e-Cargo</span>
+              <span className="block truncate text-[11px] text-brand-200">Operations Platform</span>
+            </span>
+          )}
+        </Link>
+        {!collapsed && onToggle && (
+          <button type="button" onClick={onToggle} className="rounded-md p-1.5 text-brand-200 hover:bg-white/10 hover:text-white" aria-label="Collapse navigation" aria-expanded title="Collapse navigation">
+            <PanelLeftClose className="size-5" aria-hidden />
+          </button>
+        )}
       </div>
-      <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Main">
-        <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-brand-200/70">{roleLabels[persona.role]}</p>
+      {collapsed && onToggle && (
+        <button type="button" onClick={onToggle} className="mx-auto mt-3 rounded-md p-2 text-brand-200 hover:bg-white/10 hover:text-white" aria-label="Expand navigation" aria-expanded={false} title="Expand navigation">
+          <PanelLeftOpen className="size-5" aria-hidden />
+        </button>
+      )}
+      <nav className={cn('flex-1 overflow-y-auto py-4', collapsed ? 'px-2' : 'px-3')} aria-label="Main">
+        {!collapsed && <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-brand-200/70">{roleLabels[persona.role]}</p>}
         <ul className="space-y-0.5">
           {items.map((item) => (
             <li key={item.path}>
@@ -32,24 +49,29 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 to={item.path}
                 end={item.path === '/bookings'}
                 onClick={onNavigate}
+                title={collapsed ? navLabel(item, persona.role) : undefined}
+                aria-label={collapsed ? navLabel(item, persona.role) : undefined}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors',
+                    'flex items-center gap-3 rounded-md py-2 text-sm transition-colors',
+                    collapsed ? 'justify-center px-0' : 'px-2.5',
                     isActive ? 'bg-white/12 font-medium text-white' : 'text-brand-100/85 hover:bg-white/6 hover:text-white',
                   )
                 }
               >
                 <item.icon className="size-4 shrink-0" aria-hidden />
-                <span className="flex-1 truncate">{navLabel(item, persona.role)}</span>
-                {!item.built && <span className="rounded bg-white/10 px-1.5 text-[10px] text-brand-100/80">P{item.phase}</span>}
+                {!collapsed && <span className="flex-1 truncate">{navLabel(item, persona.role)}</span>}
+                {!collapsed && !item.built && <span className="rounded bg-white/10 px-1.5 text-[10px] text-brand-100/80">P{item.phase}</span>}
               </NavLink>
             </li>
           ))}
         </ul>
       </nav>
-      <div className="border-t border-white/10 px-5 py-3 text-[11px] leading-snug text-brand-200/80">
-        Demonstration prototype. Data is simulated and stored only in this browser.
-      </div>
+      {!collapsed && (
+        <div className="border-t border-white/10 px-5 py-3 text-[11px] leading-snug text-brand-200/80">
+          Demonstration prototype. Data is simulated and stored only in this browser.
+        </div>
+      )}
     </div>
   )
 }
@@ -58,7 +80,16 @@ export function AppShell() {
   const { resetDemo } = useStore()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem(SIDEBAR_KEY) === '1' } catch { return false }
+  })
   const location = useLocation()
+
+  const toggleSidebar = () => setCollapsed((c) => {
+    const next = !c
+    try { localStorage.setItem(SIDEBAR_KEY, next ? '1' : '0') } catch { /* storage unavailable — the toggle still works for this session */ }
+    return next
+  })
 
   useEffect(() => {
     const titles: Record<string, string> = {
@@ -73,8 +104,8 @@ export function AppShell() {
   return (
     <div className="min-h-dvh">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-white focus:px-3 focus:py-2 focus:shadow">Skip to content</a>
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 lg:block print:hidden">
-        <Sidebar />
+      <aside className={cn('fixed inset-y-0 left-0 z-30 hidden transition-[width] duration-200 lg:block print:hidden', collapsed ? 'w-16' : 'w-64')}>
+        <Sidebar collapsed={collapsed} onToggle={toggleSidebar} />
       </aside>
 
       {mobileOpen && (
@@ -89,7 +120,7 @@ export function AppShell() {
         </div>
       )}
 
-      <div className="lg:pl-64 print:pl-0">
+      <div className={cn('transition-[padding] duration-200 print:pl-0', collapsed ? 'lg:pl-16' : 'lg:pl-64')}>
         <header className="print:hidden sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6">
           <button type="button" className="rounded-md p-2 text-slate-600 hover:bg-slate-100 lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open navigation">
             <Menu className="size-5" />
@@ -101,7 +132,7 @@ export function AppShell() {
           </Button>
           <RoleSwitcher />
         </header>
-        <main id="main" tabIndex={-1} key={location.pathname} className="outline-none mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
+        <main id="main" tabIndex={-1} key={location.pathname} className={cn('mx-auto px-4 py-6 outline-none transition-[max-width] duration-200 sm:px-6 lg:py-8', collapsed ? 'max-w-none lg:px-8' : 'max-w-7xl')}>
           <Outlet />
         </main>
       </div>

@@ -100,6 +100,10 @@
 - `heroScene.ts` is the reference's canvas code kept as-is (`// @ts-nocheck`, visual only) plus a small collision guard for the hero label.
 - Verified at 1280 / 820 / 375 px: no horizontal overflow, Register hand-off works, FAQ / stepper / header behave.
 
+## Navigation polish (post-Phase 8)
+
+- Collapsible sidebar: a toggle in the top bar collapses the sidebar to an icon-only rail (tooltips on each icon) and lets page content use the full width; the choice is remembered in localStorage (`nrc-ecargo-prototype:sidebar-collapsed`). The mobile drawer is unchanged.
+
 ## Next task (exact)
 
 There is no further planned build phase. Recommended next steps:
