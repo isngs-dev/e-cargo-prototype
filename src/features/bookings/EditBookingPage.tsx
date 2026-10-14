@@ -36,7 +36,7 @@ export function EditBookingPage() {
     <>
       <PageHeader title="Correct and resubmit" description={`${booking.reference} · ${customer.companyName}`} />
       {lastRemark && <div className="mb-4"><Notice tone="warning" title="Head of Cargo’s comments">{lastRemark}</Notice></div>}
-      {blocked ? <Notice tone="warning" title="You cannot resubmit right now">{blocked}</Notice> : <BookingForm customer={customer} initial={initial} onSubmit={onSubmit} submitLabel="Resubmit booking" />}
+      {blocked ? <Notice tone="warning" title="You cannot resubmit right now">{blocked}</Notice> : <BookingForm customer={customer} initial={initial} onSubmit={onSubmit} submitLabel="Resubmit booking" excludeBookingId={booking.id} />}
     </>
   )
 }

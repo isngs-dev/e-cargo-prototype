@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, Ban, CircleCheck, PauseCircle, X } from 'lucide-react'
+import { ArrowLeft, Ban, CircleCheck, PauseCircle } from 'lucide-react'
 import { useStore } from '@/app/store'
-import { Notice, PageHeader } from '@/components/ui/blocks'
+import { Notice, PageHeader, Flash } from '@/components/ui/blocks'
 import { Field, Textarea } from '@/components/ui/fields'
 import { Badge, Button, Card, CardHeader, Input, Select } from '@/components/ui/primitives'
 import { ActivityList } from '@/features/audit/ActivityList'
@@ -59,12 +59,7 @@ export function CustomerDetailPage() {
     <>
       <Link to="/customers" className="mb-3 inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"><ArrowLeft className="size-4" /> All customers</Link>
       <PageHeader title={customer.companyName} description={<span className="inline-flex flex-wrap items-center gap-2">{customer.cacNumber} · {customer.district} district <Badge tone={tone[customer.accountStatus]}>{customer.accountStatus}</Badge></span>} />
-      {flash && (
-        <div className="mb-4 flex items-start justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status">
-          <p>{flash}</p>
-          <button type="button" onClick={() => setFlash(null)} aria-label="Dismiss" className="text-emerald-700"><X className="size-4" /></button>
-        </div>
-      )}
+      <Flash message={flash} onDismiss={() => setFlash(null)} />
       <div className="grid gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
           <Card>

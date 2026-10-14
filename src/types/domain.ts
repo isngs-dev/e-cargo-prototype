@@ -149,6 +149,15 @@ export interface TaxConfig {
   basis: 'net' | 'gross'
 }
 
+/** Proposed approval targets in hours (open item D-9). Used for ageing indicators only — nothing is ever auto-approved. */
+export interface SlaConfig {
+  registrationDistrictHours: number
+  registrationDirectorHours: number
+  bookingCargoHours: number
+  bookingDirectorHours: number
+  dispatchHours: number
+}
+
 export interface PlatformConfig {
   tax: TaxConfig
   /** UNRESOLVED (open item #4). Proposed 72h. */
@@ -157,6 +166,7 @@ export interface PlatformConfig {
   /** UNRESOLVED (open item #3). Proposed 30 days. */
   refundWindowDays: number
   taxCertificateRequired: boolean
+  sla: SlaConfig
 }
 
 // ---------------------------------------------------------- Bookings
@@ -231,6 +241,9 @@ export interface Awb {
   generatedAt: ISODateTime
   /** Demo-only verification target. Not a signed URL. */
   verificationRef: string
+  /** Set when an amendment issues a newer version; superseded versions are kept, never edited. */
+  supersededAt?: ISODateTime
+  amendmentReason?: string
 }
 
 export interface Booking {
@@ -272,6 +285,8 @@ export interface Booking {
   }
   dispatch?: DispatchDetails
   awb?: Awb
+  /** Earlier (superseded) AWB versions, oldest first. */
+  awbHistory?: Awb[]
   createdAt: ISODateTime
   updatedAt: ISODateTime
   isDemo: true
@@ -353,6 +368,27 @@ export interface PaymentException {
   resolution?: { action: PaymentExceptionAction; note: string; at: ISODateTime; byName: string; bookingId?: string }
 }
 
+// ---------------------------------------------------------- Capacity (simulated, open item D-6)
+
+/** Daily capacity of a route in capacity units (20ft = 1, 40ft = 2, Reefer = 2, Wagon = 1 — demo assumption). */
+export interface CapacityRule { routeId: string; dailyUnits: number }
+
+export interface MaintenanceBlock { id: string; routeId: string; date: ISODate; reason: string }
+
+export interface WaitlistEntry {
+  id: string
+  customerId: string
+  routeId: string
+  date: ISODate
+  units: number
+  summary: string
+  createdAt: ISODateTime
+  status: 'waiting' | 'cancelled'
+}
+
+/** A processed refund is corrected by a reversing entry; the original refund record is never edited. */
+export interface RefundReversal { id: string; refundId: string; reason: string; reference: string; at: ISODateTime; byName: string }
+
 // ---------------------------------------------------------- Application data
 
 export interface AppData {
@@ -366,5 +402,9 @@ export interface AppData {
   refunds: Refund[]
   paymentExceptions: PaymentException[]
   config: PlatformConfig
+  capacity: CapacityRule[]
+  maintenanceBlocks: MaintenanceBlock[]
+  waitlist: WaitlistEntry[]
+  refundReversals: RefundReversal[]
   counters: { nextBookingSeq: number; nextRegistrationSeq: number; nextAwbSeq: number }
 }

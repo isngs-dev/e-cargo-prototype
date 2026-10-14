@@ -24,6 +24,10 @@ export function createSeedData(): AppData {
     refunds: seed.refunds,
     paymentExceptions: seed.paymentExceptions,
     config: seed.config,
+    capacity: seed.capacity,
+    maintenanceBlocks: seed.maintenanceBlocks,
+    waitlist: seed.waitlist,
+    refundReversals: seed.refundReversals,
     counters: seed.counters,
   })
 }

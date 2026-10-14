@@ -12,6 +12,7 @@ import type {
 } from '@/types/domain'
 import { indicativeDiscountBp, isCreditBlocked, outstandingCredit } from '@/lib/eligibility'
 import { formatKobo } from '@/lib/money'
+import { checkCapacity, unitsFor } from '@/lib/capacity'
 import { tryCalculatePrice } from '@/lib/pricing'
 import { fail, type Actor, type WorkflowResult } from './result'
 
@@ -108,6 +109,8 @@ export function createBooking(
   if (!route || !route.active) return fail('Selected route is not available.')
   const errors = validateBooking(input, today)
   if (Object.keys(errors).length) return fail(Object.values(errors)[0]!)
+  const cap = checkCapacity(data, input.routeId, input.bookingDate, input.containers)
+  if (!cap.ok) return fail(cap.reason)
   const priced = indicativePrice(data, customer, input)
   if (!priced.ok) return fail(priced.error)
 
@@ -148,6 +151,8 @@ export function resubmitBooking(
   if (!route || !route.active) return fail('Selected route is not available.')
   const errors = validateBooking(input, today)
   if (Object.keys(errors).length) return fail(Object.values(errors)[0]!)
+  const cap = checkCapacity(data, input.routeId, input.bookingDate, input.containers, bookingId)
+  if (!cap.ok) return fail(cap.reason)
   const priced = indicativePrice(data, customer, input)
   if (!priced.ok) return fail(priced.error)
 
@@ -167,4 +172,49 @@ export function resubmitBooking(
     remarks: `Indicative total ${formatKobo(priced.price.totalPayable)} accepted by facilitator. No payment taken.`,
   })
   return { ok: true, data: next, bookingId: b.id }
+}
+
+/**
+ * Waitlist (original scope, open item D-6): when the chosen date has no (or not enough) capacity the facilitator may
+ * join a waitlist instead. A waitlist entry is NOT a booking — no approval, price or payment. Simulated.
+ */
+export function joinWaitlist(data: AppData, input: Pick<BookingInput, 'routeId' | 'bookingDate' | 'containers' | 'commodity'>, actor: Actor, now = new Date().toISOString(), today = todayISO()): WorkflowResult<{ waitlistId: string }> {
+  if (actor.role !== 'cargo_facilitator' || !actor.customerId) return fail('Only an activated cargo facilitator can join a waitlist.')
+  const customer = data.customers.find((c) => c.id === actor.customerId)
+  if (!customer) return fail('Customer account not found.')
+  const blocked = bookingBlock(data, customer)
+  if (blocked) return fail(blocked)
+  const route = data.routes.find((r) => r.id === input.routeId)
+  if (!route || !route.active) return fail('Select an available route.')
+  if (!input.bookingDate || input.bookingDate < today) return fail('Select a booking date that is today or later.')
+  if (input.containers.length === 0 || input.containers.some((c) => !Number.isInteger(c.quantity) || c.quantity <= 0)) return fail('Enter the quantities first.')
+  const cap = checkCapacity(data, input.routeId, input.bookingDate, input.containers)
+  if (cap.ok) return fail('Slots are available on this date — submit the booking instead.')
+  if (data.waitlist.some((w) => w.customerId === customer.id && w.routeId === input.routeId && w.date === input.bookingDate && w.status === 'waiting')) return fail('You are already on the waitlist for this route and date.')
+
+  const next = structuredClone(data)
+  const entry = {
+    id: `wl-${next.waitlist.length + 1}`, customerId: customer.id, routeId: input.routeId, date: input.bookingDate, units: unitsFor(input.containers),
+    summary: `${input.containers.map((c) => `${c.quantity} × ${c.containerType}`).join(', ')} · ${input.commodity.trim() || 'cargo'}`, createdAt: now, status: 'waiting' as const,
+  }
+  next.waitlist.push(entry)
+  next.audit.push({
+    id: `au-${String(next.audit.length + 1).padStart(4, '0')}`, at: now, actorName: actor.name, actorRole: actor.role, entityType: 'booking', entityId: entry.id,
+    entityRef: `Waitlist · ${route.code} ${entry.date}`, action: 'Joined the waitlist (no slot available; not a booking)', remarks: entry.summary,
+  })
+  return { ok: true, data: next, waitlistId: entry.id }
+}
+
+export function leaveWaitlist(data: AppData, id: string, actor: Actor, now = new Date().toISOString()): WorkflowResult {
+  const next = structuredClone(data)
+  const w = next.waitlist.find((x) => x.id === id)
+  if (!w) return fail('Waitlist entry not found.')
+  if (actor.role !== 'cargo_facilitator' || actor.customerId !== w.customerId) return fail('You can only cancel your own waitlist entries.')
+  if (w.status !== 'waiting') return fail('This waitlist entry is already cancelled.')
+  w.status = 'cancelled'
+  next.audit.push({
+    id: `au-${String(next.audit.length + 1).padStart(4, '0')}`, at: now, actorName: actor.name, actorRole: actor.role, entityType: 'booking', entityId: w.id,
+    entityRef: `Waitlist · ${w.routeId} ${w.date}`, action: 'Left the waitlist', fromStatus: 'waiting', toStatus: 'cancelled',
+  })
+  return { ok: true, data: next }
 }

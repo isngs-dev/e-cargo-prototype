@@ -181,7 +181,7 @@ describe('refund flow', () => {
     d = ok(advanceRefund(d, 'rf-0380', 'approve', sa, NOW)).data
     d = ok(advanceRefund(d, 'rf-0380', 'process', sa, NOW)).data
     expect(d.refunds[0]).toMatchObject({ status: 'processed', processedAt: NOW, reference: 'DEMO-RFND-0380' })
-    expect(d.audit.filter((e) => e.entityType === 'refund').map((e) => e.toStatus)).toEqual(['link_sent', 'requested', 'under_review', 'approved', 'processed'])
+    expect(d.audit.filter((e) => e.entityType === 'refund').map((e) => e.toStatus)).toEqual(['awaiting_director', 'link_sent', 'requested', 'under_review', 'approved', 'processed'])
   })
   it('separation of duties: the Director cannot process, Super Admin cannot trigger', () => {
     const d = ok(submitRefundRequest(linked(), 'rf-0380', request(), lagoon, NOW)).data

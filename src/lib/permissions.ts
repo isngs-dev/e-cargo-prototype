@@ -25,15 +25,16 @@ export type Area =
   | 'master_data'
   | 'audit'
   | 'my_registration'
+  | 'capacity'
 
 /** Derived from the role access matrix (baseline doc §10). */
 const access: Record<Role, Area[]> = {
   cargo_facilitator: ['dashboard', 'bookings', 'new_booking', 'company_profile', 'awbs', 'refunds'],
   district_supervisor: ['dashboard', 'registrations'],
-  head_of_cargo: ['dashboard', 'bookings', 'awbs'],
-  director_operations: ['dashboard', 'registrations', 'bookings', 'customers', 'awbs', 'refunds', 'master_data', 'audit'],
-  head_port_operations: ['dashboard', 'dispatch', 'bookings', 'awbs'],
-  super_admin: ['dashboard', 'staff', 'customers', 'master_data', 'payments', 'refunds', 'registrations', 'bookings', 'awbs', 'audit'],
+  head_of_cargo: ['dashboard', 'bookings', 'capacity', 'awbs'],
+  director_operations: ['dashboard', 'registrations', 'bookings', 'customers', 'capacity', 'awbs', 'refunds', 'master_data', 'audit'],
+  head_port_operations: ['dashboard', 'dispatch', 'bookings', 'capacity', 'awbs'],
+  super_admin: ['dashboard', 'staff', 'customers', 'master_data', 'payments', 'refunds', 'registrations', 'bookings', 'capacity', 'awbs', 'audit'],
 }
 
 export function canAccess(role: Role, area: Area): boolean {

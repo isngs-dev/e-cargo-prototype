@@ -5,6 +5,10 @@
 import type {
   AuditEntry,
   Booking,
+  CapacityRule,
+  MaintenanceBlock,
+  RefundReversal,
+  WaitlistEntry,
   BookingStatus,
   CargoType,
   ContainerLine,
@@ -29,7 +33,7 @@ import { calculatePrice } from '@/lib/pricing'
 import { indicativeDiscountBp } from '@/lib/eligibility'
 import { demoVerificationRef, formatAwbNumber } from '@/lib/awb'
 
-export const SEED_VERSION = 5
+export const SEED_VERSION = 6
 
 export const config: PlatformConfig = {
   tax: { vatBp: 750, stampDutyBp: 75, insuranceBp: 150, basis: 'net' },
@@ -37,6 +41,7 @@ export const config: PlatformConfig = {
   paymentReminderHours: 24,
   refundWindowDays: 30,
   taxCertificateRequired: false,
+  sla: { registrationDistrictHours: 48, registrationDirectorHours: 48, bookingCargoHours: 24, bookingDirectorHours: 48, dispatchHours: 24 },
 }
 
 export const routes: Route[] = [
@@ -444,6 +449,15 @@ export const refunds: Refund[] = [
     reason: 'Physical verification failed at Apapa (weight mismatch, broken seal).', status: 'awaiting_director', createdAt: '2026-10-07T10:40:00+01:00' },
 ]
 
+for (const r of refunds) {
+  const b = bookings.find((x) => x.id === r.bookingId)!
+  audit.push({
+    id: `au-${String(++auditSeq).padStart(4, '0')}`, at: r.createdAt, actorName: actors.hop!.name, actorRole: 'head_port_operations', entityType: 'refund', entityId: r.id,
+    entityRef: `Refund · ${b.reference}`, action: 'Refund created after failed physical verification; awaiting Director', toStatus: 'awaiting_director', remarks: r.reason,
+  })
+}
+audit.sort((a, b) => a.at.localeCompare(b.at))
+
 export const paymentExceptions: PaymentException[] = [
   { id: 'px-1', reference: 'DEMO-PSK-76011', amount: naira(214_000), receivedAt: '2026-10-09T13:22:00+01:00', issue: 'Amount received does not match any open invoice.', resolved: false },
   { id: 'px-2', bookingId: 'bk-0380', reference: 'DEMO-PSK-75870-DUP', amount: bookings.find((b) => b.id === 'bk-0380')!.approved!.price.totalPayable, receivedAt: '2026-09-29T14:05:00+01:00', issue: 'Possible duplicate payment for NRC-BK-2026-0380.', resolved: false },
@@ -453,5 +467,19 @@ paymentExceptions.push({
   id: 'px-3', reference: 'DEMO-PSK-76233', amount: bookings.find((b) => b.id === 'bk-0401')!.approved!.price.totalPayable,
   receivedAt: '2026-10-12T16:05:00+01:00', issue: 'Payment received without a booking reference — amount equals an open invoice.', resolved: false,
 })
+
+export const capacity: CapacityRule[] = [
+  { routeId: 'rt-apl', dailyUnits: 30 },
+  { routeId: 'rt-ebm', dailyUnits: 40 },
+  { routeId: 'rt-mny', dailyUnits: 24 },
+]
+
+export const maintenanceBlocks: MaintenanceBlock[] = [
+  { id: 'mb-1', routeId: 'rt-ebm', date: '2026-10-30', reason: 'Track maintenance (demo)' },
+  { id: 'mb-2', routeId: 'rt-mny', date: '2026-11-03', reason: 'Signalling works (demo)' },
+]
+
+export const waitlist: WaitlistEntry[] = []
+export const refundReversals: RefundReversal[] = []
 
 export const counters = { nextBookingSeq: 421, nextRegistrationSeq: 108, nextAwbSeq: 102 }

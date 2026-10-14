@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router'
 import { useStore } from '@/app/store'
 import { Notice, PageHeader } from '@/components/ui/blocks'
-import { bookingBlock, createBooking, emptyBooking } from '@/lib/workflow/booking'
+import { bookingBlock, createBooking, emptyBooking, joinWaitlist } from '@/lib/workflow/booking'
 import { BookingForm } from './BookingForm'
 
 export function NewBookingPage() {
@@ -22,7 +22,12 @@ export function NewBookingPage() {
   return (
     <>
       <PageHeader title="New booking" description={`${customer.companyName} · ${customer.eligibility.isPriority ? 'Priority' : 'Non-Priority'} customer`} />
-      {blocked ? <Notice tone="warning" title="You cannot create a booking right now">{blocked}</Notice> : <BookingForm customer={customer} initial={emptyBooking()} onSubmit={onSubmit} />}
+      {blocked ? <Notice tone="warning" title="You cannot create a booking right now">{blocked}</Notice> : <BookingForm customer={customer} initial={emptyBooking()} onSubmit={onSubmit} onJoinWaitlist={(v) => {
+        const r = act((d) => joinWaitlist(d, v, { name: persona.name, role: persona.role, customerId: customer.id }))
+        if (!r.ok) return r.error
+        navigate('/bookings', { state: { flash: 'You are on the waitlist for that date (simulated). This is not a booking — no approval, price or payment applies yet.' } })
+        return null
+      }} />}
     </>
   )
 }

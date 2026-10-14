@@ -1,11 +1,11 @@
-import { useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router'
-import { Menu, RotateCcw, TrainFront, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import { BookOpen, Menu, RotateCcw, TrainFront, X } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { navForPersona, navLabel } from '@/app/navigation'
 import { cn } from '@/lib/cn'
 import { roleLabels } from '@/lib/permissions'
-import { Button } from '@/components/ui/primitives'
+import { Button, buttonClass } from '@/components/ui/primitives'
 import { Dialog } from '@/components/ui/dialog'
 import { RoleSwitcher } from './RoleSwitcher'
 
@@ -60,8 +60,19 @@ export function AppShell() {
   const [confirmReset, setConfirmReset] = useState(false)
   const location = useLocation()
 
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      dashboard: 'Dashboard', bookings: 'Bookings', registrations: 'Registrations', customers: 'Customers', company: 'Company profile', dispatch: 'Dispatch queue',
+      awbs: 'AWBs', refunds: 'Refunds', payments: 'Payment exceptions', staff: 'Staff accounts', 'master-data': 'Routes & rates', audit: 'Audit log',
+      capacity: 'Train capacity', register: 'Register', 'my-registration': 'My registration', 'demo-guide': 'Demo guide',
+    }
+    const seg = location.pathname.split('/')[1] ?? ''
+    document.title = `${titles[seg] ?? 'NRC e-Cargo'} · NRC e-Cargo Prototype`
+  }, [location.pathname])
+
   return (
     <div className="min-h-dvh">
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-white focus:px-3 focus:py-2 focus:shadow">Skip to content</a>
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 lg:block print:hidden">
         <Sidebar />
       </aside>
@@ -87,12 +98,13 @@ export function AppShell() {
             <Menu className="size-5" />
           </button>
           <div className="flex-1" />
+          <Link to="/demo-guide" className={buttonClass('ghost', 'sm')} title="Stakeholder walk-through"><BookOpen className="size-3.5" /> <span className="hidden sm:inline">Demo guide</span></Link>
           <Button variant="ghost" size="sm" onClick={() => setConfirmReset(true)} title="Restore seeded demo data">
             <RotateCcw className="size-3.5" /> <span className="hidden sm:inline">Reset demo</span>
           </Button>
           <RoleSwitcher />
         </header>
-        <main key={location.pathname} className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
+        <main id="main" tabIndex={-1} key={location.pathname} className="outline-none mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
           <Outlet />
         </main>
       </div>

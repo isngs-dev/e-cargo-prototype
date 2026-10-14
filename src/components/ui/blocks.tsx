@@ -1,10 +1,12 @@
 import type { LucideIcon } from 'lucide-react'
-import { Inbox } from 'lucide-react'
+import { Inbox, X } from 'lucide-react'
+import { Link } from 'react-router'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { Badge, Card } from './primitives'
 import { bookingStatusMeta, paymentStatusMeta, registrationStatusMeta, type Tone } from '@/lib/status'
 import type { BookingStatus, PaymentStatus, RegistrationStatus } from '@/types/domain'
+import type { Ageing } from '@/lib/sla'
 
 export function PageHeader({ title, description, actions }: { title: string; description?: ReactNode; actions?: ReactNode }) {
   return (
@@ -27,9 +29,9 @@ const kpiAccent: Record<Tone, string> = {
   accent: 'bg-violet-50 text-violet-700',
 }
 
-export function KpiCard({ label, value, hint, icon: Icon, tone = 'neutral' }: { label: string; value: ReactNode; hint?: ReactNode; icon: LucideIcon; tone?: Tone }) {
-  return (
-    <Card className="p-4">
+export function KpiCard({ label, value, hint, icon: Icon, tone = 'neutral', to }: { label: string; value: ReactNode; hint?: ReactNode; icon: LucideIcon; tone?: Tone; to?: string }) {
+  const card = (
+    <Card className={cn('p-4', to && 'transition-colors group-hover:border-brand-300 group-hover:shadow-sm')}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
@@ -42,6 +44,7 @@ export function KpiCard({ label, value, hint, icon: Icon, tone = 'neutral' }: { 
       {hint && <p className="mt-2 text-xs text-slate-500">{hint}</p>}
     </Card>
   )
+  return to ? <Link to={to} className="group block rounded-lg">{card}</Link> : card
 }
 
 export function EmptyState({ title, description, icon: Icon = Inbox, action }: { title: string; description?: ReactNode; icon?: LucideIcon; action?: ReactNode }) {
@@ -84,5 +87,38 @@ export function Notice({ tone = 'info', title, children }: { tone?: 'info' | 'wa
       <p className="font-medium">{title}</p>
       {children && <div className="mt-1 opacity-90">{children}</div>}
     </div>
+  )
+}
+
+/** Dismissible success / result message shown after an action. */
+export function Flash({ message, onDismiss }: { message: string | null; onDismiss: () => void }) {
+  if (!message) return null
+  const failed = message.startsWith('Not done:')
+  return (
+    <div
+      role="status"
+      className={cn('mb-4 flex items-start justify-between gap-3 rounded-md border px-4 py-3 text-sm', failed ? 'border-red-200 bg-red-50 text-red-900' : 'border-emerald-200 bg-emerald-50 text-emerald-900')}
+    >
+      <p>{message}</p>
+      <button type="button" onClick={onDismiss} aria-label="Dismiss message" className="shrink-0 rounded p-0.5 opacity-70 hover:opacity-100"><X className="size-4" /></button>
+    </div>
+  )
+}
+
+const ageTone: Record<Ageing['level'], string> = {
+  ok: 'bg-slate-100 text-slate-700 ring-slate-200',
+  due: 'bg-amber-50 text-amber-800 ring-amber-200',
+  overdue: 'bg-orange-100 text-orange-800 ring-orange-300',
+  escalated: 'bg-red-100 text-red-800 ring-red-300',
+}
+
+/** How long an item has waited at its current approval stage vs the (proposed) target. Indicator only — never auto-approves. */
+export function AgeingBadge({ ageing }: { ageing: Ageing | null }) {
+  if (!ageing) return <span className="text-xs text-slate-300">—</span>
+  const word = { ok: '', due: ' · due soon', overdue: ' · overdue', escalated: ' · escalate' }[ageing.level]
+  return (
+    <span className={cn('inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset', ageTone[ageing.level])} title={`Target ${ageing.targetHours}h (proposed). Nothing is ever auto-approved.`}>
+      {ageing.label}{word}
+    </span>
   )
 }

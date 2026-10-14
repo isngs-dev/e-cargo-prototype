@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import { BrowserRouter, Route, Routes } from 'react-router'
 import { StoreProvider } from '@/app/store'
 import { AppShell } from '@/components/layout/AppShell'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
@@ -9,9 +9,15 @@ import { DispatchQueuePage } from '@/features/dispatch/DispatchQueuePage'
 import { AwbPreviewPage } from '@/features/awb/AwbPreviewPage'
 import { AwbRegisterPage } from '@/features/awb/AwbRegisterPage'
 import { RefundsPage } from '@/features/refunds/RefundsPage'
+import { RefundDetailPage } from '@/features/refunds/RefundDetailPage'
+import { PaymentExceptionDetailPage } from '@/features/payments/PaymentExceptionDetailPage'
 import { StaffPage } from '@/features/staff/StaffPage'
 import { PaymentExceptionsPage } from '@/features/payments/PaymentExceptionsPage'
 import { CustomerDetailPage } from '@/features/customers/CustomerDetailPage'
+import { CapacityPage } from '@/features/capacity/CapacityPage'
+import { LandingPage } from '@/features/landing/LandingPage'
+import { VerifyAwbPage } from '@/features/awb/VerifyAwbPage'
+import { DemoGuidePage } from '@/features/demo/DemoGuidePage'
 import { NewBookingPage } from '@/features/bookings/NewBookingPage'
 import { RegistrationsPage } from '@/features/registrations/RegistrationsPage'
 import { CustomersPage } from '@/features/customers/CustomersPage'
@@ -31,8 +37,10 @@ export default function App() {
     <StoreProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/verify" element={<VerifyAwbPage />} />
           <Route element={<AppShell />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="demo-guide" element={<DemoGuidePage />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="bookings" element={guarded('bookings', <BookingsPage />)} />
             <Route path="bookings/new" element={guarded('new_booking', <NewBookingPage />)} />
@@ -49,8 +57,11 @@ export default function App() {
             <Route path="dispatch" element={guarded('dispatch', <DispatchQueuePage />)} />
             <Route path="awbs" element={guarded('awbs', <AwbRegisterPage />)} />
             <Route path="bookings/:id/awb" element={guarded('awbs', <AwbPreviewPage />)} />
+            <Route path="capacity" element={guarded('capacity', <CapacityPage />)} />
             <Route path="refunds" element={guarded('refunds', <RefundsPage />)} />
+            <Route path="refunds/:id" element={guarded('refunds', <RefundDetailPage />)} />
             <Route path="payments" element={guarded('payments', <PaymentExceptionsPage />)} />
+            <Route path="payments/:id" element={guarded('payments', <PaymentExceptionDetailPage />)} />
             <Route path="staff" element={guarded('staff', <StaffPage />)} />
             <Route path="master-data" element={guarded('master_data', <MasterDataPage />)} />
             <Route path="audit" element={guarded('audit', <AuditPage />)} />

@@ -1,14 +1,17 @@
 import { CircleAlert, CircleCheck } from 'lucide-react'
 import { Link } from 'react-router'
 import { useStore } from '@/app/store'
-import { EmptyState, RegistrationStatusBadge } from '@/components/ui/blocks'
+import { AgeingBadge, EmptyState, RegistrationStatusBadge } from '@/components/ui/blocks'
+import { registrationAgeing } from '@/lib/sla'
 import { Table, Td, Th } from '@/components/ui/primitives'
 import { formatDateTime } from '@/lib/format'
 import { runRegistrationChecks } from '@/lib/registration'
 import type { RegistrationApplication } from '@/types/domain'
 
 export function RegistrationTable({ applications, emptyTitle = 'No applications' }: { applications: RegistrationApplication[]; emptyTitle?: string }) {
-  const { data } = useStore()
+  const { data, persona } = useStore()
+  const showWaiting = persona.role !== 'cargo_facilitator'
+  const now = new Date()
   if (applications.length === 0) return <EmptyState title={emptyTitle} />
   return (
     <Table>
@@ -20,6 +23,7 @@ export function RegistrationTable({ applications, emptyTitle = 'No applications'
           <Th>Point of contact</Th>
           <Th>Automated checks</Th>
           <Th>Status</Th>
+          {showWaiting && <Th>Waiting</Th>}
         </tr>
       </thead>
       <tbody>
@@ -56,6 +60,7 @@ export function RegistrationTable({ applications, emptyTitle = 'No applications'
                 )}
               </Td>
               <Td><RegistrationStatusBadge status={a.status} /></Td>
+              {showWaiting && <Td><AgeingBadge ageing={registrationAgeing(data, a, now)} /></Td>}
             </tr>
           )
         })}

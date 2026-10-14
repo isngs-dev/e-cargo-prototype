@@ -4,6 +4,7 @@ import { useStore } from '@/app/store'
 import { Notice } from '@/components/ui/blocks'
 import { Field, Textarea } from '@/components/ui/fields'
 import { Button, Card, CardHeader, Input, Select } from '@/components/ui/primitives'
+import { availability, checkCapacity, loadLevel } from '@/lib/capacity'
 import { cn } from '@/lib/cn'
 import {
   containerTypesFor, indicativePrice, OPTIONAL_BOOKING_DOCS, requiredBookingDocs, todayISO, validateBooking,
@@ -17,7 +18,16 @@ const COMMODITIES = ['Packaged beverages', 'Bagged cement', 'Bagged maize', 'Bui
 const steps = ['Shipment', 'Documents', 'Review & submit']
 const stepFields: Record<number, (keyof BookingErrors)[]> = { 0: ['bookingDate', 'routeId', 'containers', 'weightTons', 'commodity'], 1: ['documents'], 2: ['declaration'] }
 
-export function BookingForm({ customer, initial, onSubmit, submitLabel = 'Submit booking' }: { customer: Customer; initial: BookingInput; onSubmit: (v: BookingInput) => string | null; submitLabel?: string }) {
+export function BookingForm({ customer, initial, onSubmit, submitLabel = 'Submit booking', excludeBookingId, onJoinWaitlist }: {
+  customer: Customer
+  initial: BookingInput
+  onSubmit: (v: BookingInput) => string | null
+  submitLabel?: string
+  /** When editing, the booking's own units are not counted against capacity. */
+  excludeBookingId?: string
+  /** Offered when the chosen date has no (or not enough) capacity. Returns an error message, or null on success. */
+  onJoinWaitlist?: (v: BookingInput) => string | null
+}) {
   const { data } = useStore()
   const [v, setV] = useState<BookingInput>(initial)
   const [step, setStep] = useState(0)
@@ -34,6 +44,12 @@ export function BookingForm({ customer, initial, onSubmit, submitLabel = 'Submit
   const price = useMemo(() => indicativePrice(data, customer, v), [data, customer, v])
   const priceError = !price.ok && v.routeId ? price.error : undefined
 
+  const usable = v.containers.filter((c) => Number.isInteger(c.quantity) && c.quantity > 0)
+  const avail = v.routeId && v.bookingDate ? availability(data, v.routeId, v.bookingDate, excludeBookingId) : null
+  const cap = v.routeId && v.bookingDate ? checkCapacity(data, v.routeId, v.bookingDate, usable, excludeBookingId) : null
+  const capBlocked = !!cap && !cap.ok
+  const [waitError, setWaitError] = useState('')
+
   const setCargo = (cargoType: CargoType) => set({ cargoType, containers: [{ containerType: containerTypesFor(cargoType)[0]!, quantity: 1 }] })
   const setLine = (i: number, patch: Partial<BookingInput['containers'][number]>) => set({ containers: v.containers.map((c, j) => (j === i ? { ...c, ...patch } : c)) })
   const unusedTypes = containerTypesFor(v.cargoType).filter((t) => !v.containers.some((c) => c.containerType === t))
@@ -42,7 +58,7 @@ export function BookingForm({ customer, initial, onSubmit, submitLabel = 'Submit
   const next = () => {
     setTouched(true)
     if (stepErrors.length) return
-    if (step === 0 && priceError) return
+    if (step === 0 && (priceError || capBlocked)) return
     setTouched(false)
     setStep((s) => s + 1)
   }
@@ -54,6 +70,7 @@ export function BookingForm({ customer, initial, onSubmit, submitLabel = 'Submit
       setStep(stepFields[0]!.includes(first) ? 0 : stepFields[1]!.includes(first) ? 1 : 2)
       return
     }
+    if (capBlocked) return setSubmitError(cap!.ok ? '' : cap!.reason)
     const err = onSubmit(v)
     if (err) setSubmitError(err)
   }
@@ -88,6 +105,25 @@ export function BookingForm({ customer, initial, onSubmit, submitLabel = 'Submit
                   {activeRoutes.map((r) => <option key={r.id} value={r.id}>{r.origin} → {r.destination} ({r.distanceKm} km)</option>)}
                 </Select>
               </Field>
+
+              {avail && cap && (
+                <div className="sm:col-span-2" aria-live="polite">
+                  <div className={cn('rounded-md border px-3 py-2 text-sm', cap.ok ? (loadLevel(avail) === 'limited' ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-emerald-200 bg-emerald-50 text-emerald-900') : 'border-red-200 bg-red-50 text-red-800')}>
+                    <p className="font-medium">
+                      {avail.blockedReason ? avail.blockedReason : avail.capacity === null ? 'Capacity not configured for this route (unconstrained).' : cap.ok ? `Slots available: ${avail.remaining} of ${avail.capacity} capacity units left on this date.` : 'Not enough capacity on this date.'}
+                    </p>
+                    {!cap.ok && !avail.blockedReason && <p className="mt-0.5 text-xs">{cap.reason}</p>}
+                    {!cap.ok && avail.blockedReason && <p className="mt-0.5 text-xs">Choose another date or join the waitlist.</p>}
+                    <p className="mt-0.5 text-xs opacity-70">Simulated capacity (20ft = 1, 40ft = 2, Reefer = 2, Wagon = 1 unit) — the rule is pending NRC confirmation.</p>
+                    {!cap.ok && onJoinWaitlist && (
+                      <div className="mt-2">
+                        <Button size="sm" variant="secondary" onClick={() => { const e = onJoinWaitlist(v); setWaitError(e ?? '') }}>Join the waitlist for this date</Button>
+                        {waitError && <p role="alert" className="mt-1 text-xs text-red-700">{waitError}</p>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="sm:col-span-2">
                 <p className="mb-1 text-sm font-medium text-slate-800">{v.cargoType === 'Containerized' ? 'Containers' : 'Wagons'} <span className="text-red-600" aria-hidden>*</span></p>
@@ -172,7 +208,7 @@ export function BookingForm({ customer, initial, onSubmit, submitLabel = 'Submit
 
         <div className="flex items-center justify-between gap-2 border-t border-slate-100 bg-slate-50 px-5 py-3">
           <Button variant="secondary" disabled={step === 0} onClick={() => { setTouched(false); setSubmitError(''); setStep((s) => s - 1) }}><ArrowLeft className="size-4" /> Back</Button>
-          {step < 2 ? <Button onClick={next}>Next <ArrowRight className="size-4" /></Button> : <Button onClick={submit} disabled={!!priceError}><Send className="size-4" /> {submitLabel}</Button>}
+          {step < 2 ? <Button onClick={next}>Next <ArrowRight className="size-4" /></Button> : <Button onClick={submit} disabled={!!priceError || capBlocked}><Send className="size-4" /> {submitLabel}</Button>}
         </div>
       </Card>
 

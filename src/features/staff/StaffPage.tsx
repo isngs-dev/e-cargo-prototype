@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { KeyRound, Pencil, Plus, ShieldOff, UserCheck, UserCog, X } from 'lucide-react'
+import { KeyRound, Pencil, Plus, ShieldOff, UserCheck, UserCog } from 'lucide-react'
 import { useStore } from '@/app/store'
-import { Notice, PageHeader } from '@/components/ui/blocks'
+import { Notice, PageHeader, Flash } from '@/components/ui/blocks'
 import { Dialog } from '@/components/ui/dialog'
 import { Field } from '@/components/ui/fields'
 import { Badge, Button, Card, Input, Select, Table, Td, Th } from '@/components/ui/primitives'
@@ -43,12 +43,7 @@ export function StaffPage() {
         actions={<Button onClick={() => setDialog({ kind: 'create' })}><Plus className="size-4" /> Create account</Button>}
       />
       <div className="mb-4"><Notice title="Simulated credentials">No password is ever generated, shown or emailed. Account changes here do not change the role-switcher personas. Every action is written to the audit log.</Notice></div>
-      {flash && (
-        <div className="mb-4 flex items-start justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status">
-          <p>{flash}</p>
-          <button type="button" onClick={() => setFlash(null)} aria-label="Dismiss" className="text-emerald-700"><X className="size-4" /></button>
-        </div>
-      )}
+      <Flash message={flash} onDismiss={() => setFlash(null)} />
       <Card>
         <Table>
           <thead><tr><Th>Name</Th><Th>Role</Th><Th>District</Th><Th>Status</Th><Th>Last login</Th><Th>Actions</Th></tr></thead>

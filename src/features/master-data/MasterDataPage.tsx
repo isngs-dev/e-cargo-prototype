@@ -1,15 +1,15 @@
 import { useState } from 'react'
-import { Plus, Settings2, X } from 'lucide-react'
+import { Plus, Settings2 } from 'lucide-react'
 import { useStore } from '@/app/store'
-import { Notice, PageHeader } from '@/components/ui/blocks'
+import { Notice, PageHeader, Flash } from '@/components/ui/blocks'
 import { Badge, Button, Card, CardHeader, Table, Td, Th } from '@/components/ui/primitives'
 import { findRate } from '@/lib/pricing'
 import { formatDate } from '@/lib/format'
 import { formatBp, formatKobo } from '@/lib/money'
-import { addRoute, insertFreightRate, setRouteActive, updateConfig } from '@/lib/workflow/masterData'
+import { addMaintenanceBlock, addRoute, insertFreightRate, removeMaintenanceBlock, setRouteActive, setRouteCapacity, updateConfig } from '@/lib/workflow/masterData'
 import type { Actor } from '@/lib/workflow/result'
 import type { CargoType, ContainerType } from '@/types/domain'
-import { ConfigDialog, RateDialog, RouteDialog } from './MasterDataDialogs'
+import { CapacityDialog, ConfigDialog, MaintenanceDialog, RateDialog, RouteDialog } from './MasterDataDialogs'
 
 const columns: [CargoType, ContainerType][] = [
   ['Containerized', '20ft'],
@@ -18,7 +18,7 @@ const columns: [CargoType, ContainerType][] = [
   ['Non-Containerized', 'Wagon'],
 ]
 
-type Dlg = null | 'rate' | 'route' | 'config'
+type Dlg = null | 'rate' | 'route' | 'config' | 'capacity' | 'maintenance'
 
 export function MasterDataPage() {
   const { data, persona, act } = useStore()
@@ -56,12 +56,7 @@ export function MasterDataPage() {
             : 'The Director can view master data; only Super Admin configures it.'}
         </Notice>
       </div>
-      {flash && (
-        <div className="mb-4 flex items-start justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status">
-          <p>{flash}</p>
-          <button type="button" onClick={() => setFlash(null)} aria-label="Dismiss" className="text-emerald-700"><X className="size-4" /></button>
-        </div>
-      )}
+      <Flash message={flash} onDismiss={() => setFlash(null)} />
       <Card>
         <CardHeader title="Current rate per unit" description={`Rate in force today (${formatDate(today)}). Containerized rates are per container; non-containerized per wagon (demo assumption).`} />
         <Table>
@@ -132,6 +127,7 @@ export function MasterDataPage() {
               ['Payment reminder', `${data.config.paymentReminderHours} hours`],
               ['Refund request window', `${data.config.refundWindowDays} days`],
               ['Tax certificate at registration', data.config.taxCertificateRequired ? 'Required' : 'Optional'],
+              ['Approval targets (proposed)', `Dist. ${data.config.sla.registrationDistrictHours}h · Dir. reg. ${data.config.sla.registrationDirectorHours}h · Cargo ${data.config.sla.bookingCargoHours}h · Dir. booking ${data.config.sla.bookingDirectorHours}h · Dispatch ${data.config.sla.dispatchHours}h`],
             ].map(([k, v]) => (
               <div key={k} className="flex justify-between gap-4 px-5 py-2.5">
                 <dt className="text-slate-500">{k}</dt>
@@ -143,6 +139,38 @@ export function MasterDataPage() {
         </Card>
       </div>
 
+      <Card className="mt-6">
+        <CardHeader
+          title="Train capacity & maintenance"
+          description="Simulated daily capacity per route (units) and dates when a route is blocked — pending NRC confirmation."
+          action={isSA ? <div className="flex gap-2"><Button size="sm" variant="secondary" onClick={() => setDialog('capacity')}>Set capacity</Button><Button size="sm" variant="secondary" onClick={() => setDialog('maintenance')}>Add maintenance block</Button></div> : undefined}
+        />
+        <div className="grid gap-6 p-5 md:grid-cols-2">
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Daily capacity</p>
+            <ul className="space-y-1 text-sm">
+              {data.routes.map((r) => <li key={r.id} className="flex justify-between"><span>{r.code}</span><span className="font-medium tabular-nums">{data.capacity.find((c) => c.routeId === r.id)?.dailyUnits ?? 'unconstrained'}{data.capacity.find((c) => c.routeId === r.id) ? ' units' : ''}</span></li>)}
+            </ul>
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Maintenance blocks</p>
+            {data.maintenanceBlocks.length === 0 ? <p className="text-sm text-slate-500">None.</p> : (
+              <ul className="space-y-1 text-sm">
+                {[...data.maintenanceBlocks].sort((a, b) => a.date.localeCompare(b.date)).map((m) => (
+                  <li key={m.id} className="flex items-center justify-between gap-2"><span><span className="font-mono text-xs">{data.routes.find((r) => r.id === m.routeId)?.code}</span> · {formatDate(m.date)} · {m.reason}</span>
+                    {isSA && <Button size="sm" variant="ghost" onClick={() => run((d) => removeMaintenanceBlock(d, m.id, actor), 'Maintenance block removed.')}>Remove</Button>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      <CapacityDialog open={dialog === 'capacity'} routes={data.routes} current={(id) => data.capacity.find((c) => c.routeId === id)?.dailyUnits} onClose={() => setDialog(null)}
+        onSubmit={(routeId, units) => run((d) => setRouteCapacity(d, routeId, units, actor), 'Daily capacity saved. It applies to new bookings; existing bookings are not cancelled.')} />
+      <MaintenanceDialog open={dialog === 'maintenance'} routes={data.routes} onClose={() => setDialog(null)}
+        onSubmit={(v) => run((d) => addMaintenanceBlock(d, v, actor), 'Maintenance block added.')} />
       <RateDialog open={dialog === 'rate'} routes={data.routes} onClose={() => setDialog(null)}
         onSubmit={(v) => run((d) => insertFreightRate(d, v, actor), 'Freight rate added. Earlier rows are retained and bookings with a frozen price are unchanged.')} />
       <RouteDialog open={dialog === 'route'} onClose={() => setDialog(null)}

@@ -44,6 +44,7 @@ export function resolvePaymentException(data: AppData, id: string, resolution: R
     const refundId = `rf-${px.id}`
     if (next.refunds.some((r) => r.id === refundId)) return fail('A refund was already started for this payment.')
     next.refunds.push({ id: refundId, bookingId: b.id, customerId: b.customerId, amount: px.amount, reason: `Duplicate payment received (${px.reference}).`, status: 'awaiting_director', createdAt: now })
+    appendAudit(next, { at: now, actorName: actor.name, actorRole: actor.role, entityType: 'refund', entityId: refundId, entityRef: `Refund · ${b.reference}`, action: `Refund created for duplicate payment ${px.reference}; awaiting Director`, toStatus: 'awaiting_director', remarks: note.trim() })
     bookingId = b.id
     action = `Duplicate payment ${px.reference}: refund flow started for ${b.reference} (Director to trigger)`
   } else {

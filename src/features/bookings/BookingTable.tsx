@@ -1,7 +1,8 @@
 import { Link } from 'react-router'
 import { useStore } from '@/app/store'
 import { bookingAmount, containerSummary, customerName, routeLabel } from '@/app/selectors'
-import { BookingStatusBadge, EmptyState, PaymentStatusBadge } from '@/components/ui/blocks'
+import { AgeingBadge, BookingStatusBadge, EmptyState, PaymentStatusBadge } from '@/components/ui/blocks'
+import { bookingAgeing } from '@/lib/sla'
 import { Table, Td, Th } from '@/components/ui/primitives'
 import { formatDate } from '@/lib/format'
 import { formatKobo } from '@/lib/money'
@@ -21,7 +22,9 @@ export function BookingTable({
   emptyTitle?: string
   emptyDescription?: string
 }) {
-  const { data } = useStore()
+  const { data, persona } = useStore()
+  const showWaiting = persona.role !== 'cargo_facilitator'
+  const now = new Date()
   if (bookings.length === 0) return <EmptyState title={emptyTitle} description={emptyDescription} />
   return (
     <Table>
@@ -34,6 +37,7 @@ export function BookingTable({
           <Th className="text-right">Amount</Th>
           <Th>Status</Th>
           {showPayment && <Th>Payment</Th>}
+          {showWaiting && <Th>Waiting</Th>}
         </tr>
       </thead>
       <tbody>
@@ -64,6 +68,7 @@ export function BookingTable({
               </Td>
               <Td><BookingStatusBadge status={b.status} /></Td>
               {showPayment && <Td><PaymentStatusBadge status={b.payment.status} /></Td>}
+              {showWaiting && <Td><AgeingBadge ageing={bookingAgeing(data, b, now)} /></Td>}
             </tr>
           )
         })}

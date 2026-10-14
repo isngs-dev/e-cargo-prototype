@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   Building,
+  CalendarDays,
   ClipboardCheck,
   FilePen,
   Database,
@@ -41,6 +42,7 @@ export const navItems: NavItem[] = [
   { area: 'awbs', path: '/awbs', label: 'AWBs', icon: QrCode, phase: 6, built: true },
   { area: 'company_profile', path: '/company', label: 'Company Profile', icon: Building, phase: 2, built: true },
   { area: 'customers', path: '/customers', label: 'Customers', icon: Users, phase: 2, built: true },
+  { area: 'capacity', path: '/capacity', label: 'Train Capacity', icon: CalendarDays, phase: 8, built: true },
   { area: 'refunds', path: '/refunds', label: 'Refunds', icon: Undo2, phase: 6, built: true },
   { area: 'payments', path: '/payments', label: 'Payment Exceptions', icon: Receipt, phase: 7, built: true },
   { area: 'staff', path: '/staff', label: 'Staff Accounts', icon: UserCog, phase: 7, built: true },

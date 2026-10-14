@@ -2,7 +2,7 @@
 
 ## Current phase
 
-**Phase 7 (Super Admin, master data & audit) complete** (2026-10-14).
+**Phase 8 (integration, polish & extras) complete** (2026-10-14). All eight planned phases are done.
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -13,7 +13,7 @@
 | 5 | Booking approvals & payment simulation | ✅ Done |
 | 6 | Port operations, AWB, refunds | Planned |
 | 7 | Super Admin, master data maintenance, audit | Planned |
-| 8 | Integration testing, polish | ⏭ Next |
+| 8 | Integration testing, polish & extras | ✅ Done |
 
 ## Completed
 
@@ -26,6 +26,19 @@
 - Role dashboards for all six roles with KPI cards and queues.
 - Read-only screens: Bookings list (search + status filter, role-scoped), Registrations list (search + filter + automated check flags), Company Profile + eligibility/credit usage, Customers, Routes & Rates (current rates, history, tax config), Audit Log (search + entity filter).
 - Unbuilt areas show an honest "Scheduled for phase N" page; unauthorized routes show an access-denied state.
+
+## Phase 8 — completed
+
+- **Refunds and payment exceptions are now clickable cards** that open their own pages: `/refunds` and `/payments` list summary cards (with an "action needed" hint and filters); the actions live on `/refunds/:id` and `/payments/:id`. The refund page also hosts the facilitator's request form and the reversal.
+- **End-to-end tests** (`journey.test.ts`): the full happy path, credit path, send-back loops, HoC / Director rejection, auto-cancel, and physical-failure → refund → reversal, each ending with audit-trail invariants (statuses chain without gaps, time never goes backwards, every entry has an actor and role). This found and fixed a real gap: refund creation was not audited.
+- **Capacity & waitlist (simulated, D-6):** `lib/capacity.ts`, live availability in the booking form, blocking + waitlist, `/capacity` dashboard, Super Admin capacity / maintenance-block editing.
+- **Approval ageing (D-9, proposed targets):** `lib/sla.ts`, "Waiting" column in registration and booking queues, targets editable in configuration.
+- **AWB amendment (new versions, superseded kept) and a public `/verify` page** (valid / superseded / not found / forged number); the AWB QR now encodes the verification URL.
+- **Refund reversal** (separate reversing entry).
+- **Public landing page** (`/`) with services, train availability, FAQ, placeholders for NRC policy and contact; the platform is at `/dashboard`.
+- **Stakeholder demo guide** (`/demo-guide`): five scenes whose "Go" buttons switch role and open the right page.
+- **Polish:** one shared `Flash` message component, clickable KPI cards, page titles, skip-to-content link, print-friendly AWB.
+- State version 6 (capacity, waitlist, reversals, SLA config). 25 new tests (150 total).
 
 ## Phase 7 — completed
 
@@ -66,7 +79,7 @@
 
 | Command | Result |
 |---|---|
-| `npm test` | ✅ 125/125 passed |
+| `npm test` | ✅ 150/150 passed |
 | `npm run typecheck` | ✅ no errors |
 | `npm run build` | ✅ passes (JS ~447 kB, 133 kB gzip) |
 | Browser (dev server) | ✅ applicant resubmit → DS forward → Director approve (Priority 12% / 2 mo / ₦3M / Strategic) → customer created + audit trail; validation messages; document preview; no console errors |
@@ -81,9 +94,8 @@
 
 ## Next task (exact)
 
-**Phase 8 — Integration testing, bug fixing and presentation polish:**
-1. A scripted end-to-end walk-through test (Vitest, workflow level) covering registration → booking → approvals → payment → dispatch → AWB, plus the rejection / send-back / failure / refund branches, asserting audit trail completeness.
-2. A guided "demo script" screen or doc for stakeholders (suggested persona order and data to enter) and a clear "Reset demo" affordance.
-3. Cross-screen consistency pass: empty/loading/error states, status badge wording, responsive checks at 375 / 768 / 1280, keyboard focus, long-name truncation.
-4. Optional (only if NRC wants them): public landing / FAQ page [O], capacity / train-slot simulation (D-6), AWB amendment versioning, refund reversal entries, approval SLA ageing (D-9).
-5. Decide with NRC the open items in `docs/DECISIONS.md §3` before treating any assumption as a requirement; update PROGRESS.md.
+There is no further planned build phase. Recommended next steps:
+
+1. **Stakeholder walkthrough** using `/demo-guide`, then record feedback.
+2. **Get NRC to decide the open items** in `docs/DECISIONS.md §3` (tax basis D-1, refund policy D-2/D-3, payment window D-4, capacity D-6, documents D-7, SLAs D-9, AWB format D-10, Super Admin eligibility D-14, …). Until then every "assumption" (A-n) stays labelled as unconfirmed.
+3. **Production scoping:** the prototype has no backend, authentication, Paystack, email, database-trigger auditing or real file storage — see `docs/PROTOTYPE_SPEC.md §13`. Convert confirmed rules from `src/lib/workflow/*` into server-side logic.

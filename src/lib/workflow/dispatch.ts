@@ -117,6 +117,10 @@ export function failPhysicalVerification(data: AppData, id: string, reason: stri
       id: refundId, bookingId: b.id, customerId: b.customerId, amount: b.approved.price.totalPayable,
       reason: reason.trim(), status: 'awaiting_director', createdAt: now,
     })
+    appendAudit(next, {
+      at: now, actorName: actor.name, actorRole: actor.role, entityType: 'refund', entityId: refundId, entityRef: `Refund · ${b.reference}`,
+      action: 'Refund created after failed physical verification; awaiting Director', toStatus: 'awaiting_director', remarks: reason.trim(),
+    })
   } else {
     b.payment = { ...b.payment, status: 'cancelled' } // unpaid credit no longer counts towards the threshold
   }
@@ -144,3 +148,36 @@ export function completeBooking(data: AppData, id: string, actor: Actor, now = n
 }
 
 export type { Booking }
+
+/**
+ * Amend an AWB (baseline §4.6): the number is never edited or reused. An amendment issues a NEW VERSION of the same AWB
+ * and marks the previous version superseded (it stays on record). Only before the booking is completed.
+ */
+export function amendAwb(data: AppData, id: string, input: DispatchInput, reason: string, actor: Actor, now = new Date().toISOString(), today = todayISO()): WorkflowResult<{ version: number }> {
+  if (!reason.trim()) return fail('A reason for the amendment is required.')
+  const loaded = loadForPort(data, id, actor, 'amend an AWB')
+  if ('error' in loaded) return loaded
+  const { next, booking: b } = loaded
+  if (!b.awb || !b.dispatch) return fail('This booking has no AWB to amend.')
+  if (b.status !== 'awb_generated') return fail('Only AWBs on bookings that are not yet completed can be amended.')
+  const errors = validateDispatch(input, { counts: true, cargoAndWeight: true, condition: true, hazardous: true }, false, today)
+  if (Object.keys(errors).length) return fail(Object.values(errors)[0]!)
+  const changed = (['wagonNumber', 'trainNumber', 'departureDate', 'departureTime', 'loadingYard'] as const).filter((k) => (input[k].trim() || undefined) !== (b.dispatch![k] ?? undefined))
+  if (changed.length === 0) return fail('No change to amend.')
+
+  const previous = b.awb
+  b.awbHistory = [...(b.awbHistory ?? []), { ...previous, supersededAt: now }]
+  const version = previous.version + 1
+  b.awb = { number: previous.number, version, generatedAt: now, verificationRef: demoVerificationRef(previous.number, version), amendmentReason: reason.trim() }
+  b.dispatch = {
+    wagonNumber: input.wagonNumber.trim(), trainNumber: input.trainNumber.trim(), departureDate: input.departureDate, departureTime: input.departureTime,
+    loadingYard: input.loadingYard.trim() || undefined, remarks: input.remarks.trim() || undefined,
+  }
+  b.updatedAt = now
+  appendAudit(next, {
+    at: now, actorName: actor.name, actorRole: actor.role, entityType: 'booking', entityId: b.id, entityRef: b.reference,
+    action: `AWB ${previous.number} amended — version ${version} issued, version ${previous.version} superseded (distribution emails simulated)`,
+    remarks: reason.trim(), change: { field: 'AWB dispatch details', from: `v${previous.version}`, to: `v${version} (${changed.join(', ')})` },
+  })
+  return { ok: true, data: next, version }
+}

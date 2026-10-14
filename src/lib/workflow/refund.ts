@@ -104,3 +104,25 @@ export function advanceRefund(data: AppData, id: string, step: keyof typeof SA_S
   record(next, refund, ref, actor, def.action, def.to, def.from, now, remarks)
   return { ok: true, data: next }
 }
+
+/**
+ * Reverse a processed refund that was made in error (baseline §5.1). The original refund record is NOT edited or deleted;
+ * a separate reversing entry is added. Super Admin executes it (simulated), with a mandatory reason.
+ */
+export function reverseRefund(data: AppData, id: string, reason: string, actor: Actor, now = new Date().toISOString()): WorkflowResult {
+  if (actor.role !== 'super_admin') return fail('Only Super Admin can reverse a processed refund.')
+  if (!reason.trim()) return fail('A reason is required.')
+  const next = structuredClone(data)
+  const refund = next.refunds.find((r) => r.id === id)
+  if (!refund) return fail('Refund not found.')
+  if (refund.status !== 'processed') return fail('Only a processed refund can be reversed.')
+  if (next.refundReversals.some((r) => r.refundId === id)) return fail('This refund has already been reversed.')
+  const ref = next.bookings.find((b) => b.id === refund.bookingId)?.reference ?? refund.bookingId
+  const reversal = { id: `rv-${refund.id}`, refundId: refund.id, reason: reason.trim(), reference: `DEMO-RVRS-${refund.id.slice(-4)}`, at: now, byName: actor.name }
+  next.refundReversals.push(reversal)
+  appendAudit(next, {
+    at: now, actorName: actor.name, actorRole: actor.role, entityType: 'refund', entityId: refund.id, entityRef: `Refund · ${ref}`,
+    action: `Refund reversed by a reversing entry (simulated — original record unchanged)`, remarks: `${reason.trim()} · Ref ${reversal.reference} · ${formatKobo(refund.amount)}`,
+  })
+  return { ok: true, data: next }
+}

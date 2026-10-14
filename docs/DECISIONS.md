@@ -45,10 +45,10 @@ Items 1–11 are [B §12] open items. Values shown are **proposals**, not approv
 | D-3 | Refund request window | 30 days (display only) |
 | D-4 | Payment window before auto-cancel | 72 hours; reminder 24h |
 | D-5 | Non-containerized rate coverage (₦0 booking previously passed approvals) | Rate required per route × cargo type; APP-MNY non-cont. intentionally has no rate to demo blocking |
-| D-6 | Capacity validation at booking (train slots, route capacity, maintenance, waitlist [O]) | Not yet designed; Phase 4 to show clearly-simulated availability only if confirmed useful |
+| D-6 | Capacity validation at booking (train slots, route capacity, maintenance, waitlist [O]) | **Simulated in Phase 8** (A-42, A-43) with demo capacities — NRC must confirm whether and how capacity is enforced |
 | D-7 | Document set — full five or Bill of Lading only | BoL, Packing List, Invoice mandatory; Radiation & Customs conditional |
 | D-8 | Multiple container types per booking; hybrid payment (partial advance + credit) [O Scenario C] | Multiple lines supported; hybrid **not** implemented |
-| D-9 | Approval SLAs / ageing / escalation | Not implemented; no auto-approval |
+| D-9 | Approval SLAs / ageing / escalation | **Indicator implemented in Phase 8** with proposed targets (A-46); no auto-approval, no automated escalation |
 | D-10 | AWB numbering format | `NRC-AWB-YY-NNNNNN-C` (Luhn) — proposal |
 | D-11 | Hosting & NDPR residency | N/A for prototype |
 | D-12 | Who can reject a registration? [B §3.2] gives DS only send-back/forward, yet DS dashboard shows "Rejected" | Only Director rejects; DS dashboard counts all rejections |
@@ -103,4 +103,11 @@ Items 1–11 are [B §12] open items. Values shown are **proposals**, not approv
 | A-39 | Customer administration: Director and Super Admin may suspend / blacklist / reactivate (reason required); only the Director changes eligibility (D-14 unchanged); Super Admin may correct address and contact fields only |
 | A-40 | Payment exceptions: Super Admin may match a payment to an open invoice of exactly the same total, start a duplicate-payment refund (Director then triggers, Super Admin processes), or return the payment — all simulated. Partial/over payments are not modelled |
 | A-41 | Audit export is a client-side CSV of the currently filtered entries (formula characters neutralised); it is a demo convenience, not a controlled production export |
+| A-42 | Capacity (D-6, simulated): a route has a daily capacity in units (20ft = 1, 40ft = 2, Reefer = 2, Wagon = 1). Live bookings (not rejected / cancelled) consume capacity on their booking date; a route with no rule is unconstrained. Enforced when a booking is created or resubmitted only. A maintenance block closes a route for a date; adding one does not cancel existing bookings (they are flagged in the audit entry) |
+| A-43 | Waitlist: offered when a date has no or not enough capacity; an entry is not a booking (no approval, price or payment) and is never promoted automatically |
+| A-44 | AWB amendment: the number never changes; an amendment issues a new version (v2, v3…) and marks the previous version superseded, kept on record. Allowed for the Head of Port until the booking is Completed, with a reason. The QR encodes a demo verification URL on this site; verification only knows the AWBs held in the viewing browser's own demo data |
+| A-45 | Refund reversal: Super Admin adds a separate reversing entry (once, with a reason) to a processed refund; the original refund record is never edited. No further money flow is modelled |
+| A-46 | Approval ageing (D-9): proposed targets 48h (district verification), 48h (Director, registration), 24h (Head of Cargo), 48h (Director, booking), 24h (dispatch). Indicator only: "due soon" at 75% of target, "overdue" at 100%, "escalate" at 200%. Nothing is ever auto-approved. Measured from when the item entered its current status |
+| A-47 | Public landing page: services, FAQ and train-availability content is derived from the two requirement documents. The NRC Fair Cargo Policy highlights and the contact details are placeholders because NRC has not supplied them |
+| A-48 | A refund's creation (after a failed physical check or a duplicate payment) is itself audited as an entry in the refund's trail, starting at "awaiting Director" |
 | A-9 | Seed date context is October 2026; seeded timestamps are fixed |

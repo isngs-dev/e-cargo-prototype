@@ -69,10 +69,10 @@ function FacilitatorDashboard() {
   return (
     <>
       <Grid>
-        <KpiCard label="Total bookings" value={mine.length} icon={Package} />
-        <KpiCard label="Pending approval" value={mine.filter((b) => PENDING_APPROVAL.includes(b.status)).length} icon={Hourglass} tone="info" />
-        <KpiCard label="Awaiting payment" value={mine.filter((b) => b.status === 'awaiting_payment').length} icon={Wallet} tone="warning" hint="Pay-now bookings after Director approval" />
-        <KpiCard label="AWB generated" value={mine.filter((b) => AWB_STATUSES.includes(b.status)).length} icon={QrCode} tone="success" />
+        <KpiCard to="/bookings" label="Total bookings" value={mine.length} icon={Package} />
+        <KpiCard to="/bookings" label="Pending approval" value={mine.filter((b) => PENDING_APPROVAL.includes(b.status)).length} icon={Hourglass} tone="info" />
+        <KpiCard to="/bookings" label="Awaiting payment" value={mine.filter((b) => b.status === 'awaiting_payment').length} icon={Wallet} tone="warning" hint="Pay-now bookings after Director approval" />
+        <KpiCard to="/awbs" label="AWB generated" value={mine.filter((b) => AWB_STATUSES.includes(b.status)).length} icon={QrCode} tone="success" />
       </Grid>
       <div className="mt-6 grid gap-6 xl:grid-cols-3">
         <Card className="xl:col-span-2">
@@ -92,10 +92,10 @@ function DistrictSupervisorDashboard() {
   return (
     <>
       <Grid>
-        <KpiCard label="Pending verification" value={queue.length} icon={ClipboardCheck} tone="info" hint="Includes Director send-backs" />
-        <KpiCard label="Forwarded / approved" value={apps.filter((a) => a.status === 'pending_director_approval' || a.status === 'activated').length} icon={BadgeCheck} tone="success" />
-        <KpiCard label="Sent back to facilitator" value={apps.filter((a) => a.status === 'sent_back_to_facilitator').length} icon={Undo2} tone="warning" />
-        <KpiCard label="Rejected" value={apps.filter((a) => a.status === 'rejected').length} icon={CircleX} tone="danger" />
+        <KpiCard to="/registrations" label="Pending verification" value={queue.length} icon={ClipboardCheck} tone="info" hint="Includes Director send-backs" />
+        <KpiCard to="/registrations" label="Forwarded / approved" value={apps.filter((a) => a.status === 'pending_director_approval' || a.status === 'activated').length} icon={BadgeCheck} tone="success" />
+        <KpiCard to="/registrations" label="Sent back to facilitator" value={apps.filter((a) => a.status === 'sent_back_to_facilitator').length} icon={Undo2} tone="warning" />
+        <KpiCard to="/registrations" label="Rejected" value={apps.filter((a) => a.status === 'rejected').length} icon={CircleX} tone="danger" />
       </Grid>
       <Card className="mt-6">
          <CardHeader title={`Verification queue — ${persona.district} district`} description="Verify documents against submitted details. Eligibility is decided by the Director, not here." action={viewAll('/registrations')} />
@@ -111,10 +111,10 @@ function HeadOfCargoDashboard() {
   return (
     <>
       <Grid>
-        <KpiCard label="Pending booking approvals" value={queue.length} icon={ClipboardCheck} tone="info" />
-        <KpiCard label="Hazardous in queue" value={queue.filter((b) => b.hazardous).length} icon={ShieldCheck} tone="warning" hint="Compliance document required" />
-        <KpiCard label="Forwarded to Director" value={data.bookings.filter((b) => b.status === 'pending_director_review').length} icon={Clock} />
-        <KpiCard label="Sent back to facilitator" value={data.bookings.filter((b) => b.status === 'sent_back_to_facilitator').length} icon={Undo2} tone="warning" />
+        <KpiCard to="/bookings" label="Pending booking approvals" value={queue.length} icon={ClipboardCheck} tone="info" />
+        <KpiCard to="/bookings" label="Hazardous in queue" value={queue.filter((b) => b.hazardous).length} icon={ShieldCheck} tone="warning" hint="Compliance document required" />
+        <KpiCard to="/bookings" label="Forwarded to Director" value={data.bookings.filter((b) => b.status === 'pending_director_review').length} icon={Clock} />
+        <KpiCard to="/bookings" label="Sent back to facilitator" value={data.bookings.filter((b) => b.status === 'sent_back_to_facilitator').length} icon={Undo2} tone="warning" />
       </Grid>
       <Card className="mt-6">
         <CardHeader title="Pending booking approvals" description="Verify documents, containers/wagons, weight and hazardous compliance. Discount and payment terms are set by the Director." action={viewAll('/bookings')} />
@@ -132,10 +132,10 @@ function DirectorDashboard() {
   return (
     <>
       <Grid>
-        <KpiCard label="Registrations pending final approval" value={regs.length} icon={FileText} tone="info" />
-        <KpiCard label="Bookings awaiting final approval" value={bks.length} icon={ClipboardCheck} tone="info" />
-        <KpiCard label="Refunds awaiting your trigger" value={data.refunds.filter((r) => r.status === 'awaiting_director').length} icon={Undo2} tone="warning" />
-        <KpiCard label="Approved booking value" value={formatKobo(frozenRevenue)} icon={Banknote} tone="success" hint="Frozen prices, excl. rejected/cancelled · demo data" />
+        <KpiCard to="/registrations" label="Registrations pending final approval" value={regs.length} icon={FileText} tone="info" />
+        <KpiCard to="/bookings" label="Bookings awaiting final approval" value={bks.length} icon={ClipboardCheck} tone="info" />
+        <KpiCard to="/refunds" label="Refunds awaiting your trigger" value={data.refunds.filter((r) => r.status === 'awaiting_director').length} icon={Undo2} tone="warning" />
+        <KpiCard to="/bookings" label="Approved booking value" value={formatKobo(frozenRevenue)} icon={Banknote} tone="success" hint="Frozen prices, excl. rejected/cancelled · demo data" />
       </Grid>
       <div className="mt-6 grid gap-6">
         <Card>
@@ -158,10 +158,10 @@ function PortOperationsDashboard() {
   return (
     <>
       <Grid>
-        <KpiCard label="Awaiting dispatch" value={ready.length} icon={Truck} tone="accent" hint="Payment or credit condition satisfied" />
-        <KpiCard label="AWB generated" value={data.bookings.filter((b) => AWB_STATUSES.includes(b.status)).length} icon={QrCode} tone="success" />
-        <KpiCard label="Held — awaiting payment" value={blocked.length} icon={Wallet} tone="warning" hint="Not released to port until payment clears" />
-        <KpiCard label="Physical check failures" value={data.bookings.filter((b) => b.status === 'rejected_physical').length} icon={CircleX} tone="danger" />
+        <KpiCard to="/dispatch" label="Awaiting dispatch" value={ready.length} icon={Truck} tone="accent" hint="Payment or credit condition satisfied" />
+        <KpiCard to="/awbs" label="AWB generated" value={data.bookings.filter((b) => AWB_STATUSES.includes(b.status)).length} icon={QrCode} tone="success" />
+        <KpiCard to="/dispatch" label="Held — awaiting payment" value={blocked.length} icon={Wallet} tone="warning" hint="Not released to port until payment clears" />
+        <KpiCard to="/bookings" label="Physical check failures" value={data.bookings.filter((b) => b.status === 'rejected_physical').length} icon={CircleX} tone="danger" />
       </Grid>
       <Card className="mt-6">
         <CardHeader title="Bookings awaiting dispatch" description="Open a booking to verify it physically, record wagon, train and departure details, and generate the AWB." action={viewAll('/dispatch')} />
@@ -180,10 +180,10 @@ function SuperAdminDashboard() {
       </Notice>
       <div className="mt-4">
         <Grid>
-          <KpiCard label="Active staff accounts" value={data.staff.filter((s) => s.status === 'active').length} icon={UserCog} hint={`${data.staff.length} total · ${data.staff.filter((s) => s.status === 'pending_first_login').length} pending first login`} />
-          <KpiCard label="Payment exceptions" value={data.paymentExceptions.filter((p) => !p.resolved).length} icon={Receipt} tone="warning" />
-          <KpiCard label="Refunds to process" value={data.refunds.filter((r) => r.status === 'requested' || r.status === 'under_review' || r.status === 'approved').length} icon={Undo2} hint="After Director trigger + customer request" />
-          <KpiCard label="Audit events" value={data.audit.length} icon={ScrollText} hint="Demo log — not tamper-proof" />
+          <KpiCard to="/staff" label="Active staff accounts" value={data.staff.filter((s) => s.status === 'active').length} icon={UserCog} hint={`${data.staff.length} total · ${data.staff.filter((s) => s.status === 'pending_first_login').length} pending first login`} />
+          <KpiCard to="/payments" label="Payment exceptions" value={data.paymentExceptions.filter((p) => !p.resolved).length} icon={Receipt} tone="warning" />
+          <KpiCard to="/refunds" label="Refunds to process" value={data.refunds.filter((r) => r.status === 'requested' || r.status === 'under_review' || r.status === 'approved').length} icon={Undo2} hint="After Director trigger + customer request" />
+          <KpiCard to="/audit" label="Audit events" value={data.audit.length} icon={ScrollText} hint="Demo log — not tamper-proof" />
         </Grid>
       </div>
       <div className="mt-6 grid gap-6 xl:grid-cols-3">
@@ -195,12 +195,14 @@ function SuperAdminDashboard() {
           <CardHeader title="Unresolved payment exceptions" description="Simulated reconciliation queue" />
           <ul className="divide-y divide-slate-100">
             {data.paymentExceptions.filter((p) => !p.resolved).map((p) => (
-              <li key={p.id} className="px-5 py-3">
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="font-mono text-xs text-slate-700">{p.reference}</span>
-                  <span className="text-sm font-medium tabular-nums">{formatKobo(p.amount)}</span>
-                </div>
-                <p className="mt-0.5 text-xs text-slate-500">{p.issue}</p>
+              <li key={p.id}>
+                <Link to={`/payments/${p.id}`} className="block px-5 py-3 hover:bg-slate-50">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="font-mono text-xs text-slate-700">{p.reference}</span>
+                    <span className="text-sm font-medium tabular-nums">{formatKobo(p.amount)}</span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-slate-500">{p.issue}</p>
+                </Link>
               </li>
             ))}
           </ul>

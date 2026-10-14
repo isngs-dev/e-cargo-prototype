@@ -4,6 +4,7 @@ import { Field } from '@/components/ui/fields'
 import { Button, Input, Select } from '@/components/ui/primitives'
 import { containerTypesFor, todayISO } from '@/lib/workflow/booking'
 import type { RateInput, RouteInput } from '@/lib/workflow/masterData'
+import type { ISODate } from '@/types/domain'
 import type { CargoType, ContainerType, PlatformConfig, Route } from '@/types/domain'
 
 const footer = (onClose: () => void, submit: () => void, label: string) => (
@@ -91,8 +92,60 @@ export function ConfigDialog({ open, config, onClose, onSubmit }: { open: boolea
         <Field label="Payment reminder (hours)"><Input type="number" value={Number.isNaN(c.paymentReminderHours) ? '' : c.paymentReminderHours} onChange={(e) => { setC({ ...c, paymentReminderHours: num(e.target.value) }); setError('') }} /></Field>
         <Field label="Refund window (days)"><Input type="number" value={Number.isNaN(c.refundWindowDays) ? '' : c.refundWindowDays} onChange={(e) => { setC({ ...c, refundWindowDays: num(e.target.value) }); setError('') }} /></Field>
         <Field label="Tax certificate at registration"><Select value={String(c.taxCertificateRequired)} onChange={(e) => { setC({ ...c, taxCertificateRequired: e.target.value === 'true' }); setError('') }}><option value="false">Optional</option><option value="true">Required</option></Select></Field>
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 sm:col-span-2">Approval targets (hours) — proposed, indicator only</p>
+        {([['registrationDistrictHours', 'Registration — District Supervisor'], ['registrationDirectorHours', 'Registration — Director'], ['bookingCargoHours', 'Booking — Head of Cargo'], ['bookingDirectorHours', 'Booking — Director'], ['dispatchHours', 'Dispatch — Head of Port']] as const).map(([k, label]) => (
+          <Field key={k} label={label}><Input type="number" min={1} value={Number.isNaN(c.sla[k]) ? '' : c.sla[k]} onChange={(e) => { setC({ ...c, sla: { ...c.sla, [k]: num(e.target.value) } }); setError('') }} /></Field>
+        ))}
         <Field label="Reason / reference (optional)" className="sm:col-span-2"><Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. NRC letter ref" /></Field>
         <div className="sm:col-span-2">{err(error)}</div>
+      </div>
+    </Dialog>
+  )
+}
+
+export function CapacityDialog({ open, routes, current, onClose, onSubmit }: { open: boolean; routes: Route[]; current: (routeId: string) => number | undefined; onClose: () => void; onSubmit: (routeId: string, units: number) => string | null }) {
+  const [routeId, setRouteId] = useState('')
+  const [units, setUnits] = useState('')
+  const [error, setError] = useState('')
+  const close = () => { setRouteId(''); setUnits(''); setError(''); onClose() }
+  const submit = () => {
+    const e = onSubmit(routeId, units === '' ? NaN : Number(units))
+    if (e) return setError(e)
+    close()
+  }
+  return (
+    <Dialog open={open} onClose={close} title="Set daily train capacity" description="Capacity units per day (20ft = 1, 40ft = 2, Reefer = 2, Wagon = 1). Existing bookings are not cancelled." footer={footer(close, submit, 'Save capacity')}>
+      <div className="space-y-3">
+        <Field label="Route" required>
+          <Select value={routeId} onChange={(e) => { setRouteId(e.target.value); setUnits(String(current(e.target.value) ?? '')); setError('') }}>
+            <option value="">Select…</option>{routes.map((r) => <option key={r.id} value={r.id}>{r.code} · {r.destination}</option>)}
+          </Select>
+        </Field>
+        <Field label="Daily capacity (units)" required><Input type="number" min={1} value={units} onChange={(e) => { setUnits(e.target.value); setError('') }} /></Field>
+        {err(error)}
+      </div>
+    </Dialog>
+  )
+}
+
+export function MaintenanceDialog({ open, routes, onClose, onSubmit }: { open: boolean; routes: Route[]; onClose: () => void; onSubmit: (v: { routeId: string; date: ISODate; reason: string }) => string | null }) {
+  const [routeId, setRouteId] = useState('')
+  const [date, setDate] = useState('')
+  const [reason, setReason] = useState('')
+  const [error, setError] = useState('')
+  const close = () => { setRouteId(''); setDate(''); setReason(''); setError(''); onClose() }
+  const submit = () => {
+    const e = onSubmit({ routeId, date, reason })
+    if (e) return setError(e)
+    close()
+  }
+  return (
+    <Dialog open={open} onClose={close} title="Add maintenance block" description="No bookings can be made for the route on this date." footer={footer(close, submit, 'Add block')}>
+      <div className="space-y-3">
+        <Field label="Route" required><Select value={routeId} onChange={(e) => { setRouteId(e.target.value); setError('') }}><option value="">Select…</option>{routes.map((r) => <option key={r.id} value={r.id}>{r.code} · {r.destination}</option>)}</Select></Field>
+        <Field label="Date" required><Input type="date" min={todayISO()} value={date} onChange={(e) => { setDate(e.target.value); setError('') }} /></Field>
+        <Field label="Reason" required><Input value={reason} onChange={(e) => { setReason(e.target.value); setError('') }} placeholder="e.g. Track maintenance" /></Field>
+        {err(error)}
       </div>
     </Dialog>
   )

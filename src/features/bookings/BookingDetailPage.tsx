@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router'
-import { ArrowLeft, Eye, FilePen, TriangleAlert, X } from 'lucide-react'
+import { ArrowLeft, Eye, FilePen, TriangleAlert } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { containerSummary, customerName, routeLabel, visibleBookings } from '@/app/selectors'
-import { BookingStatusBadge, Notice, PageHeader, PaymentStatusBadge } from '@/components/ui/blocks'
+import { BookingStatusBadge, Notice, PageHeader, PaymentStatusBadge, Flash } from '@/components/ui/blocks'
 import { Field, Textarea } from '@/components/ui/fields'
 import { Badge, Button, buttonClass, Card, CardHeader } from '@/components/ui/primitives'
 import { ActivityList } from '@/features/audit/ActivityList'
@@ -17,6 +17,7 @@ import { addBookingRemark } from '@/lib/workflow/bookingApproval'
 import type { Actor } from '@/lib/workflow/result'
 import { DirectorPanel, HeadOfCargoPanel } from './ApprovalPanels'
 import { DispatchPanel } from '@/features/dispatch/DispatchPanel'
+import { AmendAwbPanel } from '@/features/dispatch/AmendAwbPanel'
 import { completeBooking } from '@/lib/workflow/dispatch'
 import { isReadyForDispatch } from '@/lib/status'
 import { FacilitatorPaymentPanel, SuperAdminPaymentControls } from './PaymentPanels'
@@ -84,12 +85,7 @@ export function BookingDetailPage() {
         title={booking.reference}
         description={<span className="inline-flex flex-wrap items-center gap-2"><BookingStatusBadge status={booking.status} />{booking.hazardous && <Badge tone="warning"><TriangleAlert className="size-3" /> Hazardous</Badge>}<Badge>Demo data</Badge></span>}
       />
-      {flash && (
-        <div className="mb-4 flex items-start justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status">
-          <p>{flash}</p>
-          <button type="button" onClick={() => setFlash(null)} aria-label="Dismiss" className="text-emerald-700"><X className="size-4" /></button>
-        </div>
-      )}
+      <Flash message={flash} onDismiss={() => setFlash(null)} />
 
       <Card className="mb-6 p-5"><BookingStages status={booking.status} /></Card>
       {lastRemark?.remarks && <div className="mb-6"><Notice tone="warning" title={lastRemark.action}>{lastRemark.remarks}</Notice></div>}
@@ -120,6 +116,7 @@ export function BookingDetailPage() {
               <CardHeader title="Dispatch & AWB" action={booking.awb ? <Link to={`/bookings/${booking.id}/awb`} className={buttonClass('primary', 'sm')}>View AWB</Link> : undefined} />
               <dl className="grid gap-x-6 gap-y-3 px-5 py-4 text-sm sm:grid-cols-2">
                 {booking.awb && <div><dt className="text-xs text-slate-500">AWB number (demo)</dt><dd className="font-mono font-medium">{booking.awb.number}</dd></div>}
+                {booking.awb && <div><dt className="text-xs text-slate-500">Version</dt><dd className="font-medium">{booking.awb.version}{(booking.awbHistory?.length ?? 0) > 0 ? ` (${booking.awbHistory!.length} earlier superseded)` : ''}</dd></div>}
                 {booking.awb && <div><dt className="text-xs text-slate-500">Generated</dt><dd className="font-medium">{formatDateTime(booking.awb.generatedAt)}</dd></div>}
                 {booking.dispatch && ([['Train', booking.dispatch.trainNumber], ['Wagon', booking.dispatch.wagonNumber], ['Departure', `${formatDate(booking.dispatch.departureDate)} ${booking.dispatch.departureTime}`], ['Loading yard', booking.dispatch.loadingYard ?? '—']] as const).map(([k, v]) => <div key={k}><dt className="text-xs text-slate-500">{k}</dt><dd className="font-medium">{v}</dd></div>)}
               </dl>
@@ -138,6 +135,7 @@ export function BookingDetailPage() {
           {isSA && <SuperAdminPaymentControls booking={booking} actor={actor} run={run} />}
           {isHop && isReadyForDispatch(booking) && <DispatchPanel booking={booking} actor={actor} run={run} />}
           {isHop && booking.status === 'awaiting_payment' && <Notice title="Held until payment clears">This booking is not released to the port until the customer's payment is confirmed.</Notice>}
+          {isHop && booking.status === 'awb_generated' && booking.dispatch && <AmendAwbPanel key={booking.awb?.version} booking={booking} actor={actor} run={run} />}
           {isHop && booking.status === 'awb_generated' && (
             <Card>
               <CardHeader title="Delivery" description="Mark the booking completed once the consignment is delivered." />

@@ -19,6 +19,7 @@ export function AwbPreviewPage() {
     return <Notice tone="warning" title="AWB not available">This booking has no AWB yet, or it is not visible to your role. <Link to="/awbs" className="underline">Back to AWBs</Link></Notice>
   }
   const { awb, dispatch } = booking
+  const verifyUrl = `${window.location.origin}/verify?awb=${awb.number}&v=${awb.version}`
   const customer = data.customers.find((c) => c.id === booking.customerId)
 
   const rows: [string, string][] = [
@@ -34,6 +35,7 @@ export function AwbPreviewPage() {
     ['Departure', `${formatDate(dispatch.departureDate)} at ${dispatch.departureTime}`],
     ['Loading yard', dispatch.loadingYard ?? '—'],
     ['Generated', formatDateTime(awb.generatedAt)],
+    ...(awb.amendmentReason ? ([['Amendment reason', awb.amendmentReason]] as [string, string][]) : []),
   ]
 
   return (
@@ -55,7 +57,7 @@ export function AwbPreviewPage() {
             <div className="mt-2 flex gap-2"><Badge tone="success">Version {awb.version}</Badge><Badge>Demo data</Badge></div>
           </div>
           <div className="text-center">
-            <QRCodeSVG value={awb.verificationRef} size={112} level="M" title={`Demo verification reference for ${awb.number}`} />
+            <QRCodeSVG value={verifyUrl} size={112} level="M" title={`Demo verification reference for ${awb.number}`} />
             <p className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">Demo verification</p>
           </div>
         </header>
@@ -65,10 +67,24 @@ export function AwbPreviewPage() {
           ))}
         </dl>
         <footer className="border-t border-slate-200 bg-slate-50 px-5 py-3 text-xs text-slate-500">
-          <p className="break-all">Reference encoded in QR: <span className="font-mono">{awb.verificationRef}</span></p>
+          <p className="break-all">Encoded in the QR (demo verification page): <span className="font-mono">{verifyUrl}</span></p>
           <p className="mt-1">Distributed to: customer, Head of Cargo, Director of Operations, Head of Port Operations (emails simulated). AWB numbers are never reused or edited.</p>
         </footer>
       </article>
+
+      {(booking.awbHistory?.length ?? 0) > 0 && (
+        <section className="mx-auto mt-6 max-w-3xl rounded-lg border border-slate-200 bg-white print:hidden" aria-label="Earlier versions">
+          <h2 className="border-b border-slate-100 px-5 py-3 text-sm font-semibold text-slate-900">Earlier versions (superseded)</h2>
+          <ul className="divide-y divide-slate-100">
+            {booking.awbHistory!.map((h) => (
+              <li key={h.version} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 text-sm">
+                <span>Version {h.version} · issued {formatDateTime(h.generatedAt)} <Badge tone="warning" className="ml-1">Superseded {h.supersededAt ? formatDateTime(h.supersededAt) : ''}</Badge></span>
+                <Link to={`/verify?awb=${h.number}&v=${h.version}`} className="text-brand-700 hover:underline">Check at the gate</Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </>
   )
 }

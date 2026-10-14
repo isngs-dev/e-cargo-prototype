@@ -16,7 +16,8 @@ src/
   app/          store (context + reducer + localStorage), navigation, selectors
   components/   ui/ primitives & blocks, layout/ shell + role switcher
   features/     one folder per area (dashboard, bookings, registrations, customers, audit, master-data, placeholder)
-  lib/          pure business rules: pricing, eligibility, status/dispatch gate, permissions, registration checks, awb, money
+  lib/          pure business rules: pricing, eligibility, status/dispatch gate, permissions, registration checks, awb, money, capacity (simulated), sla (ageing), csv
+  lib/workflow/ pure state transitions per area (registration, booking, bookingApproval, payment, dispatch, refund, staff, masterData, customerAdmin, paymentException)
   data/         seed.ts (demo data), personas.ts (role switcher)
   types/        domain.ts
 ```
@@ -46,5 +47,6 @@ npm run build      # tsc -b && vite build → dist/
 - Preserve scope: one phase at a time per `docs/PROGRESS.md`. Don't present unresolved decisions as confirmed — add to DECISIONS.md.
 - Avoid new dependencies unless clearly justified. No backend/DB/Docker.
 - After each phase: `npm test`, `npm run build`, update `docs/PROGRESS.md`. Never commit, push or deploy unless asked.
-- Workflow functions live in `src/lib/workflow/` (pure; take AppData, return new AppData or error) and are invoked via `useStore().act(...)`.
+- Workflow functions live in `src/lib/workflow/` (pure; take AppData, return new AppData or error) and are invoked via `useStore().act(...)`. Every success writes an audit entry; `journey.test.ts` checks audit-trail invariants — keep it green.
+- Public pages (`/`, `/verify`) sit outside `AppShell`; list pages for refunds / payment exceptions are cards that link to detail pages where actions happen.
 - Bump `SEED_VERSION` in `src/data/seed.ts` when the persisted state shape changes (forces a reseed).

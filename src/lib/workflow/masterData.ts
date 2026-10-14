@@ -89,6 +89,7 @@ const fmtConfig = (k: keyof PlatformConfig, c: PlatformConfig): string => {
     case 'paymentReminderHours': return `${c.paymentReminderHours} hours`
     case 'refundWindowDays': return `${c.refundWindowDays} days`
     case 'taxCertificateRequired': return c.taxCertificateRequired ? 'required' : 'optional'
+    case 'sla': return `District ${c.sla.registrationDistrictHours}h · Director (reg.) ${c.sla.registrationDirectorHours}h · Cargo ${c.sla.bookingCargoHours}h · Director (booking) ${c.sla.bookingDirectorHours}h · Dispatch ${c.sla.dispatchHours}h`
   }
 }
 
@@ -98,6 +99,7 @@ export function validateConfig(c: PlatformConfig): string | null {
   if (!Number.isInteger(c.paymentWindowHours) || c.paymentWindowHours < 1 || c.paymentWindowHours > 720) return 'The payment window must be 1–720 hours.'
   if (!Number.isInteger(c.paymentReminderHours) || c.paymentReminderHours < 1 || c.paymentReminderHours >= c.paymentWindowHours) return 'The reminder must be at least 1 hour and earlier than the payment window.'
   if (!Number.isInteger(c.refundWindowDays) || c.refundWindowDays < 1 || c.refundWindowDays > 365) return 'The refund window must be 1–365 days.'
+  if (!Object.values(c.sla).every((h) => Number.isInteger(h) && h >= 1 && h <= 720)) return 'Approval targets must be whole hours between 1 and 720.'
   return null
 }
 
@@ -107,7 +109,7 @@ export function updateConfig(data: AppData, config: PlatformConfig, actor: Actor
   if (denied) return denied
   const bad = validateConfig(config)
   if (bad) return fail(bad)
-  const keys: (keyof PlatformConfig)[] = ['tax', 'paymentWindowHours', 'paymentReminderHours', 'refundWindowDays', 'taxCertificateRequired']
+  const keys: (keyof PlatformConfig)[] = ['tax', 'paymentWindowHours', 'paymentReminderHours', 'refundWindowDays', 'taxCertificateRequired', 'sla']
   const changed = keys.filter((k) => JSON.stringify(data.config[k]) !== JSON.stringify(config[k]))
   if (changed.length === 0) return fail('No changes to save.')
   const next = structuredClone(data)
@@ -116,4 +118,51 @@ export function updateConfig(data: AppData, config: PlatformConfig, actor: Actor
   }
   next.config = structuredClone(config)
   return { ok: true, data: next, changed: changed.length }
+}
+
+// ------------------------------------------------------------ Train capacity (simulated, open item D-6)
+
+export function setRouteCapacity(data: AppData, routeId: string, dailyUnits: number, actor: Actor, now = new Date().toISOString()): WorkflowResult {
+  const denied = gate(actor)
+  if (denied) return denied
+  const route = data.routes.find((r) => r.id === routeId)
+  if (!route) return fail('Select a route.')
+  if (!Number.isInteger(dailyUnits) || dailyUnits < 1 || dailyUnits > 1000) return fail('Daily capacity must be a whole number from 1 to 1000 units.')
+  const next = structuredClone(data)
+  const rule = next.capacity.find((c) => c.routeId === routeId)
+  const before = rule ? `${rule.dailyUnits} units/day` : 'not configured (unconstrained)'
+  if (rule?.dailyUnits === dailyUnits) return fail('No change to save.')
+  if (rule) rule.dailyUnits = dailyUnits
+  else next.capacity.push({ routeId, dailyUnits })
+  log(next, actor, `cap-${route.code}`, route.code, 'Daily train capacity changed — applies to new bookings; existing bookings are not cancelled', now, { field: `${route.code} daily capacity`, from: before, to: `${dailyUnits} units/day` })
+  return { ok: true, data: next }
+}
+
+export function addMaintenanceBlock(data: AppData, input: { routeId: string; date: ISODate; reason: string }, actor: Actor, now = new Date().toISOString(), today = todayISO()): WorkflowResult {
+  const denied = gate(actor)
+  if (denied) return denied
+  const route = data.routes.find((r) => r.id === input.routeId)
+  if (!route) return fail('Select a route.')
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) return fail('Select the date.')
+  if (input.date < today) return fail('A maintenance block cannot be in the past.')
+  if (!input.reason.trim()) return fail('Enter a reason for the block.')
+  if (data.maintenanceBlocks.some((m) => m.routeId === input.routeId && m.date === input.date)) return fail('This route is already blocked on that date.')
+  const next = structuredClone(data)
+  const block = { id: `mb-${route.code.toLowerCase()}-${input.date}`, routeId: input.routeId, date: input.date, reason: input.reason.trim() }
+  next.maintenanceBlocks.push(block)
+  const affected = next.bookings.filter((b) => b.routeId === input.routeId && b.bookingDate === input.date && b.status !== 'draft' && !['rejected_hoc', 'rejected_director', 'rejected_physical', 'auto_cancelled'].includes(b.status)).length
+  log(next, actor, block.id, route.code, `Maintenance block added for ${input.date}: ${block.reason}${affected ? ` (${affected} existing booking${affected > 1 ? 's' : ''} on that date need rescheduling)` : ''}`, now)
+  return { ok: true, data: next }
+}
+
+export function removeMaintenanceBlock(data: AppData, id: string, actor: Actor, now = new Date().toISOString()): WorkflowResult {
+  const denied = gate(actor)
+  if (denied) return denied
+  const next = structuredClone(data)
+  const i = next.maintenanceBlocks.findIndex((m) => m.id === id)
+  if (i < 0) return fail('Maintenance block not found.')
+  const [block] = next.maintenanceBlocks.splice(i, 1)
+  const route = next.routes.find((r) => r.id === block!.routeId)
+  log(next, actor, block!.id, route?.code ?? block!.routeId, `Maintenance block removed for ${block!.date}`, now)
+  return { ok: true, data: next }
 }
