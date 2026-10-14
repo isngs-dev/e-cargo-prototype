@@ -164,7 +164,7 @@ function PortOperationsDashboard() {
         <KpiCard label="Physical check failures" value={data.bookings.filter((b) => b.status === 'rejected_physical').length} icon={CircleX} tone="danger" />
       </Grid>
       <Card className="mt-6">
-        <CardHeader title="Bookings awaiting dispatch" description="Physical verification, wagon/train assignment and AWB generation arrive in Phase 6." />
+        <CardHeader title="Bookings awaiting dispatch" description="Open a booking to verify it physically, record wagon, train and departure details, and generate the AWB." action={viewAll('/dispatch')} />
         <BookingTable bookings={ready} showPayment emptyTitle="Nothing ready for dispatch" />
       </Card>
     </>

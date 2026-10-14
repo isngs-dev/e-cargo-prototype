@@ -37,11 +37,11 @@ export const navItems: NavItem[] = [
     label: { default: 'Bookings', cargo_facilitator: 'My Bookings', head_of_cargo: 'Booking Reviews', head_port_operations: 'All Bookings' },
   },
   { area: 'registrations', path: '/registrations', label: { default: 'Registrations', district_supervisor: 'Registration Queue' }, icon: ClipboardCheck, phase: 2, built: true },
-  { area: 'dispatch', path: '/dispatch', label: 'Dispatch Queue', icon: Truck, phase: 6, built: false },
-  { area: 'awbs', path: '/awbs', label: 'AWBs', icon: QrCode, phase: 6, built: false },
+  { area: 'dispatch', path: '/dispatch', label: 'Dispatch Queue', icon: Truck, phase: 6, built: true },
+  { area: 'awbs', path: '/awbs', label: 'AWBs', icon: QrCode, phase: 6, built: true },
   { area: 'company_profile', path: '/company', label: 'Company Profile', icon: Building, phase: 2, built: true },
   { area: 'customers', path: '/customers', label: 'Customers', icon: Users, phase: 2, built: true },
-  { area: 'refunds', path: '/refunds', label: 'Refunds', icon: Undo2, phase: 6, built: false },
+  { area: 'refunds', path: '/refunds', label: 'Refunds', icon: Undo2, phase: 6, built: true },
   { area: 'payments', path: '/payments', label: 'Payment Exceptions', icon: Receipt, phase: 7, built: false },
   { area: 'staff', path: '/staff', label: 'Staff Accounts', icon: UserCog, phase: 7, built: false },
   { area: 'master_data', path: '/master-data', label: 'Routes & Rates', icon: Database, phase: 2, built: true },
@@ -49,25 +49,6 @@ export const navItems: NavItem[] = [
 ]
 
 export const planDescriptions: Partial<Record<Area, { title: string; scope: string[] }>> = {
-  dispatch: {
-    title: 'Dispatch Queue',
-    scope: [
-      'Only bookings whose payment or credit condition is satisfied',
-      'Physical verification checklist',
-      'Wagon, train, departure date/time, loading yard',
-      'Fail → report to Director with mandatory reason (refund flow if paid)',
-      'Approve dispatch → idempotent AWB generation',
-    ],
-  },
-  awbs: { title: 'Air Waybills (AWB)', scope: ['AWB register and preview', 'Demo QR verification reference', 'Version / superseded handling'] },
-  refunds: {
-    title: 'Refunds',
-    scope: [
-      'Director triggers refund link after physical-verification failure',
-      'Facilitator submits simulated refund request',
-      'Super Admin processes (simulated) — Requested → Under Review → Approved → Processed',
-    ],
-  },
   payments: { title: 'Payment Exceptions', scope: ['Unmatched / duplicate simulated payments', 'Simulated reconciliation actions'] },
   staff: { title: 'Staff Accounts', scope: ['Create NRC staff accounts (simulated credentials)', 'Reset, suspend, revoke, reassign roles', 'All actions audit-logged'] },
 }

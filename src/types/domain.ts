@@ -313,13 +313,30 @@ export interface AuditEntry {
 
 export type RefundStatus = 'awaiting_director' | 'link_sent' | 'requested' | 'under_review' | 'approved' | 'processed'
 
+/** Simulated refund request. Only a masked account reference is kept — real bank details are never stored. */
+export interface RefundRequest {
+  bankName: string
+  accountName: string
+  accountMask: string
+  confirmedAmount: Kobo
+  policyAcknowledged: boolean
+  requestedAt: ISODateTime
+}
+
 export interface Refund {
   id: string
   bookingId: string
+  customerId: string
   amount: Kobo
   reason: string
   status: RefundStatus
   createdAt: ISODateTime
+  /** Set when the Director triggers the refund link; the refund-request window runs from here. */
+  linkSentAt?: ISODateTime
+  request?: RefundRequest
+  processedAt?: ISODateTime
+  /** Simulated disbursement reference — no gateway is contacted. */
+  reference?: string
 }
 
 export interface PaymentException {

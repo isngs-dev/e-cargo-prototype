@@ -16,6 +16,9 @@ import type { UploadedDocument } from '@/types/domain'
 import { addBookingRemark } from '@/lib/workflow/bookingApproval'
 import type { Actor } from '@/lib/workflow/result'
 import { DirectorPanel, HeadOfCargoPanel } from './ApprovalPanels'
+import { DispatchPanel } from '@/features/dispatch/DispatchPanel'
+import { completeBooking } from '@/lib/workflow/dispatch'
+import { isReadyForDispatch } from '@/lib/status'
 import { FacilitatorPaymentPanel, SuperAdminPaymentControls } from './PaymentPanels'
 import { PriceBreakdown } from './PriceBreakdown'
 import type { Run } from './runTypes'
@@ -48,6 +51,7 @@ export function BookingDetailPage() {
   const isHoc = persona.role === 'head_of_cargo'
   const isDir = persona.role === 'director_operations'
   const isSA = persona.role === 'super_admin'
+  const isHop = persona.role === 'head_port_operations'
   const hocOpen = booking.status === 'pending_hoc_review' || booking.status === 'sent_back_to_hoc'
   const dirOpen = booking.status === 'pending_director_review'
   const addNote = () => {
@@ -113,9 +117,10 @@ export function BookingDetailPage() {
 
           {(booking.dispatch || booking.awb) && (
             <Card>
-              <CardHeader title="Dispatch & AWB" description="Read-only. Dispatch entry and AWB preview arrive in Phase 6." />
+              <CardHeader title="Dispatch & AWB" action={booking.awb ? <Link to={`/bookings/${booking.id}/awb`} className={buttonClass('primary', 'sm')}>View AWB</Link> : undefined} />
               <dl className="grid gap-x-6 gap-y-3 px-5 py-4 text-sm sm:grid-cols-2">
                 {booking.awb && <div><dt className="text-xs text-slate-500">AWB number (demo)</dt><dd className="font-mono font-medium">{booking.awb.number}</dd></div>}
+                {booking.awb && <div><dt className="text-xs text-slate-500">Generated</dt><dd className="font-medium">{formatDateTime(booking.awb.generatedAt)}</dd></div>}
                 {booking.dispatch && ([['Train', booking.dispatch.trainNumber], ['Wagon', booking.dispatch.wagonNumber], ['Departure', `${formatDate(booking.dispatch.departureDate)} ${booking.dispatch.departureTime}`], ['Loading yard', booking.dispatch.loadingYard ?? '—']] as const).map(([k, v]) => <div key={k}><dt className="text-xs text-slate-500">{k}</dt><dd className="font-medium">{v}</dd></div>)}
               </dl>
             </Card>
@@ -131,6 +136,19 @@ export function BookingDetailPage() {
           )}
           {isFacilitator && <FacilitatorPaymentPanel booking={booking} actor={actor} run={run} />}
           {isSA && <SuperAdminPaymentControls booking={booking} actor={actor} run={run} />}
+          {isHop && isReadyForDispatch(booking) && <DispatchPanel booking={booking} actor={actor} run={run} />}
+          {isHop && booking.status === 'awaiting_payment' && <Notice title="Held until payment clears">This booking is not released to the port until the customer's payment is confirmed.</Notice>}
+          {isHop && booking.status === 'awb_generated' && (
+            <Card>
+              <CardHeader title="Delivery" description="Mark the booking completed once the consignment is delivered." />
+              <div className="p-5"><Button className="w-full" onClick={() => run((d) => completeBooking(d, booking.id, actor), 'Booking marked completed.')}>Mark as delivered & complete</Button></div>
+            </Card>
+          )}
+          {booking.status === 'rejected_physical' && (
+            <Notice tone="warning" title="Physical verification failed">
+              {data.refunds.some((r) => r.bookingId === booking.id) ? <>Payment had been received, so a refund was started. <Link to="/refunds" className="underline">Open Refunds</Link>.</> : 'No payment had been received, so no refund is required.'}
+            </Notice>
+          )}
           {isHoc && hocOpen && <HeadOfCargoPanel booking={booking} actor={actor} run={run} />}
           {isDir && dirOpen && customer && <DirectorPanel booking={booking} customer={customer} data={data} actor={actor} run={run} />}
           {isDir && hocOpen && <Notice title="With Head of Cargo">This booking reaches you once the Head of Cargo has verified it.</Notice>}

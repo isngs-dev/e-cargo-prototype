@@ -30,10 +30,10 @@ export type Area =
 const access: Record<Role, Area[]> = {
   cargo_facilitator: ['dashboard', 'bookings', 'new_booking', 'company_profile', 'awbs', 'refunds'],
   district_supervisor: ['dashboard', 'registrations'],
-  head_of_cargo: ['dashboard', 'bookings'],
-  director_operations: ['dashboard', 'registrations', 'bookings', 'customers', 'refunds', 'master_data', 'audit'],
+  head_of_cargo: ['dashboard', 'bookings', 'awbs'],
+  director_operations: ['dashboard', 'registrations', 'bookings', 'customers', 'awbs', 'refunds', 'master_data', 'audit'],
   head_port_operations: ['dashboard', 'dispatch', 'bookings', 'awbs'],
-  super_admin: ['dashboard', 'staff', 'customers', 'master_data', 'payments', 'refunds', 'registrations', 'bookings', 'audit'],
+  super_admin: ['dashboard', 'staff', 'customers', 'master_data', 'payments', 'refunds', 'registrations', 'bookings', 'awbs', 'audit'],
 }
 
 export function canAccess(role: Role, area: Area): boolean {

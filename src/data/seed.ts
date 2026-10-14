@@ -29,7 +29,7 @@ import { calculatePrice } from '@/lib/pricing'
 import { indicativeDiscountBp } from '@/lib/eligibility'
 import { demoVerificationRef, formatAwbNumber } from '@/lib/awb'
 
-export const SEED_VERSION = 3
+export const SEED_VERSION = 4
 
 export const config: PlatformConfig = {
   tax: { vatBp: 750, stampDutyBp: 75, insuranceBp: 150, basis: 'net' },
@@ -440,7 +440,7 @@ chain('staff', 'st-ds2', 'Hauwa Garba', 'active', [['2026-08-20T11:00:00+01:00',
 audit.sort((a, b) => a.at.localeCompare(b.at))
 
 export const refunds: Refund[] = [
-  { id: 'rf-0380', bookingId: 'bk-0380', amount: bookings.find((b) => b.id === 'bk-0380')!.approved!.price.totalPayable,
+  { id: 'rf-0380', bookingId: 'bk-0380', customerId: 'cus-lagoon', amount: bookings.find((b) => b.id === 'bk-0380')!.approved!.price.totalPayable,
     reason: 'Physical verification failed at Apapa (weight mismatch, broken seal).', status: 'awaiting_director', createdAt: '2026-10-07T10:40:00+01:00' },
 ]
 

@@ -2,7 +2,7 @@
 
 ## Current phase
 
-**Phase 5 (Booking approvals & payment simulation) complete** (2026-10-13).
+**Phase 6 (Port operations, AWB & refunds) complete** (2026-10-13).
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -27,6 +27,15 @@
 - Read-only screens: Bookings list (search + status filter, role-scoped), Registrations list (search + filter + automated check flags), Company Profile + eligibility/credit usage, Customers, Routes & Rates (current rates, history, tax config), Audit Log (search + entity filter).
 - Unbuilt areas show an honest "Scheduled for phase N" page; unauthorized routes show an access-denied state.
 
+## Phase 6 — completed
+
+- `src/lib/workflow/dispatch.ts` (pure): `approveDispatch` (gate: paid or credit-approved only; mandatory wagon/train/date/time; full physical-verification checklist; **idempotent** AWB generation — repeat returns the same AWB, no number consumed, no extra audit), `failPhysicalVerification` (mandatory reason; capacity released; refund created when money was received; unpaid credit cancelled), `completeBooking`.
+- `src/lib/workflow/refund.ts` (pure): Director `triggerRefund`, facilitator `submitRefundRequest` (validation, 30-day window, masked account only), Super Admin `advanceRefund` review → approve → process (cannot skip; separation of duties enforced).
+- Screens: dispatch panel on the booking page (Head of Port), `/dispatch` queue, AWB preview `/bookings/:id/awb` (QR via `qrcode.react`, demo-labelled, printable), `/awbs` register, `/refunds` (role-specific actions, progress tracker, history), "View AWB" on the booking for every permitted role.
+- New dependency: `qrcode.react` (4.2.0, ISC, 134 KB). Run `npm install` after pulling.
+- State version 4 (refund shape changed; old saved demo data reseeds).
+- 21 new tests (99+ total).
+
 ## Phase 5 — completed
 
 - `src/lib/workflow/bookingApproval.ts` (pure): Head of Cargo approve / send back / reject; Director approve (final discount ≤ eligible and none for Non-Priority, reason when below max, payment terms, credit ≤ eligible and within threshold, price recalculated and **frozen** with an eligibility snapshot, invoice + simulated payment link), reject, send back to Head of Cargo; internal remarks; below-max discount and payment-term selection audited separately.
@@ -47,7 +56,7 @@
 
 | Command | Result |
 |---|---|
-| `npm test` | ✅ 78/78 passed |
+| `npm test` | ✅ 99/99 passed |
 | `npm run typecheck` | ✅ no errors |
 | `npm run build` | ✅ passes (JS ~447 kB, 133 kB gzip) |
 | Browser (dev server) | ✅ applicant resubmit → DS forward → Director approve (Priority 12% / 2 mo / ₦3M / Strategic) → customer created + audit trail; validation messages; document preview; no console errors |
@@ -62,9 +71,10 @@
 
 ## Next task (exact)
 
-**Phase 6 — Port operations, AWB generation and refunds:**
-1. `src/lib/workflow/dispatch.ts` (pure): Head of Port physical verification checklist; dispatch details (wagon, train, departure date/time mandatory; loading yard, remarks); fail → reject with mandatory reason, status `rejected_physical`, capacity released, refund record created when paid; pass → approve dispatch and generate AWB.
-2. AWB: stable unique number (`formatAwbNumber`), **idempotent** (repeat returns the existing AWB, never a second number), versioning/superseded, QR preview only if a suitable library is justified (otherwise a clearly labelled demo reference), view from the booking and `/awbs` register.
-3. Dispatch queue `/dispatch` and dispatch panel on the booking detail page; dispatch gate enforced in the workflow (payment or credit condition).
-4. Refund flow: Director triggers the refund link; facilitator submits request (simulated bank details, never real); Super Admin processes — Requested → Under Review → Approved → Processed; `/refunds` screen per role.
-5. Tests for the gate, idempotent AWB, failure → refund, refund state machine; update PROGRESS.md.
+**Phase 7 — Super Admin, master data and audit views:**
+1. `/staff`: staff account management (create DS / Head of Cargo / Director / Head of Port accounts with simulated credentials and forced first-login change, edit, reset password, suspend / revoke, reassign role and district) — Super Admin only, every action audited.
+2. `/master-data`: Super Admin edits — effective-dated freight rate insert (never edit a row), routes, tax/levy config, payment/refund windows, document requirements; Director read-only. Missing-rate warnings.
+3. Customer administration: Director / Super Admin suspend & blacklist (reason, audited); Director eligibility upgrade between bookings (never retroactive — stays in the audit log with old → new and reason).
+4. `/payments`: payment exception queue (unmatched / duplicate) with simulated resolution.
+5. Audit log: export to CSV, richer filters.
+6. Tests; update PROGRESS.md.

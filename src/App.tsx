@@ -5,6 +5,10 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { BookingsPage } from '@/features/bookings/BookingsPage'
 import { BookingDetailPage } from '@/features/bookings/BookingDetailPage'
 import { EditBookingPage } from '@/features/bookings/EditBookingPage'
+import { DispatchQueuePage } from '@/features/dispatch/DispatchQueuePage'
+import { AwbPreviewPage } from '@/features/awb/AwbPreviewPage'
+import { AwbRegisterPage } from '@/features/awb/AwbRegisterPage'
+import { RefundsPage } from '@/features/refunds/RefundsPage'
 import { NewBookingPage } from '@/features/bookings/NewBookingPage'
 import { RegistrationsPage } from '@/features/registrations/RegistrationsPage'
 import { CustomersPage } from '@/features/customers/CustomersPage'
@@ -38,9 +42,10 @@ export default function App() {
             <Route path="register" element={guarded('my_registration', <NewRegistrationPage />)} />
             <Route path="company" element={guarded('company_profile', <CompanyProfilePage />)} />
             <Route path="customers" element={guarded('customers', <CustomersPage />)} />
-            <Route path="dispatch" element={guarded('dispatch', <PlannedPage area="dispatch" />)} />
-            <Route path="awbs" element={guarded('awbs', <PlannedPage area="awbs" />)} />
-            <Route path="refunds" element={guarded('refunds', <PlannedPage area="refunds" />)} />
+            <Route path="dispatch" element={guarded('dispatch', <DispatchQueuePage />)} />
+            <Route path="awbs" element={guarded('awbs', <AwbRegisterPage />)} />
+            <Route path="bookings/:id/awb" element={guarded('awbs', <AwbPreviewPage />)} />
+            <Route path="refunds" element={guarded('refunds', <RefundsPage />)} />
             <Route path="payments" element={guarded('payments', <PlannedPage area="payments" />)} />
             <Route path="staff" element={guarded('staff', <PlannedPage area="staff" />)} />
             <Route path="master-data" element={guarded('master_data', <MasterDataPage />)} />

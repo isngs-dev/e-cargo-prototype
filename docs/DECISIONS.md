@@ -91,4 +91,10 @@ Items 1–11 are [B §12] open items. Values shown are **proposals**, not approv
 | A-27 | A failed simulated payment keeps the booking Awaiting Payment and the link usable until the window elapses; the facilitator may retry |
 | A-28 | Credit bookings that reach dispatch are not blocked by the credit-period payment link; settlement is separate. What happens if credit is never settled is not specified (D-15) |
 | A-29 | Head of Cargo / Director rejection before payment sets payment to "Cancelled" (no refund path needed) |
+| A-30 | Dispatch: wagon, train, departure date (not in the past) and time (HH:MM) are mandatory; all physical-verification items must be confirmed (hazardous handling only when the cargo is hazardous) |
+| A-31 | AWB number is generated from a counter at dispatch approval; repeating the action returns the existing AWB and consumes no number. AWB amendment / versioning (new version, prior superseded) is not built — every AWB is version 1 |
+| A-32 | The AWB QR encodes a clearly labelled demo reference (`DEMO-VERIFY://…`), not a signed verification URL; the `qrcode.react` library is used for the preview only |
+| A-33 | A failed physical check on a booking with money received (paid, or credit already settled) creates a refund for the full approved total (D-2 unresolved); unpaid credit is cancelled with no refund and stops counting against the credit threshold |
+| A-34 | Refund request: bank name, account name, 10-digit account number (only last 4 kept), confirmed amount equal to the refund amount, policy acknowledged; refund window is 30 days from the link being sent (D-3 unresolved) |
+| A-35 | Reversal entries and refunds triggered by customer cancellation / duplicate payment are not built (D-13); Head of Port marks a booking Completed (delivery) — who closes bookings is not specified |
 | A-9 | Seed date context is October 2026; seeded timestamps are fixed |
