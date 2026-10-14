@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import { CircleCheck, Send, Undo2, X } from 'lucide-react'
+import { Dialog } from '@/components/ui/dialog'
 import { Field, Textarea } from '@/components/ui/fields'
 import { Badge, Button, Card, CardHeader, Input } from '@/components/ui/primitives'
 import { ReasonDialog } from '@/features/registrations/ReasonDialog'
 import { allowedPaymentTerms, discountReductionNeedsReason } from '@/lib/eligibility'
-import { formatBp } from '@/lib/money'
+import { formatBp, formatKobo } from '@/lib/money'
 import { tryCalculatePrice } from '@/lib/pricing'
 import {
   directorApproveBooking, directorRejectBooking, directorSendBackBooking, hocApproveBooking, hocRejectBooking, hocSendBackBooking,
@@ -15,7 +16,7 @@ import type { AppData, Booking, Customer, PaymentTerms } from '@/types/domain'
 import { PriceBreakdown } from './PriceBreakdown'
 import type { Run } from './runTypes'
 
-type Dlg = null | 'back' | 'reject' | 'approve'
+type Dlg = null | 'back' | 'reject' | 'approve' | 'freeze'
 
 export function HeadOfCargoPanel({ booking, actor, run }: { booking: Booking; actor: Actor; run: Run }) {
   const [dialog, setDialog] = useState<Dlg>(null)
@@ -71,6 +72,7 @@ export function DirectorPanel({ booking, customer, data, actor, run }: { booking
   })
   const approve = () => {
     const err = run((d) => directorApproveBooking(d, booking.id, actor, decision()), 'Booking approved. Price frozen; invoice generated and payment terms applied (simulated — no payment gateway contacted).')
+    setDialog(null)
     if (err) setError(err)
   }
 
@@ -121,13 +123,33 @@ export function DirectorPanel({ booking, customer, data, actor, run }: { booking
           <Field label="Remarks (optional)"><Textarea value={remarks} onChange={(ev) => setRemarks(ev.target.value)} /></Field>
 
           {error && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-          <Button className="w-full" onClick={approve} disabled={!preview.ok}><CircleCheck className="size-4" /> Approve & freeze price</Button>
+          <Button className="w-full" onClick={() => { setError(''); setDialog('freeze') }} disabled={!preview.ok}><CircleCheck className="size-4" /> Approve & freeze price</Button>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="secondary" onClick={() => setDialog('back')}><Undo2 className="size-4" /> Send back</Button>
             <Button variant="danger" onClick={() => setDialog('reject')}><X className="size-4" /> Reject</Button>
           </div>
         </div>
       </Card>
+      <Dialog
+        open={dialog === 'freeze'}
+        onClose={() => setDialog(null)}
+        title="Approve and freeze this price?"
+        description="Once approved, the price, discount and payment terms are frozen and cannot be changed. Later eligibility changes will not affect this booking."
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDialog(null)}>Cancel</Button>
+            <Button onClick={approve}>Approve & freeze</Button>
+          </>
+        }
+      >
+        {preview.ok && (
+          <dl className="space-y-1 text-sm">
+            <div className="flex justify-between"><dt className="text-slate-600">Total to be frozen</dt><dd className="font-semibold tabular-nums">{formatKobo(preview.price.totalPayable)}</dd></div>
+            <div className="flex justify-between"><dt className="text-slate-600">Discount</dt><dd>{Number.isFinite(pct) ? `${pct}%` : '—'}</dd></div>
+            <div className="flex justify-between"><dt className="text-slate-600">Payment terms</dt><dd>{paymentTerms === 'pay_now' ? 'Payment link now' : `After credit period (${creditMonths} month${creditMonths === '1' ? '' : 's'})`}</dd></div>
+          </dl>
+        )}
+      </Dialog>
       <ReasonDialog open={dialog === 'back'} onClose={() => setDialog(null)} title="Send back to Head of Cargo" label="Reason" confirmLabel="Send back"
         onConfirm={(r) => run((d) => directorSendBackBooking(d, booking.id, actor, r), 'Booking sent back to the Head of Cargo.')} />
       <ReasonDialog open={dialog === 'reject'} onClose={() => setDialog(null)} title="Reject booking" description="No payment has been taken, so no refund is required (email simulated)." label="Reason for rejection" confirmLabel="Reject booking" danger

@@ -23,7 +23,7 @@ const scenes: Scene[] = [
     id: 'booking', title: '2 · Book cargo and receive an AWB', summary: 'Approvals, frozen price, simulated payment, port verification and the AWB.',
     steps: [
       { persona: 'p-hoc', to: '/bookings/bk-0418', title: 'Head of Cargo verifies', text: 'Booking NRC-BK-2026-0418 (Lagoon Freight, Priority). Click “Verified — forward to Director”.', expect: 'Status: Pending Director Review.' },
-      { persona: 'p-dir', to: '/bookings/bk-0418', title: 'Director sets discount and terms', text: 'Try 12% (refused — the eligible maximum is 10%). Set 8%, give a reason, choose “Payment link now”, then Approve & freeze price.', expect: 'Status: Awaiting Payment. The approved price is frozen.' },
+      { persona: 'p-dir', to: '/bookings/bk-0418', title: 'Director sets discount and terms', text: 'Try 12% (refused — the eligible maximum is 10%). Set 8%, give a reason, choose “Payment link now”, then Approve & freeze price and confirm.', expect: 'Status: Awaiting Payment. The approved price is frozen.' },
       { persona: 'p-fac-priority', to: '/bookings/bk-0418', title: 'Customer pays (simulated)', text: 'Click “Payment fails”, then “Pay successfully”.', expect: 'Status: Pending Dispatch.' },
       { persona: 'p-hop', to: '/bookings/bk-0418', title: 'Head of Port dispatches', text: 'Tick the verification items, enter wagon, train, date and time, then “Approve dispatch & generate AWB”.', expect: 'Status: AWB Generated, with an AWB number.' },
       { persona: 'p-fac-priority', to: '/awbs', title: 'Customer views the AWB', text: 'Open the AWB. Its QR opens the verification page.', expect: 'A demonstration AWB with a QR code and version 1.' },

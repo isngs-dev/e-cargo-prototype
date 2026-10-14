@@ -11,18 +11,18 @@
 | 3 | Registration workflow | ✅ Done |
 | 4 | Booking creation & pricing | ✅ Done |
 | 5 | Booking approvals & payment simulation | ✅ Done |
-| 6 | Port operations, AWB, refunds | Planned |
-| 7 | Super Admin, master data maintenance, audit | Planned |
+| 6 | Port operations, AWB, refunds | ✅ Done |
+| 7 | Super Admin, master data maintenance, audit | ✅ Done |
 | 8 | Integration testing, polish & extras | ✅ Done |
 
 ## Completed
 
 - Vite + React 19 + TS 7 strict + Tailwind 4 + React Router 8 at project root; Render static-site config (`render.yaml`, SPA rewrite), `.gitignore`, `.node-version`.
-- Docs: `CLAUDE.md`, `PROTOTYPE_SPEC.md`, `DECISIONS.md` (10 conflicts, 17 open items, 9 assumptions), `DEPLOYMENT.md`.
+- Docs: `CLAUDE.md`, `PROTOTYPE_SPEC.md`, `DECISIONS.md` (11 conflicts, 18 open items, 49 assumptions), `DEPLOYMENT.md`.
 - Business-rule modules (`src/lib`): pricing (kobo, effective-dated rates, throws on missing rate, configurable tax basis), eligibility (discount cap, payment terms, credit threshold), dispatch gate, permissions/access matrix, registration checks (duplicate CAC, blacklist, incomplete docs), AWB number + check digit.
 - Seed data: 6 customers (priority, non-priority, suspended, blacklisted), 10 registrations across all statuses, 13 bookings across all statuses (priced via the real pricing module), 3 routes / 12 rate rows incl. superseded row and a deliberately missing rate, 7 staff, refunds, payment exceptions, ~70 audit entries.
 - Store: React context + reducer, persisted to localStorage, versioned, **Reset demo** dialog.
-- App shell: sidebar (role-aware, mobile drawer), prototype banner, role switcher (7 personas incl. priority & non-priority facilitator).
+- App shell: sidebar (role-aware, mobile drawer), role switcher (9 personas).
 - Role dashboards for all six roles with KPI cards and queues.
 - Read-only screens: Bookings list (search + status filter, role-scoped), Registrations list (search + filter + automated check flags), Company Profile + eligibility/credit usage, Customers, Routes & Rates (current rates, history, tax config), Audit Log (search + entity filter).
 - Unbuilt areas show an honest "Scheduled for phase N" page; unauthorized routes show an access-denied state.
@@ -102,7 +102,10 @@
 
 ## Navigation polish (post-Phase 8)
 
-- Collapsible sidebar: a toggle in the top bar collapses the sidebar to an icon-only rail (tooltips on each icon) and lets page content use the full width; the choice is remembered in localStorage (`nrc-ecargo-prototype:sidebar-collapsed`). The mobile drawer is unchanged.
+- Collapsible sidebar: a toggle inside the sidebar (beside the logo) collapses the sidebar to an icon-only rail (tooltips on each icon) and lets page content use the full width; the choice is remembered in localStorage (`nrc-ecargo-prototype:sidebar-collapsed`). The mobile drawer is unchanged.
+
+- The NRC logo in the sidebar links to `/dashboard`. Prototype banners were removed from all pages.
+- Director **Approve & freeze price** now asks for confirmation (total, discount, terms) before freezing.
 
 ## Next task (exact)
 
