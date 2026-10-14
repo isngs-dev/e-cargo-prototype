@@ -92,6 +92,14 @@
 - Eligibility edits for existing customers (upgrade between bookings) not built yet (Phase 7 / Director screen).
 - No lint configured.
 
+## Landing page redesign (post-Phase 8)
+
+- Ported the approved `docs/landing-reference/landing.html` (animated aerial rail hero, runner-along-the-line stepper, receipt-style price cards, governance section, FAQ) into `src/features/landing/` (`LandingPage.tsx`, `heroScene.ts`, `landing.css`).
+- Landing CSS is **scoped under `.nrc-landing`** and imported into Tailwind's `components` layer (`src/index.css`), so it cannot leak into the app and utilities still win.
+- Shared public header / footer / banner (`src/components/layout/PublicChrome.tsx`) are also used by `/verify`.
+- `heroScene.ts` is the reference's canvas code kept as-is (`// @ts-nocheck`, visual only) plus a small collision guard for the hero label.
+- Verified at 1280 / 820 / 375 px: no horizontal overflow, Register hand-off works, FAQ / stepper / header behave.
+
 ## Next task (exact)
 
 There is no further planned build phase. Recommended next steps:

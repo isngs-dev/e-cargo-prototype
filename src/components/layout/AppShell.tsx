@@ -90,9 +90,6 @@ export function AppShell() {
       )}
 
       <div className="lg:pl-64 print:pl-0">
-        <div className="bg-amber-50 px-4 py-1.5 text-center text-xs text-amber-900 border-b border-amber-200 print:hidden">
-          <strong className="font-semibold">Prototype</strong> — role switcher replaces login; payments, emails and refunds are simulated; no external systems are contacted.
-        </div>
         <header className="print:hidden sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6">
           <button type="button" className="rounded-md p-2 text-slate-600 hover:bg-slate-100 lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open navigation">
             <Menu className="size-5" />

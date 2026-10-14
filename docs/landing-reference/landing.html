@@ -1,0 +1,1215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NRC e-Cargo — Cargo Operations Platform (Prototype)</title>
+<meta name="description" content="Prototype of the NRC e-Cargo Operations Platform: register your company, book rail cargo, get approvals, pay and receive an Air Waybill.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#04301f">
+<link rel="icon" href="data:,">
+<script>document.documentElement.classList.add('js');</script>
+<style>
+/* =========================================================
+   1. TOKENS
+   ========================================================= */
+:root {
+  /* Brand */
+  --brand-900: #04301f; --brand-800: #064531; --brand-700: #08583f; --brand-600: #0b6e4f;
+  --brand-500: #13865c; --brand-200: #a9d8c1; --brand-100: #d5ece0; --brand-50: #eef7f2;
+
+  /* Neutrals */
+  --surface: #f6f7f9; --white: #ffffff;
+  --ink-900: #0f172a; --ink-700: #334155; --ink-500: #64748b; --line: #e2e8f0;
+
+  /* Status: foreground on background */
+  --ok: #047857;      --ok-bg: #ecfdf5;
+  --warn: #92400e;    --warn-bg: #fffbeb;
+  --err: #b91c1c;     --err-bg: #fef2f2;
+  --info: #075985;    --info-bg: #f0f9ff;
+  --neutral: #475569; --neutral-bg: #e2e8f0;
+
+  /* Semantic */
+  --text: var(--ink-900); --text-2: var(--ink-700); --text-3: var(--ink-500);
+  --line-dark: rgb(169 216 193 / 0.18);
+
+  /* Type */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --fs-xs: 0.75rem; --fs-sm: 0.875rem; --fs-md: 0.9375rem; --fs-lg: 1.125rem;
+  --fs-h1: clamp(2.375rem, 1.3rem + 4vw, 4.25rem);
+  --fs-h2: clamp(1.875rem, 1.3rem + 1.9vw, 2.75rem);
+
+  /* Space */
+  --s-1: 0.25rem; --s-2: 0.5rem; --s-3: 0.75rem; --s-4: 1rem; --s-5: 1.25rem;
+  --s-6: 1.5rem; --s-8: 2rem; --s-10: 2.5rem; --s-12: 3rem; --s-16: 4rem;
+
+  /* Shape & depth */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 16px; --r-pill: 999px;
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
+  --shadow-md: 0 1px 2px rgb(15 23 42 / 0.05), 0 16px 40px -18px rgb(15 23 42 / 0.25);
+
+  /* Layout */
+  --container: 1200px; --gutter: 1.25rem; --header-h: 4.25rem; --section-y: 4.5rem;
+}
+
+/* =========================================================
+   2. BASE
+   ========================================================= */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--header-h) + 1rem); }
+body {
+  margin: 0; font-family: var(--font-sans); font-size: 1rem; line-height: 1.6;
+  color: var(--text-2); background: var(--white); -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { margin: 0 0 0.5em; color: var(--text); font-weight: 700; line-height: 1.12; letter-spacing: -0.025em; }
+p { margin: 0 0 1em; }
+p:last-child { margin-bottom: 0; }
+a { color: var(--brand-600); text-underline-offset: 3px; }
+a:hover { color: var(--brand-800); }
+svg { display: block; flex: none; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+:focus-visible { outline: 3px solid var(--brand-500); outline-offset: 3px; border-radius: 4px; }
+.on-dark :focus-visible { outline-color: var(--brand-200); }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip-link {
+  position: absolute; left: var(--s-4); top: -100px; z-index: 100; padding: var(--s-2) var(--s-4);
+  background: var(--brand-900); color: var(--white); border-radius: var(--r-md); font-weight: 600; text-decoration: none;
+}
+.skip-link:focus { top: var(--s-4); color: var(--white); }
+
+/* =========================================================
+   3. LAYOUT
+   ========================================================= */
+.container { width: 100%; max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); }
+.section { padding-block: var(--section-y); }
+.section--surface { background: var(--surface); --text-3: var(--neutral); } /* keeps muted text AA on grey */
+.section--dark { background: var(--brand-900); color: var(--brand-100); --text-3: var(--brand-200); }
+.section--dark h2, .section--dark h3 { color: var(--white); }
+
+.section-head { max-width: 44rem; margin-bottom: var(--s-10); }
+.section-head h2 { font-size: var(--fs-h2); margin-bottom: 0.35em; }
+.section-head p { font-size: var(--fs-lg); }
+.eyebrow {
+  display: flex; align-items: center; gap: var(--s-3); margin-bottom: var(--s-4);
+  font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3);
+}
+.eyebrow .idx { padding-right: var(--s-3); border-right: 1px solid currentColor; font-family: var(--font-mono); color: var(--brand-600); }
+.section--dark .eyebrow .idx { color: var(--brand-200); }
+.title-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
+.caption { margin-top: var(--s-4); font-size: var(--fs-sm); color: var(--text-3); }
+
+/* =========================================================
+   4. COMPONENTS
+   ========================================================= */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+  min-height: 46px; padding: 0.7rem 1.25rem; border: 1px solid transparent; border-radius: var(--r-md);
+  font: inherit; font-size: var(--fs-md); font-weight: 600; line-height: 1.2; text-decoration: none; cursor: pointer;
+  transition: background-color .15s, border-color .15s, color .15s;
+}
+.btn--lg { min-height: 52px; padding-inline: 1.5rem; font-size: 1rem; }
+.btn--primary { background: var(--brand-600); color: var(--white); }
+.btn--primary:hover { background: var(--brand-700); color: var(--white); }
+.btn--light { background: var(--white); color: var(--brand-900); }
+.btn--light:hover { background: var(--brand-50); color: var(--brand-900); }
+.btn--ghost { border-color: rgb(213 236 224 / 0.45); color: var(--white); }
+.btn--ghost:hover { border-color: var(--white); background: rgb(255 255 255 / 0.07); color: var(--white); }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.1875rem 0.625rem; border-radius: var(--r-pill);
+  background: var(--neutral-bg); color: var(--neutral); font-size: var(--fs-xs); font-weight: 600; line-height: 1.5; white-space: nowrap;
+}
+.chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.chip--plain::before { display: none; }
+.chip--ok { background: var(--ok-bg); color: var(--ok); }
+.chip--warn { background: var(--warn-bg); color: var(--warn); }
+.chip--err { background: var(--err-bg); color: var(--err); }
+.chip--muted { background: var(--neutral-bg); color: var(--neutral); }
+.chip:empty { min-height: 1.5rem; background: var(--surface); } /* placeholder until JS fills the cell */
+.chip:empty::before { display: none; }
+
+.note { display: flex; align-items: flex-start; gap: var(--s-2); padding: 0.5rem 0.75rem; border-radius: var(--r-md); font-size: var(--fs-sm); line-height: 1.5; }
+.note svg { width: 17px; height: 17px; margin-top: 2px; }
+.note--warn { background: var(--warn-bg); color: var(--warn); border: 1px solid rgb(146 64 14 / 0.2); }
+
+.icon-tile { display: grid; place-items: center; width: 42px; height: 42px; border-radius: var(--r-md); background: var(--brand-50); color: var(--brand-700); box-shadow: inset 0 0 0 1px var(--brand-100); }
+.icon-tile svg { width: 21px; height: 21px; }
+
+.table-wrap { overflow-x: auto; background: var(--white); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); }
+table { width: 100%; border-collapse: collapse; }
+
+/* Chart-scale strip (hero bottom, footer top) */
+.scale-bar { height: 6px; background: repeating-linear-gradient(90deg, rgb(169 216 193 / 0.55) 0 56px, transparent 56px 112px); border-top: 1px solid var(--line-dark); }
+
+/* =========================================================
+   5. SECTIONS
+   ========================================================= */
+
+/* SECTION: header (transparent over hero, solid after it) */
+.site-header { position: sticky; top: 0; z-index: 50; background: var(--white); border-bottom: 1px solid var(--line); transition: background-color .25s, border-color .25s; }
+.header-inner { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); height: var(--header-h); }
+.brand { display: inline-flex; align-items: center; gap: 0.7rem; color: var(--text); text-decoration: none; }
+.brand:hover { color: var(--text); }
+.brand-mark { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: var(--brand-600); color: var(--white); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); }
+.brand-mark svg { width: 22px; height: 22px; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+.brand-name { font-weight: 700; letter-spacing: -0.01em; }
+.brand-sub { font-size: var(--fs-xs); color: var(--text-3); }
+
+.nav-toggle { display: inline-grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--line); border-radius: var(--r-md); background: transparent; color: var(--text); cursor: pointer; }
+.nav-toggle svg { width: 22px; height: 22px; }
+.nav-toggle .icon-close, .nav-toggle[aria-expanded="true"] .icon-open { display: none; }
+.nav-toggle[aria-expanded="true"] .icon-close { display: block; }
+
+.site-nav { display: none; }
+.site-nav.is-open {
+  display: block; position: absolute; top: 100%; left: 0; right: 0; padding: var(--s-2) var(--gutter) var(--s-5);
+  background: var(--white); border-bottom: 1px solid var(--line); box-shadow: var(--shadow-md);
+}
+.nav-list { list-style: none; margin: 0; padding: 0; }
+.nav-list a { display: block; padding: 0.8rem 0.25rem; border-bottom: 1px solid var(--line); color: var(--text); font-weight: 500; text-decoration: none; }
+.nav-cta { width: 100%; margin-top: var(--s-4); }
+
+.js .site-header:not(.is-solid) { background: transparent; border-color: var(--line-dark); }
+.js .site-header:not(.is-solid) .brand,
+.js .site-header:not(.is-solid) .nav-toggle { color: var(--white); }
+.js .site-header:not(.is-solid) .brand-sub { color: var(--brand-200); }
+.js .site-header:not(.is-solid) .brand-mark { background: rgb(255 255 255 / 0.1); box-shadow: inset 0 0 0 1px rgb(169 216 193 / 0.35); }
+.js .site-header:not(.is-solid) .nav-toggle { border-color: rgb(169 216 193 / 0.35); }
+.js .site-header:not(.is-solid) :focus-visible { outline-color: var(--brand-200); }
+
+html:not(.js) .nav-toggle { display: none; }
+html:not(.js) .header-inner { height: auto; flex-wrap: wrap; padding-block: var(--s-3); }
+html:not(.js) .site-nav { display: block; width: 100%; }
+
+/* SECTION: hero */
+.hero {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+  min-height: 100vh; min-height: 100svh;
+  margin-top: calc(-1 * var(--header-h));
+  padding: calc(var(--header-h) + 1.5rem) 0 215px;
+  background: radial-gradient(900px 500px at 80% 70%, var(--brand-800), transparent 70%), var(--brand-900);
+  color: var(--brand-100);
+}
+.hero-stage { position: absolute; inset: 0; z-index: -1; }
+.hero-stage canvas { display: block; width: 100%; height: 100%; }
+.hero-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgb(4 48 31 / 0.92) 0%, rgb(4 48 31 / 0.78) 52%, rgb(4 48 31 / 0) 72%); }
+.hero .scale-bar { position: absolute; left: 0; right: 0; bottom: 0; }
+
+.hero-copy { max-width: 40rem; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 0.6rem; margin-bottom: var(--s-6); padding: 0.3rem 0.8rem 0.3rem 0.6rem;
+  border: 1px solid rgb(169 216 193 / 0.3); border-radius: var(--r-pill); background: rgb(4 48 31 / 0.5);
+  color: var(--brand-100); font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.hero-eyebrow::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--brand-200); box-shadow: 0 0 0 3px rgb(169 216 193 / 0.2); }
+.hero h1 { margin-bottom: var(--s-5); color: var(--white); font-size: clamp(2.125rem, 1.2rem + 3.6vw, 4rem); line-height: 1.02; letter-spacing: -0.035em; text-wrap: balance; }
+.hero-lead { max-width: 34rem; margin-bottom: var(--s-6); font-size: 1.0625rem; color: var(--brand-100); }
+.hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
+.hero-link { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 46px; padding-inline: var(--s-2); color: var(--white); font-weight: 600; }
+.hero-link:hover { color: var(--brand-200); }
+.hero-link svg { width: 16px; height: 16px; }
+
+/* Tracking label attached to the train */
+.tracker {
+  position: absolute; left: 0; top: 0; z-index: 1; min-width: 232px; padding: 0.7rem 0.85rem;
+  background: rgb(4 48 31 / 0.84); border: 1px solid rgb(169 216 193 / 0.38); border-radius: var(--r-md);
+  box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.7); color: var(--white); font-size: var(--fs-sm); line-height: 1.35;
+  opacity: 0; transform: translateY(6px); transition: opacity .7s ease, transform .7s ease; pointer-events: none;
+}
+.tracker.is-on { opacity: 1; transform: none; }
+.tracker::after { content: ""; position: absolute; left: var(--lx, 40px); top: 100%; width: 1px; height: var(--lh, 60px); background: linear-gradient(rgb(169 216 193 / 0.9), rgb(169 216 193 / 0.25)); }
+.tracker::before { content: ""; position: absolute; left: calc(var(--lx, 40px) - 3px); top: calc(100% + var(--lh, 60px) - 3px); width: 7px; height: 7px; border-radius: 50%; background: var(--brand-200); box-shadow: 0 0 0 4px rgb(169 216 193 / 0.22); }
+.tracker-eyebrow { display: none; margin-bottom: 0.2rem; color: var(--brand-200); font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.tracker-route { display: block; font-weight: 700; }
+.tracker-meta { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.45rem; }
+.tracker-meta .chip { padding-block: 0.0625rem; font-size: 0.6875rem; }
+.tracker-awb { color: var(--brand-100); font-family: var(--font-mono); font-size: 0.75rem; }
+
+/* SECTION: at a glance */
+.glance { border-bottom: 1px solid var(--line); }
+.glance-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.glance-item { display: flex; align-items: center; gap: 0.9rem; padding: var(--s-5) 0; border-top: 1px solid var(--line); }
+.glance-item:first-child { border-top: 0; }
+.glance-item .icon-tile { width: 38px; height: 38px; }
+.glance-item .icon-tile svg { width: 19px; height: 19px; }
+.glance-item strong { display: block; color: var(--text); font-size: var(--fs-md); line-height: 1.3; }
+.glance-item span { font-size: var(--fs-sm); color: var(--text-3); }
+
+/* SECTION: services */
+.services { display: grid; gap: var(--s-5); counter-reset: svc; }
+.service {
+  position: relative; overflow: hidden; counter-increment: svc;
+  display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-6);
+  background: var(--white); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
+  transition: translate .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.service::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, var(--brand-600), var(--brand-200)); transform: scaleX(0); transform-origin: left; transition: transform .35s ease; }
+.service::after { content: "0" counter(svc); position: absolute; top: var(--s-6); right: var(--s-6); color: var(--text-3); font-family: var(--font-mono); font-size: var(--fs-xs); }
+.service:hover { translate: 0 -3px; border-color: var(--brand-200); box-shadow: var(--shadow-md); }
+.service:hover::before { transform: scaleX(1); }
+.avail tbody tr:hover > td { background: var(--surface); }
+.avail tbody tr:hover > td.is-today { background: var(--brand-100); }
+.service h3 { margin: var(--s-2) 0 0; font-size: 1.1875rem; }
+.service p { margin: 0; font-size: var(--fs-md); }
+
+/* SECTION: how it works (line-map stepper) */
+.phases { display: none; }
+.line { position: relative; display: grid; margin: 0; padding: 0; list-style: none; }
+.stop { position: relative; padding: 0 0 var(--s-6) 3.5rem; }
+.stop::before { content: ""; position: absolute; left: 17px; top: 36px; bottom: 0; width: 3px; background: var(--brand-100); }
+.stop:last-child { padding-bottom: 0; }
+.stop:last-child::before { display: none; }
+.stop-dot {
+  position: absolute; left: 0; top: 0; z-index: 1; display: grid; place-items: center; width: 37px; height: 37px;
+  border: 3px solid var(--brand-600); border-radius: 50%; background: var(--white); color: var(--brand-700);
+  font-family: var(--font-mono); font-size: 0.8125rem; font-weight: 700;
+}
+html:not(.js) .stop::before { background: var(--brand-600); }
+html:not(.js) .stop:last-child .stop-dot,
+.stop.is-done .stop-dot { background: var(--brand-600); color: var(--white); }
+.stop-dot { transition: background-color .35s ease, color .35s ease; }
+.stop.is-current .stop-dot { animation: stop-pulse 1.6s ease-out infinite; }
+.stop h3, .stop p { transition: color .35s ease; }
+.line-wrap.is-animated .stop:not(.is-done) h3 { color: var(--text-3); }
+@keyframes stop-pulse { 0% { box-shadow: 0 0 0 0 rgb(19 134 92 / 0.45); } 100% { box-shadow: 0 0 0 12px rgb(19 134 92 / 0); } }
+
+.line-wrap { position: relative; }
+.line-progress { position: absolute; z-index: 1; width: 0; height: 0; border-radius: 2px; background: var(--brand-600); pointer-events: none; transition: width 1s cubic-bezier(.65, 0, .35, 1), height 1s cubic-bezier(.65, 0, .35, 1); }
+.line-runner { position: absolute; width: 13px; height: 13px; border-radius: 50%; background: var(--brand-500); box-shadow: 0 0 0 5px rgb(19 134 92 / 0.2), 0 0 16px rgb(19 134 92 / 0.55); }
+.line-progress.is-h .line-runner { right: -6.5px; top: -5px; }
+.line-progress.is-v .line-runner { left: -5px; bottom: -6.5px; }
+.stop-dot { z-index: 2; }
+.stop h3 { margin: 0.3rem 0 0.2rem; font-size: 1rem; letter-spacing: -0.01em; }
+.stop p { margin: 0; font-size: var(--fs-sm); color: var(--text-3); line-height: 1.5; }
+
+/* SECTION: priority vs non-priority + pricing */
+.compare th, .compare td { padding: 0.9rem 1rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; font-size: var(--fs-md); }
+.compare thead th { color: var(--text); font-size: var(--fs-sm); }
+.compare thead .col-p { color: var(--brand-700); }
+.compare tbody th { color: var(--text); font-weight: 600; }
+.compare tbody tr:last-child > * { border-bottom: 0; }
+.compare .col-p { background: var(--brand-50); }
+.compare .is-none { color: var(--text-3); }
+.compare caption { caption-side: bottom; padding: 0.85rem 1rem; border-top: 1px solid var(--line); text-align: left; font-size: var(--fs-sm); color: var(--text-3); }
+
+.pricing-row { display: grid; gap: var(--s-5); margin-top: var(--s-8); }
+.pricing-intro h3 { margin: var(--s-3) 0 var(--s-2); font-size: 1.1875rem; }
+.pricing-intro p { font-size: var(--fs-sm); color: var(--text-3); }
+.receipt { position: relative; display: flex; flex-direction: column; padding: var(--s-6); background: var(--white); border: 1px solid var(--line); border-top: 3px solid var(--neutral); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); }
+.receipt--p { border-top-color: var(--brand-600); box-shadow: var(--shadow-md); }
+.receipt-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-3); margin-bottom: var(--s-3); }
+.receipt-head h3 { margin: 0; font-size: var(--fs-lg); }
+.receipt-head span { font-size: var(--fs-xs); color: var(--text-3); }
+.receipt dl { display: flex; flex-direction: column; flex: 1; margin: 0; }
+.rl { display: flex; align-items: baseline; gap: var(--s-2); padding: 0.4rem 0; font-size: var(--fs-md); }
+.rl dt { display: flex; flex: 1; align-items: baseline; gap: var(--s-2); min-width: 0; color: var(--text-2); }
+.rl dt::after { content: ""; flex: 1; min-width: 12px; border-bottom: 1px dotted rgb(100 116 139 / 0.5); transform: translateY(-4px); }
+.rl dd { margin: 0; color: var(--text); font-family: var(--font-mono); font-size: 0.875rem; white-space: nowrap; }
+.rl .rate { color: var(--text-3); font-size: var(--fs-xs); }
+.rl--disc dd { color: var(--ok); }
+.rl--sub dt, .rl--sub dd { color: var(--text); font-weight: 700; }
+.rl--total { margin-top: auto; padding-top: var(--s-4); border-top: 2px solid var(--text); }
+.rl--total dt { color: var(--text); font-weight: 700; }
+.rl--total dt::after { display: none; }
+.rl--total dd { font-size: 1.375rem; font-weight: 700; letter-spacing: -0.02em; }
+.rl-gap { height: 0.4rem; }
+
+/* SECTION: train availability */
+.legend { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: 0 0 var(--s-4); padding: 0; list-style: none; }
+.avail { min-width: 780px; }
+.avail th, .avail td { padding: 0.8rem 0.75rem; border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
+.avail thead th { height: 4rem; font-size: var(--fs-xs); font-weight: 500; color: var(--text-3); }
+.avail tbody tr:last-child > * { border-bottom: 0; }
+.avail .route-col { position: sticky; left: 0; z-index: 1; min-width: 11.5rem; background: var(--white); box-shadow: 1px 0 0 var(--line); text-align: left; }
+.avail thead .route-col { color: var(--text); font-size: var(--fs-sm); font-weight: 700; }
+.route-from { display: block; font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.04em; color: var(--text-3); }
+.route-to { color: var(--text); font-weight: 600; }
+.day-name { display: block; color: var(--text); font-size: 0.8125rem; font-weight: 700; }
+.day-date { display: block; font-family: var(--font-mono); }
+.avail .is-today { background: var(--brand-50); }
+.avail .chip { min-width: 5.75rem; justify-content: center; }
+
+/* SECTION: governance & fair cargo policy */
+.gov-layout { display: grid; gap: var(--s-10); }
+.gov-list { margin: 0; padding: 0; list-style: none; }
+.gov-list li { display: flex; gap: var(--s-4); padding: var(--s-5) 0; border-top: 1px solid var(--line-dark); }
+.gov-list li:last-child { border-bottom: 1px solid var(--line-dark); }
+.gov-list strong { display: block; margin-bottom: 0.15rem; color: var(--white); }
+.tick { flex: none; display: grid; place-items: center; width: 26px; height: 26px; margin-top: 1px; border-radius: 50%; background: var(--brand-600); color: var(--white); }
+.tick::after { content: ""; width: 5px; height: 10px; border: solid var(--white); border-width: 0 2px 2px 0; transform: translateY(-1px) rotate(45deg); }
+.policy { align-self: start; padding: var(--s-8) var(--s-6); border: 1.5px dashed rgb(169 216 193 / 0.5); border-radius: var(--r-lg); background: rgb(255 255 255 / 0.03); }
+.policy h3 { margin-bottom: var(--s-4); font-size: 1.375rem; }
+.policy-text { margin: var(--s-5) 0; font-size: var(--fs-lg); color: var(--brand-100); }
+.declaration { padding: var(--s-4) var(--s-5); border: 1px solid var(--line-dark); border-radius: var(--r-md); background: rgb(255 255 255 / 0.05); }
+.declaration-label { display: block; margin-bottom: var(--s-3); color: var(--brand-200); font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.declaration p { display: flex; align-items: flex-start; gap: var(--s-3); color: var(--white); font-weight: 500; }
+.mock-check { flex: none; width: 20px; height: 20px; margin-top: 2px; border: 2px solid var(--brand-200); border-radius: 5px; }
+
+/* SECTION: faq + contact */
+.faq-layout { display: grid; gap: var(--s-10); }
+.faq-list { display: grid; gap: var(--s-3); }
+.faq-item { background: var(--white); border: 1px solid var(--line); border-radius: var(--r-md); }
+.faq-item[open] { box-shadow: var(--shadow-sm); }
+.faq-item summary { display: flex; justify-content: space-between; align-items: center; gap: var(--s-4); padding: 1.05rem 1.25rem; border-radius: var(--r-md); color: var(--text); font-weight: 600; list-style: none; cursor: pointer; }
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-chev { flex: none; width: 9px; height: 9px; margin-right: 4px; border-right: 2px solid var(--brand-600); border-bottom: 2px solid var(--brand-600); transform: translateY(-2px) rotate(45deg); transition: transform .2s; }
+.faq-item[open] .faq-chev { transform: translateY(2px) rotate(-135deg); }
+.faq-body { padding: 0 1.25rem 1.2rem; font-size: var(--fs-md); }
+.contact { padding: var(--s-6); background: var(--white); border: 1px solid var(--line); border-radius: var(--r-lg); }
+.contact h3 { margin-bottom: var(--s-3); font-size: var(--fs-lg); }
+.contact-email { display: block; margin-top: var(--s-4); color: var(--text); font-family: var(--font-mono); font-size: 1rem; font-weight: 600; overflow-wrap: anywhere; }
+
+/* SECTION: footer */
+.site-footer { background: var(--brand-900); color: var(--brand-200); font-size: var(--fs-sm); }
+.footer-main { padding-block: var(--s-12) var(--s-8); }
+.footer-top { display: grid; gap: var(--s-8); }
+.site-footer .brand, .site-footer .brand:hover { color: var(--white); }
+.site-footer .brand-sub { color: var(--brand-200); }
+.site-footer .brand-mark { background: var(--brand-700); }
+.footer-statement { max-width: 32rem; margin-top: var(--s-5); }
+.footer-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-2) var(--s-6); margin: 0; padding: 0; list-style: none; }
+.footer-links a { display: inline-block; padding-block: 0.25rem; color: var(--brand-100); text-decoration: none; }
+.footer-links a:hover { color: var(--white); text-decoration: underline; }
+.footer-bottom { margin-top: var(--s-10); padding-top: var(--s-6); border-top: 1px solid var(--line-dark); }
+
+/* =========================================================
+   6. MOTION (subtle, opt-in)
+   ========================================================= */
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+  .js .reveal { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
+  .js .reveal.is-visible { opacity: 1; transform: none; }
+  .js .stagger > * { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease, translate .25s ease, box-shadow .25s ease, border-color .25s ease; }
+  .js .stagger.is-visible > * { opacity: 1; transform: none; }
+  .js .stagger.is-visible > :nth-child(2) { transition-delay: .08s, .08s, 0s, 0s, 0s; }
+  .js .stagger.is-visible > :nth-child(3) { transition-delay: .16s, .16s, 0s, 0s, 0s; }
+  .js .stagger.is-visible > :nth-child(4) { transition-delay: .24s, .24s, 0s, 0s, 0s; }
+}
+
+/* =========================================================
+   7. RESPONSIVE
+   ========================================================= */
+@media (min-width: 640px) {
+  :root { --gutter: 1.5rem; }
+  .glance-list, .services { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .glance-item:nth-child(2) { border-top: 0; }
+  .tracker { min-width: 250px; }
+  .tracker-eyebrow { display: block; }
+  .hero-lead { font-size: 1.1875rem; }
+}
+
+@media (min-width: 768px) {
+  .pricing-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pricing-intro { grid-column: 1 / -1; }
+  .footer-top { grid-template-columns: 1.3fr 1fr; }
+  .compare th, .compare td { padding: 1rem 1.25rem; }
+}
+
+@media (min-width: 960px) {
+  :root { --section-y: 6.5rem; }
+  .hero { padding: calc(var(--header-h) + 2.5rem) 0 210px; }
+  .hero-copy { max-width: 44rem; }
+  .hero h1 { font-size: clamp(2.375rem, min(1.3rem + 3.3vw, 7.2vh), 3.75rem); }
+  .hero-lead { margin-bottom: var(--s-8); }
+  .hero-scrim { background: linear-gradient(90deg, rgb(4 48 31 / 0.95) 0%, rgb(4 48 31 / 0.8) 40%, rgb(4 48 31 / 0) 66%); }
+  .gov-layout { grid-template-columns: 1.1fr 0.9fr; gap: var(--s-16); align-items: start; }
+  .faq-layout { grid-template-columns: 0.85fr 1.15fr; gap: var(--s-16); align-items: start; }
+  .faq-layout .section-head { margin-bottom: var(--s-8); }
+  .policy { padding: var(--s-10); }
+}
+
+@media (min-width: 1024px) { :root { --gutter: 2rem; } }
+
+@media (min-width: 1100px) {
+  .nav-toggle { display: none; }
+  .site-nav, .site-nav.is-open { display: flex; align-items: center; gap: var(--s-5); position: static; padding: 0; background: none; border: 0; box-shadow: none; }
+  .nav-list { display: flex; gap: var(--s-1); }
+  .nav-list a { padding: 0.5rem 0.7rem; border: 0; border-radius: var(--r-sm); color: var(--text-2); font-size: var(--fs-md); }
+  .nav-list a:hover { background: var(--brand-50); color: var(--brand-700); }
+  .js .site-header:not(.is-solid) .nav-list a { color: var(--brand-100); }
+  .js .site-header:not(.is-solid) .nav-list a:hover { background: rgb(255 255 255 / 0.08); color: var(--white); }
+  .js .site-header:not(.is-solid) .nav-cta { background: var(--white); color: var(--brand-900); }
+  .nav-cta { width: auto; margin: 0; }
+
+  .glance-list, .services { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .glance-item { border-top: 0; padding-inline: var(--s-6); border-left: 1px solid var(--line); }
+  .glance-item:first-child { padding-left: 0; border-left: 0; }
+
+  .phases { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: var(--s-4); margin-bottom: var(--s-5); }
+  .phase { padding-top: var(--s-2); border-top: 1px solid var(--line); color: var(--text-3); font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  .phase:nth-child(1) { grid-column: 1 / 4; } .phase:nth-child(2) { grid-column: 4 / 7; } .phase:nth-child(3) { grid-column: 7 / 9; }
+  .line { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: var(--s-4); }
+  .stop, .stop:last-child { padding: 3.6rem 0 0; }
+  .stop::before { left: 37px; right: calc(-1 * var(--s-4)); top: 17px; bottom: auto; width: auto; height: 3px; }
+  .stop h3 { margin-top: 0; }
+
+  .pricing-row { grid-template-columns: 0.8fr 1fr 1fr; gap: var(--s-6); }
+  .pricing-intro { grid-column: auto; padding-top: var(--s-2); }
+}
+
+/* =========================================================
+   8. REDUCED MOTION
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
+</style>
+</head>
+<body id="top">
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- SECTION: header -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="13" rx="3"/><path d="M6 9.5h12"/><path d="M9.5 13h.01M14.5 13h.01"/><path d="M8.5 16 6.5 21M15.5 16l2 5M7.5 19h9"/></svg>
+      </span>
+      <span class="brand-text"><span class="brand-name">NRC e-Cargo</span><span class="brand-sub">Cargo Operations Platform</span></span>
+    </a>
+
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Menu">
+      <svg class="icon-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+
+    <nav id="primary-nav" class="site-nav" aria-label="Primary">
+      <ul class="nav-list">
+        <li><a href="#services">Services</a></li>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#availability">Train availability</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="/verify">Verify an AWB</a></li>
+      </ul>
+      <a class="btn btn--primary nav-cta" href="/dashboard">Open the platform</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+
+  <!-- SECTION: hero (canvas corridor view + copy) -->
+  <section class="hero on-dark" aria-labelledby="hero-title">
+    <div class="hero-stage" aria-hidden="true">
+      <canvas></canvas>
+      <div class="hero-scrim"></div>
+      <div class="tracker" id="tracker">
+        <span class="tracker-eyebrow">Sample consignment · simulated</span>
+        <span class="tracker-route">Apapa Port → Moniya (Ibadan)</span>
+        <span class="tracker-meta"><span class="chip chip--ok">AWB issued</span><span class="tracker-awb">SAMPLE-0417</span></span>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="hero-copy">
+        <p class="hero-eyebrow">Nigerian Railway Corporation</p>
+        <h1 id="hero-title">Book rail cargo online — from registration to Air Waybill.</h1>
+        <p class="hero-lead">Register your company, book capacity on NRC freight trains, get approvals, pay and receive your Air Waybill — in one platform.</p>
+        <div class="hero-actions">
+          <a class="btn btn--light btn--lg" href="/register">Register your company</a>
+          <a class="btn btn--ghost btn--lg" href="/dashboard">Open the demo platform</a>
+          <a class="hero-link" href="/verify">Verify an AWB
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="scale-bar" aria-hidden="true"></div>
+  </section>
+
+  <!-- SECTION: at a glance -->
+  <section class="glance" aria-labelledby="glance-title">
+    <div class="container">
+      <h2 id="glance-title" class="sr-only">At a glance</h2>
+      <ul class="glance-list reveal stagger">
+        <li class="glance-item">
+          <span class="icon-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><path d="M7 12h10"/></svg></span>
+          <div><strong>8-stage journey</strong><span>Registration to AWB</span></div>
+        </li>
+        <li class="glance-item">
+          <span class="icon-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg></span>
+          <div><strong>2 districts</strong><span>Lagos and Ibadan</span></div>
+        </li>
+        <li class="glance-item">
+          <span class="icon-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M8 15h3"/></svg></span>
+          <div><strong>Payment only after approval</strong><span>Never at submission</span></div>
+        </li>
+        <li class="glance-item">
+          <span class="icon-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M10 11h5M10 15h5"/></svg></span>
+          <div><strong>Every action audit-logged</strong><span>Who, when and why</span></div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- SECTION: services -->
+  <section id="services" class="section" aria-labelledby="services-title">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow"><span class="idx">01</span>Services</p>
+        <h2 id="services-title">One platform, from onboarding to dispatch.</h2>
+      </div>
+      <div class="services reveal stagger">
+        <article class="service">
+          <span class="icon-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-4 7 4v13"/><path d="M9 21v-5h6v5M9 11h.01M12 11h.01M15 11h.01"/></svg></span>
+          <h3>Digital onboarding</h3>
+          <p>Your company registers online. A District Supervisor verifies the documents, then the Director of Operations activates the account.</p>
+        </article>
+        <article class="service">
+          <span class="icon-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M7.5 14h3v3h-3zM13.5 14h3v3h-3z"/></svg></span>
+          <h3>Capacity-linked booking</h3>
+          <p>Choose a route and date, see slot availability, and review a live price breakdown before you submit.</p>
+        </article>
+        <article class="service">
+          <span class="icon-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/><path d="m14.5 15 1.6 1.5 3-3"/></svg></span>
+          <h3>Clear payment terms</h3>
+          <p>You pay only after your booking is approved. Eligible customers may be offered credit terms set by NRC.</p>
+        </article>
+        <article class="service">
+          <span class="icon-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM21 14v.01M17 21h4v-4M14 21h.01"/></svg></span>
+          <h3>AWB with QR verification</h3>
+          <p>Issued after physical verification and dispatch approval. Check any AWB by QR code or number — a forged number fails the check.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION: how it works -->
+  <section id="how" class="section section--surface" aria-labelledby="how-title">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow"><span class="idx">02</span>How it works</p>
+        <h2 id="how-title">Eight stages, registration to Air Waybill.</h2>
+        <p>Every stage is recorded in the audit log, so a booking’s position is always clear.</p>
+      </div>
+      <div class="reveal line-wrap">
+        <div class="phases" aria-hidden="true"><span class="phase">Onboarding</span><span class="phase">Booking &amp; payment</span><span class="phase">Dispatch</span></div>
+        <ol class="line">
+          <li class="stop"><span class="stop-dot" aria-hidden="true">01</span><h3>Register</h3><p>Submit company details and CAC documents online.</p></li>
+          <li class="stop"><span class="stop-dot" aria-hidden="true">02</span><h3>District verification</h3><p>A District Supervisor checks your documents.</p></li>
+          <li class="stop"><span class="stop-dot" aria-hidden="true">03</span><h3>Director approval</h3><p>The Director of Operations activates the account.</p></li>
+          <li class="stop"><span class="stop-dot" aria-hidden="true">04</span><h3>Book cargo</h3><p>Pick route, date and slot; see the price first.</p></li>
+          <li class="stop"><span class="stop-dot" aria-hidden="true">05</span><h3>Cargo &amp; Director review</h3><p>The booking is reviewed; the price freezes on approval.</p></li>
+          <li class="stop"><span class="stop-dot" aria-hidden="true">06</span><h3>Pay or credit</h3><p>Pay by link, or after an NRC-approved credit period.</p></li>
+          <li class="stop"><span class="stop-dot" aria-hidden="true">07</span><h3>Port verification</h3><p>Cargo is physically checked and dispatch approved.</p></li>
+          <li class="stop"><span class="stop-dot" aria-hidden="true">08</span><h3>AWB issued</h3><p>Air Waybill with a unique number and QR code.</p></li>
+        </ol>
+        <span class="line-progress" aria-hidden="true"><span class="line-runner"></span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION: priority vs non-priority + transparent pricing -->
+  <section id="pricing" class="section" aria-labelledby="pricing-title">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow"><span class="idx">03</span>Status &amp; pricing</p>
+        <h2 id="pricing-title">Priority and Non-Priority, priced in the open.</h2>
+        <p>Every booking shows its full price breakdown before you submit.</p>
+      </div>
+
+      <div class="table-wrap reveal" id="priority">
+        <table class="compare">
+          <caption>Priority is a status NRC assigns at registration, not a separate login.</caption>
+          <colgroup><col style="width:30%"><col class="col-p" style="width:35%"><col style="width:35%"></colgroup>
+          <thead><tr><th scope="col"><span class="sr-only">Feature</span></th><th scope="col" class="col-p">Priority</th><th scope="col">Non-Priority</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Discount</th><td>Up to an NRC-assigned maximum</td><td class="is-none">None</td></tr>
+            <tr><th scope="row">Credit</th><td>Up to an assigned period</td><td class="is-none">None</td></tr>
+            <tr><th scope="row">Payment options</th><td>Pay now, or after the credit period</td><td>Pay now only</td></tr>
+            <tr><th scope="row">Price breakdown</th><td>Shows a discount line</td><td>No discount line</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pricing-row reveal">
+        <div class="pricing-intro">
+          <span class="chip chip--warn chip--plain">Illustrative example</span>
+          <h3>Same freight, both statuses</h3>
+          <p>Base freight ₦180,000.00. Taxes shown on net freight (after discount); the basis is pending NRC confirmation. Rates are demo values, not NRC tariffs.</p>
+        </div>
+
+        <article class="receipt receipt--p" aria-labelledby="r-p">
+          <div class="receipt-head"><h3 id="r-p">Priority</h3><span>10% eligible discount</span></div>
+          <dl>
+            <div class="rl"><dt>Base freight</dt><dd>₦180,000.00</dd></div>
+            <div class="rl rl--disc"><dt>Discount <span class="rate">10%</span></dt><dd>−₦18,000.00</dd></div>
+            <div class="rl rl--sub"><dt>Net freight</dt><dd>₦162,000.00</dd></div>
+            <div class="rl"><dt>VAT <span class="rate">7.5%</span></dt><dd>₦12,150.00</dd></div>
+            <div class="rl"><dt>Stamp duty <span class="rate">0.75%</span></dt><dd>₦1,215.00</dd></div>
+            <div class="rl"><dt>Goods-in-transit insurance <span class="rate">1.5%</span></dt><dd>₦2,430.00</dd></div>
+            <div class="rl rl--total"><dt>Total</dt><dd>₦177,795.00</dd></div>
+          </dl>
+        </article>
+
+        <article class="receipt" aria-labelledby="r-n">
+          <div class="receipt-head"><h3 id="r-n">Non-Priority</h3><span>No discount</span></div>
+          <dl>
+            <div class="rl"><dt>Base freight</dt><dd>₦180,000.00</dd></div>
+            <div class="rl"><dt>VAT <span class="rate">7.5%</span></dt><dd>₦13,500.00</dd></div>
+            <div class="rl"><dt>Stamp duty <span class="rate">0.75%</span></dt><dd>₦1,350.00</dd></div>
+            <div class="rl"><dt>Goods-in-transit insurance <span class="rate">1.5%</span></dt><dd>₦2,700.00</dd></div>
+            <div class="rl-gap" aria-hidden="true"></div>
+            <div class="rl rl--total"><dt>Total</dt><dd>₦197,550.00</dd></div>
+          </dl>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION: train availability -->
+  <section id="availability" class="section section--surface" aria-labelledby="availability-title">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow"><span class="idx">04</span>Train availability</p>
+        <div class="title-row"><h2 id="availability-title">Next 7 days</h2><span class="chip chip--muted chip--plain">Simulated</span></div>
+      </div>
+      <ul class="legend" aria-label="Legend">
+        <li><span class="chip chip--ok">Open</span></li>
+        <li><span class="chip chip--warn">Limited</span></li>
+        <li><span class="chip chip--err">Full</span></li>
+        <li><span class="chip chip--muted">Blocked</span></li>
+      </ul>
+      <div class="table-wrap" role="region" aria-labelledby="availability-title" tabindex="0">
+        <table class="avail" id="availability-table">
+          <thead>
+            <tr>
+              <th scope="col" class="route-col">Route</th>
+              <th scope="col" class="is-today" data-day><span class="day-name">&nbsp;</span><span class="day-date">&nbsp;</span></th>
+              <th scope="col" data-day><span class="day-name">&nbsp;</span><span class="day-date">&nbsp;</span></th>
+              <th scope="col" data-day><span class="day-name">&nbsp;</span><span class="day-date">&nbsp;</span></th>
+              <th scope="col" data-day><span class="day-name">&nbsp;</span><span class="day-date">&nbsp;</span></th>
+              <th scope="col" data-day><span class="day-name">&nbsp;</span><span class="day-date">&nbsp;</span></th>
+              <th scope="col" data-day><span class="day-name">&nbsp;</span><span class="day-date">&nbsp;</span></th>
+              <th scope="col" data-day><span class="day-name">&nbsp;</span><span class="day-date">&nbsp;</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row" class="route-col"><span class="route-from">APAPA PORT →</span><span class="route-to">Apapa Local</span></th><td class="is-today"><span class="chip"></span></td><td><span class="chip"></span></td><td><span class="chip"></span></td><td><span class="chip"></span></td><td><span class="chip"></span></td><td><span class="chip"></span></td><td><span class="chip"></span></td></tr>
+            <tr><th scope="row" class="route-col"><span class="route-from">APAPA PORT →</span><span class="route-to">Ebute Metta</span></th><td class="is-today"><span class="chip"></span></td><td><span class="chip"></span></td><td><span class="chip"></span></td><td><span class="chip"></span></td><td><span class="chip"></span></td><td><span class="chip"></span></td><td><span class="chip"></span></td></tr>
+            <tr><th scope="row" class="route-col"><span class="route-from">APAPA PORT →</span><span class="route-to">Moniya (Ibadan)</span></th><td class="is-today"><span class="chip"></span></td><td><span class="chip"></span></td><td><span class="chip"></span></td><td><span class="chip"></span></td><td><span class="chip"></span></td><td><span class="chip"></span></td><td><span class="chip"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <noscript><p class="caption">Enable JavaScript to see the simulated availability.</p></noscript>
+      <p class="caption">Simulated from demo capacity settings; the capacity rule is pending NRC confirmation.</p>
+    </div>
+  </section>
+
+  <!-- SECTION: governance + NRC Fair Cargo Policy -->
+  <section id="governance" class="section section--dark on-dark" aria-labelledby="governance-title">
+    <div class="container gov-layout">
+      <div class="reveal">
+        <div class="section-head">
+          <p class="eyebrow"><span class="idx">05</span>Governance</p>
+          <h2 id="governance-title">Accountable by design.</h2>
+        </div>
+        <ul class="gov-list">
+          <li><span class="tick" aria-hidden="true"></span><div><strong>Separate authorities</strong>Business authority (NRC) and platform authority (service provider) are separate.</div></li>
+          <li><span class="tick" aria-hidden="true"></span><div><strong>Complete audit trail</strong>Every approval, rejection and change is recorded with who, when and why.</div></li>
+          <li><span class="tick" aria-hidden="true"></span><div><strong>Frozen prices</strong>Prices are frozen at Director approval and never silently changed.</div></li>
+          <li><span class="tick" aria-hidden="true"></span><div><strong>Two-party refunds</strong>Refunds need two parties: the Director triggers, Super Admin executes.</div></li>
+        </ul>
+      </div>
+
+      <div class="policy reveal" id="policy">
+        <h3>NRC Fair Cargo Policy</h3>
+        <p class="note note--warn">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M10 3 2.5 16.5h15z"/><path d="M10 8.5v3.5M10 14.5h.01"/></svg>
+          <span>Placeholder — no policy wording has been provided.</span>
+        </p>
+        <p class="policy-text">The policy highlights will be supplied by NRC.</p>
+        <div class="declaration">
+          <span class="declaration-label">Declaration accepted at booking</span>
+          <p><span class="mock-check" aria-hidden="true"></span><span>I confirm compliance with NRC Fair Cargo Policy.</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION: faq + contact -->
+  <section id="faq" class="section section--surface" aria-labelledby="faq-title">
+    <div class="container faq-layout">
+      <div class="reveal">
+        <div class="section-head">
+          <p class="eyebrow"><span class="idx">06</span>FAQ</p>
+          <h2 id="faq-title">Frequently asked questions</h2>
+        </div>
+        <!-- SECTION: contact -->
+        <div class="contact" id="contact">
+          <h3>Contact Cargo Operations</h3>
+          <p class="note note--warn">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M10 3 2.5 16.5h15z"/><path d="M10 8.5v3.5M10 14.5h.01"/></svg>
+            <span>Demonstration contact — not a monitored address.</span>
+          </p>
+          <span class="contact-email"><span class="sr-only">Email: </span>cargo.operations@nrc.demo</span>
+        </div>
+      </div>
+
+      <div class="faq-list reveal">
+        <details class="faq-item">
+          <summary>Who can register?<span class="faq-chev" aria-hidden="true"></span></summary>
+          <div class="faq-body"><p>Companies that provide a CAC number, a CAC certificate and a company profile. A tax certificate may also be requested. During registration you choose your district — Lagos or Ibadan.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary>When do I pay?<span class="faq-chev" aria-hidden="true"></span></summary>
+          <div class="faq-body"><p>Only after the Director of Operations approves your booking — never when you submit it. You then pay by payment link, or after an NRC-approved credit period.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary>What are Priority and Non-Priority customers?<span class="faq-chev" aria-hidden="true"></span></summary>
+          <div class="faq-body"><p>They are statuses NRC assigns to a company, not separate logins. The status determines discount, credit and payment options — see the <a href="#priority">comparison table</a>.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary>What if my cargo fails the physical check?<span class="faq-chev" aria-hidden="true"></span></summary>
+          <div class="faq-body"><p>The booking is cancelled and its slot is released. If you have already paid, the Director triggers a refund, you submit a refund request, and Super Admin processes it.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary>What is an AWB?<span class="faq-chev" aria-hidden="true"></span></summary>
+          <div class="faq-body"><p>The Air Waybill issued for your cargo, with a unique number and a QR code you can <a href="/verify">verify</a>. If details change, a new version is issued and the earlier one is marked superseded.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary>Is this the live system?<span class="faq-chev" aria-hidden="true"></span></summary>
+          <div class="faq-body"><p>No. This is a prototype. Payments, emails and refunds are simulated, and all data is fictional and stored only in your browser.</p></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- SECTION: footer -->
+<footer class="site-footer on-dark">
+  <div class="scale-bar" aria-hidden="true"></div>
+  <div class="container footer-main">
+    <div class="footer-top">
+      <div>
+        <a class="brand" href="#top">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="13" rx="3"/><path d="M6 9.5h12"/><path d="M9.5 13h.01M14.5 13h.01"/><path d="M8.5 16 6.5 21M15.5 16l2 5M7.5 19h9"/></svg>
+          </span>
+          <span class="brand-text"><span class="brand-name">NRC e-Cargo</span><span class="brand-sub">Cargo Operations Platform</span></span>
+        </a>
+        <p class="footer-statement">NRC e-Cargo prototype · All names, amounts and documents are fictional demonstration data · No real payments, emails or integrations.</p>
+      </div>
+      <nav aria-label="Footer">
+        <ul class="footer-links">
+          <li><a href="/dashboard">Open the platform</a></li>
+          <li><a href="#services">Services</a></li>
+          <li><a href="/register">Register your company</a></li>
+          <li><a href="#how">How it works</a></li>
+          <li><a href="/verify">Verify an AWB</a></li>
+          <li><a href="#availability">Train availability</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+    <p class="footer-bottom">Prototype for stakeholder review. Not an official NRC website.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var header = document.querySelector('.site-header');
+  var hero = document.querySelector('.hero');
+
+  /* ---------- Header: transparent over hero, solid after ---------- */
+  var menuOpen = false, pastHero = false;
+  function syncHeader() { header.classList.toggle('is-solid', menuOpen || pastHero); }
+  if ('IntersectionObserver' in window && hero) {
+    new IntersectionObserver(function (e) { pastHero = !e[0].isIntersecting; syncHeader(); },
+      { rootMargin: '-68px 0px 0px 0px' }).observe(hero);
+  } else { pastHero = true; syncHeader(); }
+
+  /* ---------- Mobile menu ---------- */
+  var toggle = document.querySelector('.nav-toggle');
+  var nav = document.getElementById('primary-nav');
+  function setMenu(open) {
+    menuOpen = open;
+    toggle.setAttribute('aria-expanded', String(open));
+    nav.classList.toggle('is-open', open);
+    syncHeader();
+  }
+  toggle.addEventListener('click', function () { setMenu(!menuOpen); });
+  nav.addEventListener('click', function (e) { if (e.target.closest('a')) setMenu(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menuOpen) { setMenu(false); toggle.focus(); }
+  });
+  var wide = window.matchMedia('(min-width: 1100px)');
+  var onWide = function (mq) { if (mq.matches) setMenu(false); };
+  if (wide.addEventListener) wide.addEventListener('change', onWide); else if (wide.addListener) wide.addListener(onWide);
+
+  /* ---------- Hero: aerial corridor view (canvas) ----------
+     A freight train on the Apapa corridor, seen from above: a port
+     container yard, a lagoon bridge, station platforms, an opposing
+     train, and drifting cloud shadows. Everything is pre-rendered to
+     off-screen canvases, so each frame is a handful of drawImage calls.
+     Waits for a real size (no zero-size canvases), pauses off-screen /
+     in hidden tabs, and shows a still frame for reduced motion. */
+  (function () {
+    var stage = document.querySelector('.hero-stage');
+    var canvas = stage && stage.querySelector('canvas');
+    var ctx = canvas && canvas.getContext && canvas.getContext('2d');
+    if (!ctx) return;
+    var tracker = document.getElementById('tracker');
+    var MONO = '600 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    var COL = { bg: '#04301f', b800: '#064531', b700: '#08583f', b600: '#0b6e4f', b500: '#13865c', b200: '#a9d8c1', b100: '#d5ece0', b50: '#eef7f2' };
+    var BOX = ['#0b6e4f', '#a9d8c1', '#475569', '#e2e8f0', '#13865c', '#334155', '#d5ece0', '#92400e'];
+    var STATIONS = [[760, 'APAPA PORT'], [2400, 'EBUTE METTA'], [3500, 'MONIYA']];
+    var LOOP = 4400, GT = 320, BT = 260, BH = 88, TRAIN_H = 48;
+    var RIVER = 1500, RIVER_W = 360, YARD = 200, YARD_W = 480;
+    var CARS = 11, CARS2 = 7, TRAIN_W = 78 + CARS * 64 + 8, TRAIN2_W = 78 + CARS2 * 64 + 8;
+
+    var W = 0, H = 0, dpr = 0, trackY = 0, headX = 0, ready = false;
+    var groundPat, bedPat, train, train2, beam, glow, cloud, yard, bridge, river, overlay, platforms = [];
+    var world = 1100, clock = 4, last = 0, raf = 0, onScreen = true;
+
+    function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+    function layer(w, h) { var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * dpr)); c.height = Math.max(1, Math.round(h * dpr)); var g = c.getContext('2d'); g.scale(dpr, dpr); return [c, g]; }
+    function rgba(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+    function wrap(s, x, y, r, fn) { for (var i = -1; i <= 1; i++) for (var j = -1; j <= 1; j++) { var cx = x + i * s, cy = y + j * s; if (cx + r > 0 && cx - r < s && cy + r > 0 && cy - r < s) fn(cx, cy); } }
+    function each(base, span, fn) { for (var k = -1; k < 2; k++) { var x = base - (world % LOOP) + k * LOOP; if (x > -span && x < W) fn(x); } }
+
+    function buildGround() {
+      var L = layer(GT, GT), g = L[1], r = rng(7), i;
+      g.fillStyle = COL.bg; g.fillRect(0, 0, GT, GT);
+      for (i = 0; i < 60; i++) {                   // soft vegetation patches
+        var rad = 14 + r() * 50, a = 0.1 + r() * 0.16;
+        wrap(GT, r() * GT, r() * GT, rad, function (x, y) {
+          var gr = g.createRadialGradient(x, y, 0, x, y, rad);
+          gr.addColorStop(0, rgba(COL.b700, a)); gr.addColorStop(1, rgba(COL.b700, 0));
+          g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+        });
+      }
+      for (i = 0; i < 16; i++) {                   // field parcels, as seen from the air
+        var pw = 50 + r() * 90, ph = 30 + r() * 60, rot = (r() - 0.5) * 0.25, pa = (0.06 + r() * 0.12).toFixed(3);
+        wrap(GT, r() * GT, r() * GT, Math.max(pw, ph), function (x, y) {
+          g.save(); g.translate(x, y); g.rotate(rot);
+          g.fillStyle = rgba(COL.b700, pa); g.fillRect(-pw / 2, -ph / 2, pw, ph);
+          g.strokeStyle = 'rgba(169,216,193,.06)'; g.strokeRect(-pw / 2, -ph / 2, pw, ph);
+          g.restore();
+        });
+      }
+      for (i = 0; i < 12; i++) {                   // small tree clusters with cast shadows
+        var cx0 = r() * GT, cy0 = r() * GT;
+        for (var t = 0; t < 5; t++) {
+          var tr = 1.8 + r() * 2.2;
+          wrap(GT, cx0 + (r() - 0.5) * 22, cy0 + (r() - 0.5) * 14, tr + 4, function (x, y) {
+            g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.arc(x + 2, y + 2.5, tr, 0, 7); g.fill();
+            g.fillStyle = rgba(COL.b600, 0.85); g.beginPath(); g.arc(x, y, tr, 0, 7); g.fill();
+          });
+        }
+      }
+      for (i = 0; i < 900; i++) { g.fillStyle = rgba(COL.b200, (r() * 0.07).toFixed(3)); g.fillRect(r() * GT, r() * GT, 1, 1); }
+      groundPat = ctx.createPattern(L[0], 'repeat');
+    }
+
+    function buildBed() {                          // ballast with two tracks: sleepers + rails
+      var L = layer(BT, BH), g = L[1], r = rng(11);
+      g.fillStyle = 'rgba(213,236,224,.07)'; g.fillRect(0, 0, BT, BH);
+      for (var i = 0; i < 1600; i++) { g.fillStyle = r() > 0.5 ? 'rgba(213,236,224,' + (0.05 + r() * 0.1).toFixed(3) + ')' : 'rgba(0,0,0,.22)'; g.fillRect(r() * BT, r() * BH, 1.2, 1.2); }
+      g.fillStyle = 'rgba(169,216,193,.16)'; g.fillRect(0, 0, BT, 1); g.fillRect(0, BH - 1, BT, 1);
+      [26, 62].forEach(function (c) {
+        for (var x = 0; x < BT; x += 10) { g.fillStyle = 'rgba(15,23,42,.6)'; g.fillRect(x, c - 12, 4, 24); g.fillStyle = 'rgba(213,236,224,.08)'; g.fillRect(x, c - 12, 4, 1); }
+        [c - 6, c + 5].forEach(function (y) { g.fillStyle = 'rgba(169,216,193,.8)'; g.fillRect(0, y, BT, 2); g.fillStyle = 'rgba(238,247,242,.5)'; g.fillRect(0, y, BT, 0.8); });
+      });
+      bedPat = ctx.createPattern(L[0], 'repeat');
+    }
+
+    function buildPlatforms() {
+      platforms = STATIONS.map(function (s) {
+        var L = layer(420, 40), g = L[1];
+        g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(14, 10, 400, 26);
+        g.fillStyle = 'rgba(213,236,224,.16)'; g.fillRect(10, 6, 400, 26);
+        g.fillStyle = 'rgba(255,251,235,.55)'; g.fillRect(10, 29, 400, 2);
+        for (var x = 150; x < 390; x += 78) { g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(x + 3, 11, 56, 14); g.fillStyle = 'rgba(238,247,242,.22)'; g.fillRect(x, 9, 56, 13); }
+        g.font = MONO; g.fillStyle = 'rgba(238,247,242,.8)'; g.fillText(s[1].split('').join(String.fromCharCode(8202)), 22, 22);
+        return L[0];
+      });
+    }
+
+    function makeTrain(n, seed) {
+      var tw = 78 + n * 64 + 8, L = layer(tw + 24, TRAIN_H), g = L[1], r = rng(seed), cy = 22, x = 6, cars = [];
+      for (var i = 0; i < n; i++) { var k = r(); cars.push({ x: x, type: k < 0.55 ? 1 : k < 0.88 ? 2 : 0, c1: BOX[(r() * BOX.length) | 0], c2: BOX[(r() * BOX.length) | 0] }); x += 64; }
+      var lx = x;                                  // locomotive leads, facing right
+      function boxes(fn) {
+        cars.forEach(function (c) {
+          fn(c.x, cy - 9, 60, 18, '#0f172a');
+          if (c.type === 1) fn(c.x + 2, cy - 10, 56, 20, c.c1);
+          if (c.type === 2) { fn(c.x + 2, cy - 10, 27, 20, c.c1); fn(c.x + 31, cy - 10, 27, 20, c.c2); }
+        });
+        fn(lx, cy - 12, 78, 24, COL.b50);
+      }
+      g.save(); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 9; g.shadowOffsetX = 6; g.shadowOffsetY = 8;
+      boxes(function (x, y, w, h, c) { g.fillStyle = c; g.fillRect(x, y, w, h); }); g.restore();
+      boxes(function (x, y, w, h) {               // corrugation, roof light, door ends
+        if (h !== 20) return;
+        g.fillStyle = 'rgba(0,0,0,.15)'; for (var cx = x + 2; cx < x + w - 1; cx += 2.5) g.fillRect(cx, y + 1, 1, h - 2);
+        g.fillStyle = 'rgba(255,255,255,.16)'; g.fillRect(x, y, w, 1.5);
+        g.fillStyle = 'rgba(0,0,0,.28)'; g.fillRect(x, y, 1.5, h); g.fillRect(x + w - 1.5, y, 1.5, h);
+      });
+      cars.forEach(function (c) { if (c.type === 0) { g.fillStyle = 'rgba(169,216,193,.25)'; for (var bx = c.x + 4; bx < c.x + 58; bx += 6) g.fillRect(bx, cy - 8, 1, 16); } g.fillStyle = '#334155'; g.fillRect(c.x + 60, cy - 2, 4, 4); });
+      g.fillStyle = COL.b500; g.fillRect(lx, cy - 12, 78, 2.5); g.fillRect(lx, cy + 9.5, 78, 2.5);
+      g.fillStyle = 'rgba(4,48,31,.35)'; for (var gx = lx + 8; gx < lx + 46; gx += 3) g.fillRect(gx, cy - 6, 1.5, 12);
+      g.fillStyle = 'rgba(4,48,31,.55)'; [lx + 15, lx + 36].forEach(function (fx) { g.beginPath(); g.arc(fx, cy, 4.5, 0, 7); g.fill(); });
+      g.fillStyle = COL.b100; g.fillRect(lx + 52, cy - 9, 18, 18);
+      g.fillStyle = COL.bg; g.fillRect(lx + 70, cy - 8, 4, 16);
+      g.fillStyle = '#fffbeb'; g.fillRect(lx + 76, cy - 7, 2, 3); g.fillRect(lx + 76, cy + 4, 2, 3);
+      return L[0];
+    }
+
+    function buildSprites() {
+      buildGround(); buildBed(); buildPlatforms();
+      train = makeTrain(CARS, 23); train2 = makeTrain(CARS2, 41);
+
+      var B = layer(200, 64), b = B[1];             // elliptical headlight wash
+      b.translate(0, 32); b.scale(1, 0.15);
+      var gr = b.createRadialGradient(0, 0, 0, 0, 0, 200); gr.addColorStop(0, 'rgba(255,251,235,.26)'); gr.addColorStop(1, 'rgba(255,251,235,0)');
+      b.fillStyle = gr; b.fillRect(0, -214, 200, 428); beam = B[0];
+
+      var G = layer(28, 28), q = G[1], gg = q.createRadialGradient(14, 14, 0, 14, 14, 14);
+      gg.addColorStop(0, 'rgba(236,253,245,1)'); gg.addColorStop(0.25, 'rgba(19,134,92,.75)'); gg.addColorStop(1, 'rgba(19,134,92,0)');
+      q.fillStyle = gg; q.fillRect(0, 0, 28, 28); glow = G[0];
+
+      var C = layer(560, 320), c = C[1], rc = rng(5); // soft cloud shadow, fades out inside its box
+      for (var i = 0; i < 9; i++) {
+        var x = 160 + rc() * 240, y = 120 + rc() * 80, rad = 60 + rc() * 60;
+        var cg = c.createRadialGradient(x, y, 0, x, y, rad); cg.addColorStop(0, 'rgba(0,12,7,.17)'); cg.addColorStop(1, 'rgba(0,12,7,0)');
+        c.fillStyle = cg; c.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+      }
+      cloud = C[0];
+
+      var Y = layer(YARD_W, 92), yd = Y[1], ry = rng(31); // Apapa port container yard
+      yd.fillStyle = 'rgba(213,236,224,.07)'; yd.fillRect(0, 0, YARD_W, 92);
+      yd.save(); yd.shadowColor = 'rgba(0,0,0,.55)'; yd.shadowBlur = 5;
+      for (var row = 0; row < 3; row++) for (var col = 0; col < 14; col++) {
+        if (ry() < 0.12) continue;
+        var tier = 1 + ((ry() * 3) | 0); yd.shadowOffsetX = 1 + tier * 2; yd.shadowOffsetY = 2 + tier * 2.5;
+        yd.fillStyle = BOX[(ry() * BOX.length) | 0]; yd.fillRect(8 + col * 33, 8 + row * 27, 28, 19);
+      }
+      yd.restore();
+      yd.fillStyle = 'rgba(0,0,0,.14)';
+      for (row = 0; row < 3; row++) for (col = 0; col < 14; col++) for (var cx = 10 + col * 33; cx < 34 + col * 33; cx += 2.5) yd.fillRect(cx, 9 + row * 27, 1, 17);
+      yd.strokeStyle = 'rgba(238,247,242,.6)'; yd.lineWidth = 1.5; yd.strokeRect(186.5, 2.5, 38, 87);
+      yd.fillStyle = 'rgba(255,251,235,.75)'; yd.fillRect(186, 44, 39, 3);
+      yard = Y[0];
+
+      var Bb = layer(RIVER_W, BH + 20), br = Bb[1]; // bridge girders with truss pattern
+      [0, BH + 14].forEach(function (y0) {
+        br.fillStyle = 'rgba(15,23,42,.8)'; br.fillRect(0, y0, RIVER_W, 6);
+        br.strokeStyle = 'rgba(169,216,193,.5)'; br.lineWidth = 1; br.beginPath();
+        for (var bx = 0; bx < RIVER_W; bx += 18) { br.moveTo(bx, y0); br.lineTo(bx + 9, y0 + 6); br.lineTo(bx + 18, y0); }
+        br.stroke();
+      });
+      bridge = Bb[0];
+    }
+
+    function buildRiver() {                        // lagoon creek crossing, sized to the hero height
+      var R = layer(RIVER_W, H), g = R[1], y;
+      g.beginPath();
+      for (y = 0; y <= H + 8; y += 8) g.lineTo(32 + Math.sin(y * 0.011) * 20, y);
+      for (y = H + 8; y >= 0; y -= 8) g.lineTo(RIVER_W - 32 + Math.sin(y * 0.009 + 2) * 20, y);
+      g.closePath();
+      var wg = g.createLinearGradient(0, 0, RIVER_W, 0);
+      wg.addColorStop(0, 'rgba(7,89,133,.78)'); wg.addColorStop(0.5, 'rgba(7,89,133,.95)'); wg.addColorStop(1, 'rgba(7,89,133,.78)');
+      g.fillStyle = wg; g.fill();
+      g.strokeStyle = 'rgba(213,236,224,.24)'; g.lineWidth = 2; g.stroke();
+      river = R[0];
+    }
+
+    function buildOverlay() {                      // chart graticule with Lagos-approach coordinates
+      var L = layer(W, H), g = L[1], step = W >= 960 ? 220 : 150, i, x, y;
+      g.strokeStyle = 'rgba(169,216,193,.08)'; g.lineWidth = 1; g.font = MONO; g.fillStyle = 'rgba(169,216,193,.5)';
+      for (i = 0, x = step * 0.6; x < W - 30; x += step, i++) {
+        g.beginPath(); g.moveTo(Math.round(x) + 0.5, 0); g.lineTo(Math.round(x) + 0.5, H); g.stroke();
+        g.fillText('3°' + (18 + i * 2) + '′E', x + 6, H - 18);
+      }
+      g.textAlign = 'right';
+      for (i = 0, y = step * 0.75; y < H - 40; y += step, i++) {
+        g.beginPath(); g.moveTo(0, Math.round(y) + 0.5); g.lineTo(W, Math.round(y) + 0.5); g.stroke();
+        g.fillText('6°' + (34 - i * 2) + '′N', W - 12, y - 6);
+      }
+      var v = g.createRadialGradient(W * 0.6, H * 0.6, Math.min(W, H) * 0.25, W * 0.6, H * 0.6, Math.max(W, H) * 0.85);
+      v.addColorStop(0, 'rgba(2,24,15,0)'); v.addColorStop(1, 'rgba(2,24,15,.55)');
+      g.fillStyle = v; g.fillRect(0, 0, W, H);
+      overlay = L[0];
+    }
+
+    function fill(pat, off, tile, y, h) {         // scroll a pattern in device pixels
+      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.translate(-Math.round((off % tile) * dpr), Math.round(y * dpr));
+      ctx.fillStyle = pat; ctx.fillRect(0, 0, canvas.width + tile * dpr + 2, Math.ceil(h * dpr));
+      ctx.restore();
+    }
+
+    function draw() {
+      if (!ready) return;
+      var bedTop = trackY - 62, i, x;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      fill(groundPat, world, GT, 0, H);
+
+      each(RIVER, RIVER_W, function (x) {           // water, ripples, bridge deck and its shadow
+        ctx.drawImage(river, x, 0, RIVER_W, H);
+        ctx.fillStyle = 'rgba(240,249,255,.22)';
+        for (var j = 0; j < 18; j++) ctx.fillRect(x + 70 + (j * 53) % 220, ((j * 97 + clock * 16) % (H + 40)) - 20, 12 + (j % 3) * 7, 1);
+        ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fillRect(x, bedTop + BH + 10, RIVER_W, 18);
+        ctx.fillStyle = 'rgba(15,23,42,.85)'; ctx.fillRect(x, bedTop, RIVER_W, BH);
+      });
+      fill(bedPat, world, BT, bedTop, BH);
+      each(RIVER, RIVER_W, function (x) { ctx.drawImage(bridge, x, bedTop - 10, RIVER_W, BH + 20); });
+      each(YARD, YARD_W, function (x) { ctx.drawImage(yard, x, bedTop - 100, YARD_W, 92); });
+      for (i = 0; i < STATIONS.length; i++) each(STATIONS[i][0], 420, function (x) { ctx.drawImage(platforms[i], x, bedTop - 40, 420, 40); });
+
+      for (x = 640 - (world % 900); x < W + 30; x += 900) {
+        ctx.fillStyle = 'rgba(15,23,42,.8)'; ctx.fillRect(x - 1.5, bedTop + BH + 6, 3, 10);
+        ctx.drawImage(glow, x - 14, bedTop + BH - 6, 28, 28);
+      }
+
+      var travel = (clock % 24) * 165, x2 = W + 60 - travel; // opposing train on the upper track
+      if (x2 < W + 60 && x2 + TRAIN2_W + 24 > -260) {
+        ctx.save(); ctx.translate(x2 + TRAIN2_W + 24, bedTop + 4); ctx.scale(-1, 1);
+        ctx.drawImage(beam, TRAIN2_W - 4, -10, 200, 64);
+        ctx.drawImage(train2, 0, 0, TRAIN2_W + 24, TRAIN_H);
+        ctx.restore();
+      }
+
+      var tx = headX - TRAIN_W;
+      ctx.drawImage(beam, tx + TRAIN_W - 4, trackY - 32, 200, 64);
+      ctx.drawImage(train, tx, trackY - 22, TRAIN_W + 24, TRAIN_H);
+
+      for (i = 0; i < 3; i++) {                     // cloud shadows drift over everything
+        var span = W + 760, cx = (((i * 0.37 * span) - world - clock * 9) % span + span) % span - 560;
+        ctx.drawImage(cloud, cx, H * (0.02 + i * 0.3), 560, 320);
+      }
+      ctx.drawImage(overlay, 0, 0, W, H);
+    }
+
+    function placeTracker() {
+      var compact = W < 640, tw = tracker.offsetWidth, th = tracker.offsetHeight;
+      var anchor = headX - 34, left = Math.max(16, Math.min(W - tw - 16, anchor - tw + 56));
+      var bottom = trackY - 62 - (compact ? 8 : 52), top = bottom - th;
+      tracker.style.left = left + 'px'; tracker.style.top = top + 'px';
+      tracker.style.setProperty('--lx', (anchor - left) + 'px');
+      tracker.style.setProperty('--lh', (trackY - 16 - bottom) + 'px');
+    }
+
+    function resize() {
+      var w = stage.clientWidth, h = stage.clientHeight;
+      if (w < 2 || h < 2) { ready = false; return; }   // not laid out yet (e.g. hidden preview)
+      var d = Math.min(2, Math.round((window.devicePixelRatio || 1) * 4) / 4);
+      W = w; H = h;
+      if (d !== dpr) { dpr = d; buildSprites(); }
+      canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+      trackY = H - (W >= 960 ? 112 : 84);
+      headX = Math.round(W * (W >= 960 ? 0.8 : 0.9));
+      buildOverlay(); buildRiver(); ready = true;
+      placeTracker(); draw(); start();
+    }
+
+    function frame(now) {
+      raf = 0;
+      var dt = last ? Math.min(0.05, (now - last) / 1000) : 0; last = now;
+      world += 34 * dt; clock += dt;
+      draw(); start();
+    }
+    function start() { if (ready && !reduce && !raf && onScreen && !document.hidden) raf = requestAnimationFrame(frame); }
+    function stop() { if (raf) cancelAnimationFrame(raf); raf = 0; last = 0; }
+
+    resize();
+    setTimeout(function () { tracker.classList.add('is-on'); }, reduce ? 0 : 250);
+    if ('ResizeObserver' in window) new ResizeObserver(function () { resize(); }).observe(stage);
+    else { var rt; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(resize, 120); }); }
+    document.addEventListener('visibilitychange', function () { if (document.hidden) stop(); else start(); });
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (e) { onScreen = e[0].isIntersecting; if (onScreen) start(); else stop(); }).observe(stage);
+  })();
+
+  /* ---------- How it works: a runner travels the line from 1 to 8 ---------- */
+  (function () {
+    var wrap = document.querySelector('.line-wrap');
+    if (!wrap) return;
+    var stops = wrap.querySelectorAll('.stop'), dots = wrap.querySelectorAll('.stop-dot'), bar = wrap.querySelector('.line-progress');
+    var cur = 0, timer = 0, visible = false, pts = [], horiz = false;
+
+    function render() {
+      if (!pts.length) return;
+      var len = horiz ? pts[cur][0] - pts[0][0] : pts[cur][1] - pts[0][1];
+      bar.style.width = horiz ? len + 'px' : '3px';
+      bar.style.height = horiz ? '3px' : len + 'px';
+      stops.forEach(function (s, i) { s.classList.toggle('is-done', i <= cur); s.classList.toggle('is-current', i === cur); });
+    }
+    function measure() {
+      var wb = wrap.getBoundingClientRect();
+      pts = Array.prototype.map.call(dots, function (d) { var b = d.getBoundingClientRect(); return [b.left - wb.left + b.width / 2, b.top - wb.top + b.height / 2]; });
+      horiz = Math.abs(pts[1][1] - pts[0][1]) < 2;
+      bar.className = 'line-progress ' + (horiz ? 'is-h' : 'is-v');
+      bar.style.left = (horiz ? pts[0][0] : pts[0][0] - 1.5) + 'px';
+      bar.style.top = (horiz ? pts[0][1] - 1.5 : pts[0][1]) + 'px';
+      render();
+    }
+    function tick() {
+      timer = 0;
+      cur = cur >= stops.length - 1 ? 0 : cur + 1;
+      render();
+      if (visible) timer = setTimeout(tick, cur === stops.length - 1 ? 2800 : 1200);
+    }
+
+    wrap.classList.add('is-animated');
+    if (reduce) { cur = stops.length - 1; measure(); window.addEventListener('resize', measure); return; }
+    measure();
+    window.addEventListener('resize', measure);
+    if (!('IntersectionObserver' in window)) { visible = true; timer = setTimeout(tick, 1200); return; }
+    new IntersectionObserver(function (e) {
+      visible = e[0].isIntersecting;
+      if (visible && !timer) timer = setTimeout(tick, 900);
+      if (!visible && timer) { clearTimeout(timer); timer = 0; }
+    }, { threshold: 0.3 }).observe(wrap);
+  })();
+
+  /* ---------- Train availability (simulated, deterministic) ---------- */
+  var STATUS = {
+    open: { label: 'Open', cls: 'chip--ok' }, limited: { label: 'Limited', cls: 'chip--warn' },
+    full: { label: 'Full', cls: 'chip--err' }, blocked: { label: 'Blocked', cls: 'chip--muted' }
+  };
+  var PATTERN = ['open', 'open', 'limited', 'open', 'full', 'open', 'limited', 'open', 'open', 'limited', 'full'];
+  var BLOCKED = [{ row: 1, month: 9, day: 30 }, { row: 2, month: 10, day: 3 }]; // 30 Oct Ebute Metta, 3 Nov Moniya
+  var table = document.getElementById('availability-table');
+  if (table) {
+    var heads = table.querySelectorAll('thead th[data-day]'), rows = table.querySelectorAll('tbody tr'), now = new Date();
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      var serial = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5);
+      var wk = d.toLocaleDateString('en-GB', { weekday: 'short' });
+      heads[i].querySelector('.day-name').textContent = i === 0 ? 'Today' : wk;
+      heads[i].querySelector('.day-date').textContent = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      for (var r = 0; r < rows.length; r++) {
+        var blocked = BLOCKED.some(function (b) { return b.row === r && b.month === d.getMonth() && b.day === d.getDate(); });
+        var key = blocked ? 'blocked' : PATTERN[(serial * 3 + r * 4) % PATTERN.length];
+        var chip = rows[r].querySelectorAll('td')[i].querySelector('.chip');
+        chip.className = 'chip ' + STATUS[key].cls; chip.textContent = STATUS[key].label;
+      }
+    }
+  }
+
+  /* ---------- Reveal on scroll ---------- */
+  var items = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    items.forEach(function (el) { el.classList.add('is-visible'); });
+  } else {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('is-visible'); io.unobserve(en.target); } });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
+    items.forEach(function (el) { io.observe(el); });
+  }
+})();
+</script>
+</body>
+</html>
