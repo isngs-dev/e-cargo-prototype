@@ -29,7 +29,7 @@ import { calculatePrice } from '@/lib/pricing'
 import { indicativeDiscountBp } from '@/lib/eligibility'
 import { demoVerificationRef, formatAwbNumber } from '@/lib/awb'
 
-export const SEED_VERSION = 4
+export const SEED_VERSION = 5
 
 export const config: PlatformConfig = {
   tax: { vatBp: 750, stampDutyBp: 75, insuranceBp: 150, basis: 'net' },
@@ -446,7 +446,12 @@ export const refunds: Refund[] = [
 
 export const paymentExceptions: PaymentException[] = [
   { id: 'px-1', reference: 'DEMO-PSK-76011', amount: naira(214_000), receivedAt: '2026-10-09T13:22:00+01:00', issue: 'Amount received does not match any open invoice.', resolved: false },
-  { id: 'px-2', reference: 'DEMO-PSK-75870-DUP', amount: bookings.find((b) => b.id === 'bk-0380')!.approved!.price.totalPayable, receivedAt: '2026-09-29T14:05:00+01:00', issue: 'Possible duplicate payment for NRC-BK-2026-0380.', resolved: false },
+  { id: 'px-2', bookingId: 'bk-0380', reference: 'DEMO-PSK-75870-DUP', amount: bookings.find((b) => b.id === 'bk-0380')!.approved!.price.totalPayable, receivedAt: '2026-09-29T14:05:00+01:00', issue: 'Possible duplicate payment for NRC-BK-2026-0380.', resolved: false },
 ]
+
+paymentExceptions.push({
+  id: 'px-3', reference: 'DEMO-PSK-76233', amount: bookings.find((b) => b.id === 'bk-0401')!.approved!.price.totalPayable,
+  receivedAt: '2026-10-12T16:05:00+01:00', issue: 'Payment received without a booking reference — amount equals an open invoice.', resolved: false,
+})
 
 export const counters = { nextBookingSeq: 421, nextRegistrationSeq: 108, nextAwbSeq: 102 }

@@ -2,7 +2,7 @@
 
 ## Current phase
 
-**Phase 6 (Port operations, AWB & refunds) complete** (2026-10-13).
+**Phase 7 (Super Admin, master data & audit) complete** (2026-10-14).
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -13,7 +13,7 @@
 | 5 | Booking approvals & payment simulation | ✅ Done |
 | 6 | Port operations, AWB, refunds | Planned |
 | 7 | Super Admin, master data maintenance, audit | Planned |
-| 8 | Integration testing, polish | Planned |
+| 8 | Integration testing, polish | ⏭ Next |
 
 ## Completed
 
@@ -26,6 +26,16 @@
 - Role dashboards for all six roles with KPI cards and queues.
 - Read-only screens: Bookings list (search + status filter, role-scoped), Registrations list (search + filter + automated check flags), Company Profile + eligibility/credit usage, Customers, Routes & Rates (current rates, history, tax config), Audit Log (search + entity filter).
 - Unbuilt areas show an honest "Scheduled for phase N" page; unauthorized routes show an access-denied state.
+
+## Phase 7 — completed
+
+- `src/lib/workflow/staff.ts`: create account (simulated credentials, forced first-login change), edit, reset password, suspend / reactivate / revoke (permanent), reassign role + district — Super Admin only, reasons enforced, all audited.
+- `src/lib/workflow/masterData.ts`: insert effective-dated freight rates (never edit/delete, not back-dated), add / deactivate routes, update platform configuration (tax/levy rates, basis, payment / reminder / refund windows, tax-certificate rule) with one audit entry per changed setting. Frozen booking prices are never affected.
+- `src/lib/workflow/customerAdmin.ts`: suspend / blacklist / reactivate (Director or Super Admin); Director-only eligibility change (never retroactive; old → new logged); Super Admin record correction (address / contact only).
+- `src/lib/workflow/paymentException.ts`: match to an exact-amount open invoice, start a duplicate-payment refund, or return — Super Admin, simulated.
+- Screens: `/staff`, master-data editing dialogs (`/master-data`), `/customers/:id`, `/payments`, audit log with actor-role and date filters plus CSV export (`src/lib/csv.ts`). All placeholder pages are gone.
+- State version 5 (payment-exception shape; seeded third exception matching an open invoice).
+- 26 new tests (125 total).
 
 ## Phase 6 — completed
 
@@ -56,7 +66,7 @@
 
 | Command | Result |
 |---|---|
-| `npm test` | ✅ 99/99 passed |
+| `npm test` | ✅ 125/125 passed |
 | `npm run typecheck` | ✅ no errors |
 | `npm run build` | ✅ passes (JS ~447 kB, 133 kB gzip) |
 | Browser (dev server) | ✅ applicant resubmit → DS forward → Director approve (Priority 12% / 2 mo / ₦3M / Strategic) → customer created + audit trail; validation messages; document preview; no console errors |
@@ -71,10 +81,9 @@
 
 ## Next task (exact)
 
-**Phase 7 — Super Admin, master data and audit views:**
-1. `/staff`: staff account management (create DS / Head of Cargo / Director / Head of Port accounts with simulated credentials and forced first-login change, edit, reset password, suspend / revoke, reassign role and district) — Super Admin only, every action audited.
-2. `/master-data`: Super Admin edits — effective-dated freight rate insert (never edit a row), routes, tax/levy config, payment/refund windows, document requirements; Director read-only. Missing-rate warnings.
-3. Customer administration: Director / Super Admin suspend & blacklist (reason, audited); Director eligibility upgrade between bookings (never retroactive — stays in the audit log with old → new and reason).
-4. `/payments`: payment exception queue (unmatched / duplicate) with simulated resolution.
-5. Audit log: export to CSV, richer filters.
-6. Tests; update PROGRESS.md.
+**Phase 8 — Integration testing, bug fixing and presentation polish:**
+1. A scripted end-to-end walk-through test (Vitest, workflow level) covering registration → booking → approvals → payment → dispatch → AWB, plus the rejection / send-back / failure / refund branches, asserting audit trail completeness.
+2. A guided "demo script" screen or doc for stakeholders (suggested persona order and data to enter) and a clear "Reset demo" affordance.
+3. Cross-screen consistency pass: empty/loading/error states, status badge wording, responsive checks at 375 / 768 / 1280, keyboard focus, long-name truncation.
+4. Optional (only if NRC wants them): public landing / FAQ page [O], capacity / train-slot simulation (D-6), AWB amendment versioning, refund reversal entries, approval SLA ageing (D-9).
+5. Decide with NRC the open items in `docs/DECISIONS.md §3` before treating any assumption as a requirement; update PROGRESS.md.

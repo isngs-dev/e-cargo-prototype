@@ -42,16 +42,11 @@ export const navItems: NavItem[] = [
   { area: 'company_profile', path: '/company', label: 'Company Profile', icon: Building, phase: 2, built: true },
   { area: 'customers', path: '/customers', label: 'Customers', icon: Users, phase: 2, built: true },
   { area: 'refunds', path: '/refunds', label: 'Refunds', icon: Undo2, phase: 6, built: true },
-  { area: 'payments', path: '/payments', label: 'Payment Exceptions', icon: Receipt, phase: 7, built: false },
-  { area: 'staff', path: '/staff', label: 'Staff Accounts', icon: UserCog, phase: 7, built: false },
+  { area: 'payments', path: '/payments', label: 'Payment Exceptions', icon: Receipt, phase: 7, built: true },
+  { area: 'staff', path: '/staff', label: 'Staff Accounts', icon: UserCog, phase: 7, built: true },
   { area: 'master_data', path: '/master-data', label: 'Routes & Rates', icon: Database, phase: 2, built: true },
   { area: 'audit', path: '/audit', label: 'Audit Log', icon: ScrollText, phase: 2, built: true },
 ]
-
-export const planDescriptions: Partial<Record<Area, { title: string; scope: string[] }>> = {
-  payments: { title: 'Payment Exceptions', scope: ['Unmatched / duplicate simulated payments', 'Simulated reconciliation actions'] },
-  staff: { title: 'Staff Accounts', scope: ['Create NRC staff accounts (simulated credentials)', 'Reset, suspend, revoke, reassign roles', 'All actions audit-logged'] },
-}
 
 export function navLabel(item: NavItem, role: Role): string {
   return typeof item.label === 'string' ? item.label : (item.label[role] ?? item.label.default)

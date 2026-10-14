@@ -9,6 +9,9 @@ import { DispatchQueuePage } from '@/features/dispatch/DispatchQueuePage'
 import { AwbPreviewPage } from '@/features/awb/AwbPreviewPage'
 import { AwbRegisterPage } from '@/features/awb/AwbRegisterPage'
 import { RefundsPage } from '@/features/refunds/RefundsPage'
+import { StaffPage } from '@/features/staff/StaffPage'
+import { PaymentExceptionsPage } from '@/features/payments/PaymentExceptionsPage'
+import { CustomerDetailPage } from '@/features/customers/CustomerDetailPage'
 import { NewBookingPage } from '@/features/bookings/NewBookingPage'
 import { RegistrationsPage } from '@/features/registrations/RegistrationsPage'
 import { CustomersPage } from '@/features/customers/CustomersPage'
@@ -17,7 +20,7 @@ import { AuditPage } from '@/features/audit/AuditPage'
 import { RegistrationDetailPage } from '@/features/registrations/RegistrationDetailPage'
 import { EditRegistrationPage, MyRegistrationRedirect, NewRegistrationPage } from '@/features/registrations/ApplicantPages'
 import { MasterDataPage } from '@/features/master-data/MasterDataPage'
-import { NotFoundPage, PlannedPage, RequireArea } from '@/features/placeholder/PlannedPage'
+import { NotFoundPage, RequireArea } from '@/features/placeholder/PlannedPage'
 import type { Area } from '@/lib/permissions'
 import type { ReactNode } from 'react'
 
@@ -42,12 +45,13 @@ export default function App() {
             <Route path="register" element={guarded('my_registration', <NewRegistrationPage />)} />
             <Route path="company" element={guarded('company_profile', <CompanyProfilePage />)} />
             <Route path="customers" element={guarded('customers', <CustomersPage />)} />
+            <Route path="customers/:id" element={guarded('customers', <CustomerDetailPage />)} />
             <Route path="dispatch" element={guarded('dispatch', <DispatchQueuePage />)} />
             <Route path="awbs" element={guarded('awbs', <AwbRegisterPage />)} />
             <Route path="bookings/:id/awb" element={guarded('awbs', <AwbPreviewPage />)} />
             <Route path="refunds" element={guarded('refunds', <RefundsPage />)} />
-            <Route path="payments" element={guarded('payments', <PlannedPage area="payments" />)} />
-            <Route path="staff" element={guarded('staff', <PlannedPage area="staff" />)} />
+            <Route path="payments" element={guarded('payments', <PaymentExceptionsPage />)} />
+            <Route path="staff" element={guarded('staff', <StaffPage />)} />
             <Route path="master-data" element={guarded('master_data', <MasterDataPage />)} />
             <Route path="audit" element={guarded('audit', <AuditPage />)} />
             <Route path="*" element={<NotFoundPage />} />

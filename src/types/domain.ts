@@ -279,7 +279,7 @@ export interface Booking {
 
 // ---------------------------------------------------------- Staff, audit, refunds
 
-export type StaffStatus = 'active' | 'suspended' | 'pending_first_login'
+export type StaffStatus = 'active' | 'suspended' | 'pending_first_login' | 'revoked'
 
 export interface StaffAccount {
   id: string
@@ -339,13 +339,18 @@ export interface Refund {
   reference?: string
 }
 
+export type PaymentExceptionAction = 'matched' | 'duplicate_refund' | 'returned'
+
 export interface PaymentException {
   id: string
   reference: string
   amount: Kobo
   receivedAt: ISODateTime
   issue: string
+  /** Booking the payment appears to relate to, when known. */
+  bookingId?: string
   resolved: boolean
+  resolution?: { action: PaymentExceptionAction; note: string; at: ISODateTime; byName: string; bookingId?: string }
 }
 
 // ---------------------------------------------------------- Application data
