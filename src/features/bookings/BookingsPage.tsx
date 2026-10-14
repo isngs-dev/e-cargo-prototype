@@ -37,7 +37,7 @@ export function BookingsPage() {
     <>
       <PageHeader
         title={isFacilitator ? 'My bookings' : 'Bookings'}
-        description={isFacilitator ? 'Bookings submitted by your company.' : 'Bookings visible to your role. Approval and dispatch actions arrive in Phases 5 and 6.'}
+        description={isFacilitator ? 'Bookings submitted by your company.' : 'Bookings visible to your role. Open one to review, approve or dispatch it.'}
         actions={isFacilitator && persona.customerId ? <Link to="/bookings/new" className={buttonClass('primary')}>New booking</Link> : undefined}
       />
       <Flash message={flash} onDismiss={() => setFlash(null)} />

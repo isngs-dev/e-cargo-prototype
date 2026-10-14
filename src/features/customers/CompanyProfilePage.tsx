@@ -44,7 +44,7 @@ export function CompanyProfilePage() {
           </Card>
           {application && (
             <Card>
-              <CardHeader title="Registration documents" description="Simulated uploads — previews arrive with the registration workflow (Phase 3)." />
+              <CardHeader title="Registration documents" description="Simulated uploads — only the file name and size are recorded." />
               <ul className="divide-y divide-slate-100">
                 {application.documents.map((d) => (
                   <li key={d.id} className="flex items-center justify-between gap-4 px-5 py-3 text-sm">
