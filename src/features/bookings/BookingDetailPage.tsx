@@ -67,6 +67,7 @@ export function BookingDetailPage() {
 
   const rows: [string, string][] = [
     ['Company', customerName(data, booking.customerId)],
+    ['Customer status', showDiscount ? 'Priority customer' : 'Non-Priority customer'],
     ['Booking date', formatDate(booking.bookingDate)],
     ['Cargo type', booking.cargoType],
     ['Route', routeLabel(data, booking.routeId)],
@@ -109,6 +110,21 @@ export function BookingDetailPage() {
                 </li>
               ))}
             </ul>
+          </Card>
+
+          <Card>
+            <CardHeader title="Payment & credit" description="All outcomes are simulated." />
+            <dl className="space-y-3 px-5 py-4 text-sm">
+              <div className="flex items-center justify-between gap-3"><dt className="text-slate-500">Status</dt><dd><PaymentStatusBadge status={booking.payment.status} /></dd></div>
+              {booking.approved ? (
+                <>
+                  <div className="flex justify-between gap-3"><dt className="text-slate-500">Terms</dt><dd className="font-medium">{booking.approved.paymentTerms === 'pay_now' ? 'Payment link now' : `After ${booking.approved.creditMonths}-month credit`}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-slate-500">Discount granted</dt><dd className="font-medium">{showDiscount ? formatBp(booking.approved.price.discountBp) : '—'}</dd></div>
+                  {booking.payment.dueBy && <div className="flex justify-between gap-3"><dt className="text-slate-500">Due by</dt><dd className="font-medium">{formatDateTime(booking.payment.dueBy)}</dd></div>}
+                  <div className="flex justify-between gap-3"><dt className="text-slate-500">Approved total</dt><dd className="font-medium tabular-nums">{formatKobo(booking.approved.price.totalPayable)}</dd></div>
+                </>
+              ) : <p className="text-xs text-slate-500">Terms are set by the Director at approval. Payment happens only after approval.</p>}
+            </dl>
           </Card>
 
           {(booking.dispatch || booking.awb) && (
@@ -160,26 +176,11 @@ export function BookingDetailPage() {
               </div>
             </Card>
           )}
-          {booking.approved ? (
+          {!isHop && (booking.approved ? (
             <PriceBreakdown price={booking.approved.price} showDiscount={showDiscount} mode="frozen" />
           ) : (
             <PriceBreakdown price={booking.indicativePrice} showDiscount={showDiscount} mode="indicative" />
-          )}
-
-          <Card>
-            <CardHeader title="Payment & credit" description="All outcomes are simulated." />
-            <dl className="space-y-3 px-5 py-4 text-sm">
-              <div className="flex items-center justify-between gap-3"><dt className="text-slate-500">Status</dt><dd><PaymentStatusBadge status={booking.payment.status} /></dd></div>
-              {booking.approved ? (
-                <>
-                  <div className="flex justify-between gap-3"><dt className="text-slate-500">Terms</dt><dd className="font-medium">{booking.approved.paymentTerms === 'pay_now' ? 'Payment link now' : `After ${booking.approved.creditMonths}-month credit`}</dd></div>
-                  <div className="flex justify-between gap-3"><dt className="text-slate-500">Discount granted</dt><dd className="font-medium">{showDiscount ? formatBp(booking.approved.price.discountBp) : '—'}</dd></div>
-                  {booking.payment.dueBy && <div className="flex justify-between gap-3"><dt className="text-slate-500">Due by</dt><dd className="font-medium">{formatDateTime(booking.payment.dueBy)}</dd></div>}
-                  <div className="flex justify-between gap-3"><dt className="text-slate-500">Approved total</dt><dd className="font-medium tabular-nums">{formatKobo(booking.approved.price.totalPayable)}</dd></div>
-                </>
-              ) : <p className="text-xs text-slate-500">Terms are set by the Director at approval. Payment happens only after approval.</p>}
-            </dl>
-          </Card>
+          ))}
 
           <Card>
             <CardHeader title="Timeline" description="Actor, time, status change and remarks" />
