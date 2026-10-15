@@ -14,6 +14,7 @@
 | 6 | Port operations, AWB, refunds | ✅ Done |
 | 7 | Super Admin, master data maintenance, audit | ✅ Done |
 | 8 | Integration testing, polish & extras | ✅ Done |
+| 9 | Reports & Analytics (executive dashboard) | ✅ Done |
 
 ## Completed
 
@@ -26,6 +27,16 @@
 - Role dashboards for all six roles with KPI cards and queues.
 - Read-only screens: Bookings list (search + status filter, role-scoped), Registrations list (search + filter + automated check flags), Company Profile + eligibility/credit usage, Customers, Routes & Rates (current rates, history, tax config), Audit Log (search + entity filter).
 - Unbuilt areas show an honest "Scheduled for phase N" page; unauthorized routes show an access-denied state.
+
+## Phase 9 — Reports & Analytics (completed)
+
+- New `/reports` page for the Director and Super Admin only (nav item `reports` + route guard; direct URL access blocked for every other role and the demo applicant).
+- `src/lib/reports.ts`: pure aggregation (`buildReport`) — period resolution from the latest data, previous-period comparison, KPIs, trend series (day / week / month), breakdowns by district and route, status distributions, Priority vs Non-Priority, revenue position, record tables. No component calculates a figure.
+- `src/features/reports/`: `ReportsPage.tsx` (one unified dashboard) and `charts.tsx` (dependency-free SVG/HTML line chart with tooltip, donut, comparison bars, split bars, KPI card). No new dependency.
+- Revenue = paid / credit-settled bookings at the frozen total, dated by payment date; refunds = processed, unreversed; net = gross − refunds; receivables (awaiting payment, approved credit) are shown separately and never counted as revenue (A-50 … A-56, D-19).
+- Seed: 16 historical demonstration bookings (Aug–Sep 2026) and one processed refund so trends have real data; `SEED_VERSION` 7 (A-57).
+- Small fixes: refund-flow test now filters by refund id; the Director's price-freeze confirmation validates before opening.
+- 31 new tests in `reports.test.ts` (181 total): KPIs and date ranges, district filtering (both districts), status mapping, revenue accuracy (unpaid / credit excluded, no double counting), refunds and net, empty and missing data, access for every role and persona.
 
 ## Phase 8 — completed
 
@@ -79,7 +90,7 @@
 
 | Command | Result |
 |---|---|
-| `npm test` | ✅ 150/150 passed |
+| `npm test` | ✅ 181/181 passed |
 | `npm run typecheck` | ✅ no errors |
 | `npm run build` | ✅ passes (JS ~447 kB, 133 kB gzip) |
 | Browser (dev server) | ✅ applicant resubmit → DS forward → Director approve (Priority 12% / 2 mo / ₦3M / Strategic) → customer created + audit trail; validation messages; document preview; no console errors |

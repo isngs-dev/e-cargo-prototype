@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
+  BarChart3,
   Building,
   CalendarDays,
   ClipboardCheck,
@@ -31,6 +32,7 @@ export interface NavItem {
 
 export const navItems: NavItem[] = [
   { area: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, phase: 2, built: true },
+  { area: 'reports', path: '/reports', label: 'Reports & Analytics', icon: BarChart3, phase: 9, built: true },
   { area: 'my_registration', path: '/my-registration', label: 'My Registration', icon: FilePen, phase: 3, built: true },
   { area: 'new_booking', path: '/bookings/new', label: 'New Booking', icon: Plus, phase: 4, built: true },
   {

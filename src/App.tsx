@@ -23,6 +23,7 @@ import { RegistrationsPage } from '@/features/registrations/RegistrationsPage'
 import { CustomersPage } from '@/features/customers/CustomersPage'
 import { CompanyProfilePage } from '@/features/customers/CompanyProfilePage'
 import { AuditPage } from '@/features/audit/AuditPage'
+import { ReportsPage } from '@/features/reports/ReportsPage'
 import { RegistrationDetailPage } from '@/features/registrations/RegistrationDetailPage'
 import { EditRegistrationPage, MyRegistrationRedirect, NewRegistrationPage } from '@/features/registrations/ApplicantPages'
 import { MasterDataPage } from '@/features/master-data/MasterDataPage'
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="staff" element={guarded('staff', <StaffPage />)} />
             <Route path="master-data" element={guarded('master_data', <MasterDataPage />)} />
             <Route path="audit" element={guarded('audit', <AuditPage />)} />
+            <Route path="reports" element={guarded('reports', <ReportsPage />)} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

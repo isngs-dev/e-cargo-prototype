@@ -95,7 +95,7 @@ export function AppShell() {
     const titles: Record<string, string> = {
       dashboard: 'Dashboard', bookings: 'Bookings', registrations: 'Registrations', customers: 'Customers', company: 'Company profile', dispatch: 'Dispatch queue',
       awbs: 'AWBs', refunds: 'Refunds', payments: 'Payment exceptions', staff: 'Staff accounts', 'master-data': 'Routes & rates', audit: 'Audit log',
-      capacity: 'Train capacity', register: 'Register', 'my-registration': 'My registration', 'demo-guide': 'Demo guide',
+      capacity: 'Train capacity', reports: 'Reports & analytics', register: 'Register', 'my-registration': 'My registration', 'demo-guide': 'Demo guide',
     }
     const seg = location.pathname.split('/')[1] ?? ''
     document.title = `${titles[seg] ?? 'NRC e-Cargo'} · NRC e-Cargo Prototype`

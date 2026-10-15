@@ -33,7 +33,7 @@ import { calculatePrice } from '@/lib/pricing'
 import { indicativeDiscountBp } from '@/lib/eligibility'
 import { demoVerificationRef, formatAwbNumber } from '@/lib/awb'
 
-export const SEED_VERSION = 6
+export const SEED_VERSION = 7
 
 export const config: PlatformConfig = {
   tax: { vatBp: 750, stampDutyBp: 75, insuranceBp: 150, basis: 'net' },
@@ -298,6 +298,8 @@ interface BookingSeed {
   dispatch?: Booking['dispatch']
   awbSeq?: number
   awbAt?: string
+  /** Physical-verification failure time (rejected_physical). */
+  failedAt?: string
 }
 
 function bookingDocs(at: string, hazardous: boolean): UploadedDocument[] {
@@ -375,6 +377,50 @@ const seeds: BookingSeed[] = [
     approval: { discountPct: 10, terms: 'pay_now', creditMonths: 0, at: '2026-09-29T10:30:00+01:00' }, payment: { status: 'paid', paidAt: '2026-09-29T14:02:00+01:00', reference: 'DEMO-PSK-75870' } },
 ]
 
+// ---- Historical demonstration bookings (Aug–Sep 2026) so reports have real trends. Amounts come from the real pricing module.
+const addDays = (iso: string, n: number) => new Date(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10) + n)).toISOString().slice(0, 10)
+
+function hist(
+  n: string, customerId: string, routeId: string, containers: ContainerLine[], weightTons: number, commodity: string, created: string,
+  discountPct: number, terms: PaymentTerms, status: 'completed' | 'awb_generated', awbSeq: number, creditMonths = 0, settledOn?: string,
+): BookingSeed {
+  const paid = terms === 'pay_now'
+  return {
+    id: `bk-${n}`, ref: `NRC-BK-2026-${n}`, customerId, routeId, cargoType: 'Containerized', containers, bookingDate: addDays(created, 7), weightTons, commodity,
+    status, createdAt: `${created}T09:30:00+01:00`,
+    approval: { discountPct, terms, creditMonths, at: `${addDays(created, 2)}T12:00:00+01:00` },
+    payment: paid
+      ? { status: 'paid', paidAt: `${addDays(created, 3)}T10:00:00+01:00`, reference: `DEMO-PSK-7${n}` }
+      : { status: 'credit_settled', paidAt: `${settledOn}T11:00:00+01:00`, reference: `DEMO-PSK-7${n}` },
+    dispatch: { wagonNumber: `NRC-FW-${20000 + awbSeq}`, trainNumber: `LI-FR-${String(awbSeq % 12 + 1).padStart(2, '0')}`, departureDate: addDays(created, 5), departureTime: '06:30', loadingYard: 'Apapa Yard A' },
+    awbSeq, awbAt: `${addDays(created, 4)}T16:00:00+01:00`,
+  }
+}
+
+seeds.push(
+  hist('0318', 'cus-gateway', 'rt-ebm', [{ containerType: '20ft', quantity: 2 }], 36, 'Rice (bagged)', '2026-08-04', 0, 'pay_now', 'completed', 80),
+  hist('0322', 'cus-lagoon', 'rt-apl', [{ containerType: '20ft', quantity: 3 }], 52, 'Consumer electronics', '2026-08-06', 10, 'pay_now', 'completed', 81),
+  hist('0326', 'cus-northbound', 'rt-mny', [{ containerType: '40ft', quantity: 2 }], 70, 'Bagged maize', '2026-08-10', 8, 'pay_now', 'completed', 82),
+  hist('0331', 'cus-fgra', 'rt-mny', [{ containerType: '40ft', quantity: 4 }], 120, 'Sorghum (strategic reserve)', '2026-08-13', 5, 'pay_after_credit', 'completed', 83, 3, '2026-09-12'),
+  hist('0335', 'cus-gateway', 'rt-apl', [{ containerType: '20ft', quantity: 2 }], 30, 'Textiles', '2026-08-18', 0, 'pay_now', 'completed', 84),
+  hist('0339', 'cus-lagoon', 'rt-ebm', [{ containerType: '40ft', quantity: 2 }], 48, 'Household appliances', '2026-08-20', 10, 'pay_now', 'completed', 85),
+  hist('0344', 'cus-northbound', 'rt-ebm', [{ containerType: '20ft', quantity: 4 }], 78, 'Bagged cement', '2026-08-26', 8, 'pay_now', 'completed', 86),
+  hist('0348', 'cus-lagoon', 'rt-mny', [{ containerType: '20ft', quantity: 2 }, { containerType: '40ft', quantity: 1 }], 66, 'Packaged beverages', '2026-09-01', 8, 'pay_after_credit', 'completed', 87, 2, '2026-09-18'),
+  hist('0356', 'cus-gateway', 'rt-ebm', [{ containerType: '40ft', quantity: 1 }], 22, 'Building materials', '2026-09-07', 0, 'pay_now', 'completed', 88),
+  hist('0360', 'cus-northbound', 'rt-mny', [{ containerType: '40ft', quantity: 3 }], 95, 'Agro inputs', '2026-09-10', 8, 'pay_now', 'awb_generated', 89),
+  hist('0364', 'cus-lagoon', 'rt-apl', [{ containerType: '20ft', quantity: 2 }, { containerType: '40ft', quantity: 1 }], 60, 'Textiles', '2026-09-12', 10, 'pay_now', 'completed', 90),
+  hist('0368', 'cus-fgra', 'rt-ebm', [{ containerType: '40ft', quantity: 3 }], 100, 'Grain (government stock)', '2026-09-15', 5, 'pay_now', 'awb_generated', 91),
+  hist('0371', 'cus-gateway', 'rt-mny', [{ containerType: '20ft', quantity: 3 }], 55, 'Beverages', '2026-09-17', 0, 'pay_now', 'awb_generated', 92),
+  hist('0374', 'cus-lagoon', 'rt-ebm', [{ containerType: '20ft', quantity: 2 }], 40, 'Packaged beverages', '2026-09-19', 10, 'pay_now', 'awb_generated', 93),
+  hist('0375', 'cus-northbound', 'rt-apl', [{ containerType: '20ft', quantity: 2 }], 33, 'Bagged maize', '2026-09-20', 8, 'pay_now', 'awb_generated', 94),
+  {
+    id: 'bk-0352', ref: 'NRC-BK-2026-0352', customerId: 'cus-lagoon', routeId: 'rt-ebm', cargoType: 'Containerized', containers: [{ containerType: '20ft', quantity: 2 }],
+    bookingDate: '2026-09-10', weightTons: 38, commodity: 'Ceramic tiles', status: 'rejected_physical', createdAt: '2026-09-03T09:30:00+01:00',
+    approval: { discountPct: 10, terms: 'pay_now', creditMonths: 0, at: '2026-09-05T12:00:00+01:00' },
+    payment: { status: 'paid', paidAt: '2026-09-06T10:00:00+01:00', reference: 'DEMO-PSK-70352' }, failedAt: '2026-09-09T11:15:00+01:00',
+  },
+)
+
 export const bookings: Booking[] = seeds.map(buildBooking)
 
 const fac = (b: Booking) => cust(b.customerId).poc.name
@@ -420,7 +466,7 @@ for (const b of bookings) {
     case 'rejected_physical':
       steps.push(hocOk, dirOk(),
         [b.payment.paidAt!, 'sys', 'Payment confirmed (simulated reconciliation)', 'pending_dispatch', `Ref ${b.payment.reference}`],
-        ['2026-10-07T10:40:00+01:00', 'hop', 'Physical verification failed; reported to Director', 'rejected_physical', 'Declared weight 31t; weighbridge reading 38.6t. One container seal broken. Capacity released.'])
+        [s.failedAt ?? '2026-10-07T10:40:00+01:00', 'hop', 'Physical verification failed; reported to Director', 'rejected_physical', 'Declared weight 31t; weighbridge reading 38.6t. One container seal broken. Capacity released.'])
       break
     case 'awb_generated':
     case 'completed':
@@ -429,6 +475,7 @@ for (const b of bookings) {
       steps.push([b.awb!.generatedAt, 'hop', `Physical verification passed; dispatch approved; AWB ${b.awb!.number} generated`, 'awb_generated',
         `Train ${b.dispatch!.trainNumber}, wagon ${b.dispatch!.wagonNumber}, departs ${b.dispatch!.departureDate} ${b.dispatch!.departureTime}`])
       if (b.status === 'completed') steps.push([d(b.dispatch!.departureDate, '14:30'), 'hop', 'Consignment delivered; booking completed', 'completed'])
+      if (b.payment.status === 'credit_settled') steps.push([b.payment.paidAt!, 'sys', 'Credit balance settled (simulated — no money moved)', undefined, `Ref ${b.payment.reference}`])
       break
   }
   chain('booking', b.id, b.reference, undefined, steps)
@@ -449,6 +496,13 @@ export const refunds: Refund[] = [
     reason: 'Physical verification failed at Apapa (weight mismatch, broken seal).', status: 'awaiting_director', createdAt: '2026-10-07T10:40:00+01:00' },
 ]
 
+refunds.push(
+{ id: 'rf-0352', bookingId: 'bk-0352', customerId: 'cus-lagoon', amount: bookings.find((b) => b.id === 'bk-0352')!.approved!.price.totalPayable,
+    reason: 'Physical verification failed at Apapa (container seal broken).', status: 'processed', createdAt: '2026-09-09T11:15:00+01:00', linkSentAt: '2026-09-10T09:00:00+01:00',
+    request: { bankName: 'Demo Bank', accountName: 'Lagoon Freight & Logistics Ltd', accountMask: '••••4321', confirmedAmount: bookings.find((b) => b.id === 'bk-0352')!.approved!.price.totalPayable, policyAcknowledged: true, requestedAt: '2026-09-11T10:00:00+01:00' },
+    processedAt: '2026-09-15T14:00:00+01:00', reference: 'DEMO-RF-0352' },
+)
+
 for (const r of refunds) {
   const b = bookings.find((x) => x.id === r.bookingId)!
   audit.push({
@@ -456,6 +510,13 @@ for (const r of refunds) {
     entityRef: `Refund · ${b.reference}`, action: 'Refund created after failed physical verification; awaiting Director', toStatus: 'awaiting_director', remarks: r.reason,
   })
 }
+chain('refund', 'rf-0352', 'Refund · NRC-BK-2026-0352', 'awaiting_director', [
+  ['2026-09-10T09:00:00+01:00', 'dir', 'Refund link triggered; rejection reason and refund request form emailed to the facilitator (simulated)', 'link_sent'],
+  ['2026-09-11T10:00:00+01:00', 'Adaeze Okafor', 'Refund request submitted (simulated bank details, policy acknowledged)', 'requested'],
+  ['2026-09-12T09:00:00+01:00', 'sa', 'Refund verification started', 'under_review'],
+  ['2026-09-13T09:00:00+01:00', 'sa', 'Refund verified and approved', 'approved'],
+  ['2026-09-15T14:00:00+01:00', 'sa', 'Refund processed (simulated Paystack disbursement; no money moved)', 'processed'],
+])
 audit.sort((a, b) => a.at.localeCompare(b.at))
 
 export const paymentExceptions: PaymentException[] = [

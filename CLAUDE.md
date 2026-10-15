@@ -15,8 +15,8 @@ React 19 · TypeScript 7 (strict) · Vite 8 · Tailwind CSS 4 (`@tailwindcss/vit
 src/
   app/          store (context + reducer + localStorage), navigation, selectors
   components/   ui/ primitives & blocks, layout/ shell + role switcher
-  features/     one folder per area (dashboard, bookings, registrations, customers, audit, master-data, placeholder)
-  lib/          pure business rules: pricing, eligibility, status/dispatch gate, permissions, registration checks, awb, money, capacity (simulated), sla (ageing), csv
+  features/     one folder per area (dashboard, bookings, registrations, customers, audit, master-data, reports, placeholder)
+  lib/          pure business rules: pricing, eligibility, status/dispatch gate, permissions, registration checks, awb, money, capacity (simulated), sla (ageing), reports (executive aggregation), csv
   lib/workflow/ pure state transitions per area (registration, booking, bookingApproval, payment, dispatch, refund, staff, masterData, customerAdmin, paymentException)
   data/         seed.ts (demo data), personas.ts (role switcher)
   types/        domain.ts

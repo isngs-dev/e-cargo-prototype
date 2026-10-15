@@ -48,6 +48,7 @@ Frontend-only, interactive prototype demonstrating: facilitator onboarding, capa
 | Create / edit / revoke staff credentials, reset passwords | | | | | | ✅ |
 | Suspend / blacklist customers | | | | ✅ | | ✅ |
 | View activity | own | own queue | own queue | full | own queue | full |
+| View Reports & Analytics | | | | ✅ | | ✅ |
 
 ### Facilitator sub-types [B §1.2]
 
@@ -206,6 +207,14 @@ Role switcher (no login) · document uploads (filename/size only) · emails/noti
 11. State persists across refresh; "Reset demo" restores seed data.
 12. Deep links work on Render (SPA rewrite).
 
-## 15. Unresolved decisions
+## 15. Reports & Analytics (executive dashboard)
+
+One page, `/reports`, for the **Director of Operations and Super Admin only** (navigation item and route guard; other roles see "Not available"). Read-only; calculated from the existing data by pure functions in `src/lib/reports.ts`.
+
+Layout, top to bottom: header (title, last-updated, Clear filters) → one shared filter bar (period incl. custom range, district, booking status, payment status, route) with an "applied filters" line → six KPI cards (AWBs, Registrations, Bookings, Revenue received, Net revenue, Receivables) each with an honest previous-period comparison → two trend charts (activity: AWBs / registrations / bookings; revenue: received vs refunded) → composition (booking status, registration status, Priority vs Non-Priority) → comparisons (by district, by route, revenue position) → one tabbed records table (Bookings, AWBs, Registrations, Payments received) with search, CSV export and drill-down to existing detail pages → "how these figures are calculated" notes.
+
+Definitions and limits are decisions A-50 … A-57 and open item D-19 in [DECISIONS.md](DECISIONS.md). Money is never invented: indicative, approved-unpaid and credit amounts are not revenue; no payment channel is recorded.
+
+## 16. Unresolved decisions
 
 See [DECISIONS.md §3](DECISIONS.md#3-unresolved-business-rules-require-nrc-confirmation).

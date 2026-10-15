@@ -70,6 +70,13 @@ export function DirectorPanel({ booking, customer, data, actor, run }: { booking
   const decision = (): DirectorDecision => ({
     discountPct: pct, paymentTerms, creditMonths: paymentTerms === 'pay_after_credit' ? Number(creditMonths) : 0, reason, remarks,
   })
+  /** Validate first so rule errors (e.g. discount above the maximum) show before the confirmation dialog. */
+  const confirmFreeze = () => {
+    const check = directorApproveBooking(data, booking.id, actor, decision())
+    if (!check.ok) return setError(check.error)
+    setError('')
+    setDialog('freeze')
+  }
   const approve = () => {
     const err = run((d) => directorApproveBooking(d, booking.id, actor, decision()), 'Booking approved. Price frozen; invoice generated and payment terms applied (simulated — no payment gateway contacted).')
     setDialog(null)
@@ -123,7 +130,7 @@ export function DirectorPanel({ booking, customer, data, actor, run }: { booking
           <Field label="Remarks (optional)"><Textarea value={remarks} onChange={(ev) => setRemarks(ev.target.value)} /></Field>
 
           {error && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-          <Button className="w-full" onClick={() => { setError(''); setDialog('freeze') }} disabled={!preview.ok}><CircleCheck className="size-4" /> Approve & freeze price</Button>
+          <Button className="w-full" onClick={confirmFreeze} disabled={!preview.ok}><CircleCheck className="size-4" /> Approve & freeze price</Button>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="secondary" onClick={() => setDialog('back')}><Undo2 className="size-4" /> Send back</Button>
             <Button variant="danger" onClick={() => setDialog('reject')}><X className="size-4" /> Reject</Button>
