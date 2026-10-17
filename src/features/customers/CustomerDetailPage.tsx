@@ -1,3 +1,4 @@
+import { newestFirst } from '@/app/selectors'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ArrowLeft, Ban, CircleCheck, PauseCircle } from 'lucide-react'
@@ -41,7 +42,7 @@ export function CustomerDetailPage() {
   const isDir = persona.role === 'director_operations'
   const isSA = persona.role === 'super_admin'
   const history = data.audit.filter((e) => e.entityType === 'customer' && e.entityId === customer.id).slice().reverse()
-  const bookings = data.bookings.filter((b) => b.customerId === customer.id)
+  const bookings = newestFirst(data.bookings.filter((b) => b.customerId === customer.id), (b) => b.createdAt)
 
   const run = (fn: Parameters<typeof act>[0], msg: string): string | null => {
     const r = act(fn)

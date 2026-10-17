@@ -22,7 +22,13 @@ describe('booking validation', () => {
 
   it('requires the mandatory fields, documents and declaration', () => {
     const e = validateBooking({ ...emptyBooking(), documents: [] }, TODAY)
-    expect(Object.keys(e).sort()).toEqual(['bookingDate', 'commodity', 'declaration', 'documents', 'routeId', 'weightTons'])
+    expect(Object.keys(e).sort()).toEqual(['bookingDate', 'commodity', 'containers', 'declaration', 'documents', 'routeId', 'weightTons'])
+  })
+  it('starts with no container type chosen (quantity 1), and asks for one', () => {
+    const b = emptyBooking()
+    expect(b.containers).toEqual([{ containerType: '', quantity: 1 }])
+    expect(validateBooking({ ...b, bookingDate: '2026-11-12', routeId: 'rt-ebm', weightTons: 10, commodity: 'x' }, TODAY).containers).toMatch(/Select the container type/)
+    expect(validateBooking(input({ containers: [{ containerType: '20ft', quantity: 1 }] }), TODAY).containers).toBeUndefined()
   })
   it('blocks past dates', () => expect(validateBooking(input({ bookingDate: '2026-10-12' }), TODAY).bookingDate).toBeDefined())
   it('requires a compliance document for hazardous cargo', () => {

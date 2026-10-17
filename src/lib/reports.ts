@@ -375,7 +375,7 @@ export function buildReport(data: AppData, f: ReportFilters, asOf: string = late
     refundByBooking.set(r.bookingId, reversed.has(r.id) ? 'Reversed' : r.status === 'processed' ? 'Processed' : 'In progress')
     refundAmountByBooking.set(r.bookingId, r.amount)
   }
-  const byDateDesc = <T,>(get: (x: T) => string) => (a: T, b: T) => get(b).localeCompare(get(a))
+  const byDateDesc = <T,>(get: (x: T) => string) => (a: T, b: T) => Date.parse(get(b)) - Date.parse(get(a))
 
   const awbRows: AwbRow[] = cur.awbs.map((x) => ({
     bookingId: x.b.id, awbNumber: x.b.awb!.number, version: x.b.awb!.version, reference: x.b.reference, district: x.district ?? '—', route: x.routeLabel,
@@ -387,7 +387,7 @@ export function buildReport(data: AppData, f: ReportFilters, asOf: string = late
   const bookingRows: BookingRow[] = cur.bookings.map((x) => ({
     id: x.b.id, reference: x.b.reference, customer: x.customerName, district: x.district ?? '—', route: x.routeLabel, bookingDate: x.b.bookingDate,
     amount: x.amount, frozen: x.frozen, paymentStatus: x.b.payment.status, status: x.b.status, priority: x.isPriority,
-  })).sort((a, b) => b.reference.localeCompare(a.reference))
+  })).sort((a, b) => Date.parse(cur.bookings.find((x) => x.b.id === b.id)!.b.createdAt) - Date.parse(cur.bookings.find((x) => x.b.id === a.id)!.b.createdAt))
   const paymentRows: PaymentRow[] = cur.payments.map((x) => ({
     bookingId: x.b.id, reference: x.b.reference, district: x.district ?? '—', customer: x.customerName, paidAt: receivedAt(x.b), amount: x.amount,
     paymentStatus: x.b.payment.status, terms: x.b.approved!.paymentTerms === 'pay_now' ? 'Pay now' : 'After credit period',

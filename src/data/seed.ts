@@ -32,8 +32,9 @@ import { naira } from '@/lib/money'
 import { calculatePrice } from '@/lib/pricing'
 import { indicativeDiscountBp } from '@/lib/eligibility'
 import { demoVerificationRef, formatAwbNumber } from '@/lib/awb'
+import { sampleContainerPhoto, SAMPLE_CAPTIONS } from '@/lib/photos'
 
-export const SEED_VERSION = 7
+export const SEED_VERSION = 11
 
 export const config: PlatformConfig = {
   tax: { vatBp: 750, stampDutyBp: 75, insuranceBp: 150, basis: 'net' },
@@ -79,6 +80,7 @@ export const staff: StaffAccount[] = [
   { id: 'st-hop', name: 'Grace Etim', email: 'g.etim@nrc.demo', role: 'head_port_operations', status: 'active', lastLoginAt: '2026-10-13T06:45:00+01:00' },
   { id: 'st-hop2', name: 'Samuel Nwosu', email: 's.nwosu@nrc.demo', role: 'head_port_operations', status: 'pending_first_login' },
   { id: 'st-sa', name: 'Tunde Bakare', email: 't.bakare@provider.demo', role: 'super_admin', status: 'active', lastLoginAt: '2026-10-13T09:01:00+01:00' },
+  { id: 'st-md', name: 'Ngozi Adekunle', email: 'n.adekunle@nrc.demo', role: 'managing_director', status: 'active', lastLoginAt: '2026-10-13T08:00:00+01:00' },
 ]
 
 // ---------------------------------------------------------------- helpers
@@ -422,6 +424,15 @@ seeds.push(
 )
 
 export const bookings: Booking[] = seeds.map(buildBooking)
+
+// Sample container photos (taken by the Head of Port) on two dispatched bookings, so the gallery is visible from the start.
+for (const [id, count] of [['bk-0390', 3], ['bk-0377', 2]] as const) {
+  const b = bookings.find((x) => x.id === id)!
+  b.photos = Array.from({ length: count }, (_, i) => ({
+    id: `ph-${id}-${i + 1}`, fileName: `container_${i + 1}.jpg`, dataUrl: sampleContainerPhoto(i + (id === 'bk-0377' ? 3 : 0)),
+    caption: SAMPLE_CAPTIONS[i % SAMPLE_CAPTIONS.length]!, addedAt: b.awb?.generatedAt ?? b.updatedAt, addedBy: 'Grace Etim',
+  }))
+}
 
 const fac = (b: Booking) => cust(b.customerId).poc.name
 

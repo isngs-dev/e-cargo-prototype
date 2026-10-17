@@ -1,3 +1,4 @@
+import { newestFirst } from '@/app/selectors'
 import { Link } from 'react-router'
 import { useStore } from '@/app/store'
 import { Badge, Card, Table, Td, Th } from '@/components/ui/primitives'
@@ -29,7 +30,7 @@ export function CustomersPage() {
             </tr>
           </thead>
           <tbody>
-            {data.customers.map((c) => {
+            {newestFirst(data.customers, (c) => c.activatedAt).map((c) => {
               const e = c.eligibility
               return (
                 <tr key={c.id} className="hover:bg-slate-50/60">

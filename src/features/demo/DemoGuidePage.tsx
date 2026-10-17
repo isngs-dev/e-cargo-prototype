@@ -14,7 +14,7 @@ const scenes: Scene[] = [
   {
     id: 'onboarding', title: '1 · Onboard a new customer', summary: 'Registration, district verification and the Director’s eligibility decision.',
     steps: [
-      { persona: 'p-fac-applicant', to: '/register', title: 'Apply to register', text: 'Click “Fill demo data”, Next, add the two required documents with “Use sample file”, Next, then Submit. (Choose the Lagos district.)', expect: 'The application is Pending District Verification.' },
+      { persona: 'p-fac-applicant', to: '/register', title: 'Apply to register', text: 'Press Tab in each grey sample field (or type your own), choose the Lagos district, tick a mode and a service, Next, add the two required documents with “Use sample file”, Next, then Submit.', expect: 'The application is Pending District Verification.' },
       { persona: 'p-ds', to: '/registrations', title: 'District Supervisor verifies', text: 'Open the new application (Lagos district only). Check the automated checks, then “Verified — forward to Director”.', expect: 'Status: Pending Director Approval. An Ibadan supervisor cannot see this application.' },
       { persona: 'p-dir', to: '/registrations', title: 'Director approves', text: 'Open it, choose Priority, discount 10, credit 2 months, threshold 5000000, category Strategic, then Approve & activate.', expect: 'Status: Activated, with a customer account and eligibility.' },
     ],

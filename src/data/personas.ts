@@ -14,6 +14,7 @@ export const personas: Persona[] = [
   { id: 'p-dir', name: 'Aliyu Bello', role: 'director_operations', title: 'Director of Operations, NRC HQ' },
   { id: 'p-hop', name: 'Grace Etim', role: 'head_port_operations', title: 'Head of Port Operations, Apapa' },
   { id: 'p-sa', name: 'Tunde Bakare', role: 'super_admin', title: 'Super Admin · Service Provider' },
+  { id: 'p-md', name: 'Ngozi Adekunle', role: 'managing_director', title: 'Managing Director, NRC' },
 ]
 
 export const DEFAULT_PERSONA_ID = 'p-fac-priority'

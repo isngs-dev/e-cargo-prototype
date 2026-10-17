@@ -24,7 +24,7 @@ function load(data: AppData, id: string) {
 }
 
 export function setCustomerAccountStatus(data: AppData, id: string, status: CustomerAccountStatus, reason: string, actor: Actor, now = new Date().toISOString()): WorkflowResult {
-  if (actor.role !== 'director_operations' && actor.role !== 'super_admin') return fail('Only the Director or Super Admin can change a customer’s account status.')
+  if (actor.role !== 'director_operations' && actor.role !== 'super_admin' && actor.role !== 'managing_director') return fail('Only the Managing Director, Director or Super Admin can change a customer’s account status.')
   if (!reason.trim()) return fail('A reason is required.')
   const { next, customer } = load(data, id)
   if (!customer) return fail('Customer not found.')
@@ -78,6 +78,20 @@ export function correctCustomerRecord(data: AppData, id: string, patch: RecordCo
   appendAudit(next, {
     at: now, actorName: actor.name, actorRole: actor.role, entityType: 'customer', entityId: customer.id, entityRef: customer.companyName,
     action: 'Customer record corrected (address / contact)', remarks: reason.trim(), change: { field: 'Record', from: before, to: after },
+  })
+  return { ok: true, data: next }
+}
+
+/** The customer has set their own password at first sign-in (the password itself is never stored in the record or audit). */
+export function completeFirstLogin(data: AppData, id: string, actor: Actor, now = new Date().toISOString()): WorkflowResult {
+  if (actor.role !== 'cargo_facilitator' || actor.customerId !== id) return fail('Only the customer’s own account can set its password.')
+  const { next, customer } = load(data, id)
+  if (!customer) return fail('Customer not found.')
+  if (!customer.firstLogin) return fail('The password has already been changed.')
+  customer.firstLogin = false
+  appendAudit(next, {
+    at: now, actorName: actor.name, actorRole: actor.role, entityType: 'customer', entityId: customer.id, entityRef: customer.companyName,
+    action: 'Password changed at first sign-in (simulated)',
   })
   return { ok: true, data: next }
 }

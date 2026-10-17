@@ -7,6 +7,7 @@ export const roleLabels: Record<Role, string> = {
   director_operations: 'Director of Operations',
   head_port_operations: 'Head of Port Operations',
   super_admin: 'Super Admin',
+  managing_director: 'Managing Director',
 }
 
 /** Application areas. Each route declares which area it belongs to. */
@@ -36,6 +37,8 @@ const access: Record<Role, Area[]> = {
   director_operations: ['dashboard', 'registrations', 'bookings', 'customers', 'capacity', 'awbs', 'refunds', 'master_data', 'audit', 'reports'],
   head_port_operations: ['dashboard', 'dispatch', 'bookings', 'capacity', 'awbs'],
   super_admin: ['dashboard', 'staff', 'customers', 'master_data', 'payments', 'refunds', 'registrations', 'bookings', 'capacity', 'awbs', 'audit', 'reports'],
+  /** View-only management and finance role: reports, applications (bookings, registrations) and customers (suspend / blacklist). */
+  managing_director: ['dashboard', 'reports', 'bookings', 'registrations', 'customers', 'awbs'],
 }
 
 export function canAccess(role: Role, area: Area): boolean {
@@ -56,5 +59,5 @@ export function hasBusinessAuthority(role: Role): boolean {
 
 /** Roles that can see every record (others see own records or own queue). */
 export function hasFullVisibility(role: Role): boolean {
-  return role === 'director_operations' || role === 'super_admin'
+  return role === 'director_operations' || role === 'super_admin' || role === 'managing_director'
 }

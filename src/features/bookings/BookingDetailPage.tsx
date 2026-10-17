@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
+import { returnsAfterDecision, returnTarget } from '@/app/returnTarget'
 import { ArrowLeft, Eye, FilePen, TriangleAlert } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { containerSummary, customerName, routeLabel, visibleBookings } from '@/app/selectors'
@@ -8,6 +9,7 @@ import { Field, Textarea } from '@/components/ui/fields'
 import { Badge, Button, buttonClass, Card, CardHeader } from '@/components/ui/primitives'
 import { ActivityList } from '@/features/audit/ActivityList'
 import { BookingStages } from '@/features/audit/Timeline'
+import { ContainerPhotos } from './ContainerPhotos'
 import { DocumentPreview } from '@/features/registrations/DocumentPreview'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { formatBp, formatKobo } from '@/lib/money'
@@ -27,6 +29,7 @@ import type { Run } from './runTypes'
 export function BookingDetailPage() {
   const { id } = useParams()
   const location = useLocation()
+  const navigate = useNavigate()
   const { data, persona, act } = useStore()
   const [note, setNote] = useState('')
   const [noteError, setNoteError] = useState('')
@@ -44,8 +47,14 @@ export function BookingDetailPage() {
   const customer = data.customers.find((c) => c.id === booking.customerId)
   const actor: Actor = { name: persona.name, role: persona.role, customerId: persona.customerId }
   const run: Run = (fn, success) => {
+    const before = booking.status
     const r = act(fn)
     if (!r.ok) return r.error
+    // A decision that moves the booking on (approve, forward, send back, reject, dispatch…) returns the officer to where they came from.
+    if (returnsAfterDecision(persona.role) && r.data.bookings.find((b) => b.id === booking.id)?.status !== before) {
+      navigate(returnTarget(persona.role), { state: { shellFlash: success } })
+      return null
+    }
     setFlash(success)
     return null
   }
@@ -55,6 +64,7 @@ export function BookingDetailPage() {
   const isHop = persona.role === 'head_port_operations'
   const hocOpen = booking.status === 'pending_hoc_review' || booking.status === 'sent_back_to_hoc'
   const dirOpen = booking.status === 'pending_director_review'
+  const canAddPhotos = isHop && ['pending_dispatch', 'credit_approved', 'awb_generated'].includes(booking.status)
   const addNote = () => {
     const err = run((d) => addBookingRemark(d, booking.id, actor, note), 'Internal remark added (not visible to the facilitator).')
     if (err) return setNoteError(err)
@@ -127,6 +137,8 @@ export function BookingDetailPage() {
             </dl>
           </Card>
 
+          {(((booking.photos?.length ?? 0) > 0) || canAddPhotos) && <ContainerPhotos booking={booking} actor={actor} run={run} canEdit={canAddPhotos} />}
+
           {(booking.dispatch || booking.awb) && (
             <Card>
               <CardHeader title="Dispatch & AWB" action={booking.awb ? <Link to={`/bookings/${booking.id}/awb`} className={buttonClass('primary', 'sm')}>View AWB</Link> : undefined} />
@@ -147,7 +159,7 @@ export function BookingDetailPage() {
               <div className="p-5"><Link to={`/bookings/${booking.id}/edit`} className={buttonClass('primary', 'md', 'w-full')}><FilePen className="size-4" /> Correct & resubmit</Link></div>
             </Card>
           )}
-          {isFacilitator && <FacilitatorPaymentPanel booking={booking} actor={actor} run={run} />}
+          {isFacilitator && <FacilitatorPaymentPanel booking={booking} />}
           {isSA && <SuperAdminPaymentControls booking={booking} actor={actor} run={run} />}
           {isHop && isReadyForDispatch(booking) && <DispatchPanel booking={booking} actor={actor} run={run} />}
           {isHop && booking.status === 'awaiting_payment' && <Notice title="Held until payment clears">This booking is not released to the port until the customer's payment is confirmed.</Notice>}
@@ -176,7 +188,8 @@ export function BookingDetailPage() {
               </div>
             </Card>
           )}
-          {!isHop && (booking.approved ? (
+          {/* The Director's decision panel already shows the live price preview, so no second price card while deciding. */}
+          {!isHop && !(isDir && dirOpen) && (booking.approved ? (
             <PriceBreakdown price={booking.approved.price} showDiscount={showDiscount} mode="frozen" />
           ) : (
             <PriceBreakdown price={booking.indicativePrice} showDiscount={showDiscount} mode="indicative" />

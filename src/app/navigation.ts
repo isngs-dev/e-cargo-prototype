@@ -28,10 +28,12 @@ export interface NavItem {
   /** Implementation phase in which the screen is (or will be) built. */
   phase: number
   built: boolean
+  /** Roles that do not get this item (e.g. the Managing Director's home is Reports). */
+  hideFor?: Role[]
 }
 
 export const navItems: NavItem[] = [
-  { area: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, phase: 2, built: true },
+  { area: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, phase: 2, built: true, hideFor: ['managing_director'] },
   { area: 'reports', path: '/reports', label: 'Reports & Analytics', icon: BarChart3, phase: 9, built: true },
   { area: 'my_registration', path: '/my-registration', label: 'My Registration', icon: FilePen, phase: 3, built: true },
   { area: 'new_booking', path: '/bookings/new', label: 'New Booking', icon: Plus, phase: 4, built: true },
@@ -57,5 +59,5 @@ export function navLabel(item: NavItem, role: Role): string {
 }
 
 export function navForPersona(persona: Persona): NavItem[] {
-  return navItems.filter((i) => canAccessPersona(persona, i.area))
+  return navItems.filter((i) => canAccessPersona(persona, i.area) && !i.hideFor?.includes(persona.role))
 }

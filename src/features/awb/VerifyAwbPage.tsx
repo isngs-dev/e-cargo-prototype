@@ -4,7 +4,6 @@ import { CircleAlert, CircleCheck, TriangleAlert } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { customerName, routeLabel } from '@/app/selectors'
 import { PublicLayout } from '@/components/layout/PublicLayout'
-import { Notice } from '@/components/ui/blocks'
 import { Badge, Button, Card, Input } from '@/components/ui/primitives'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { verifyAwb } from '@/lib/awb'
@@ -23,7 +22,6 @@ export function VerifyAwbPage() {
       <section className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Verify an AWB</h1>
         <p className="mt-1 text-sm text-slate-500">Enter an AWB number, or scan its QR code. A forged number fails the check digit; an older version is reported as superseded.</p>
-        <div className="mt-4"><Notice tone="warning" title="Demonstration only">This checks AWBs in this browser’s demo data. It is not a signed production verification and cannot confirm a real consignment.</Notice></div>
 
         <form className="mt-6 flex gap-2" onSubmit={(e) => { e.preventDefault(); setParams(input.trim() ? { awb: input.trim() } : {}) }}>
           <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="NRC-AWB-26-000101-8" aria-label="AWB number" className="font-mono" />

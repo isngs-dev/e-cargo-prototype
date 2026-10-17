@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { Link, Navigate } from 'react-router'
 import {
   Banknote,
   BadgeCheck,
@@ -18,7 +18,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import { useStore } from '@/app/store'
-import { customerName, visibleApplications, visibleBookings } from '@/app/selectors'
+import { customerName, visibleApplications, visibleBookings, newestFirst } from '@/app/selectors'
 import { DemoTag, EmptyState, KpiCard, Notice, PageHeader, RegistrationStatusBadge } from '@/components/ui/blocks'
 import { buttonClass, Card, CardHeader } from '@/components/ui/primitives'
 import { BookingTable } from '@/features/bookings/BookingTable'
@@ -107,7 +107,7 @@ function DistrictSupervisorDashboard() {
 
 function HeadOfCargoDashboard() {
   const { data } = useStore()
-  const queue = data.bookings.filter((b) => b.status === 'pending_hoc_review' || b.status === 'sent_back_to_hoc')
+  const queue = newestFirst(data.bookings.filter((b) => b.status === 'pending_hoc_review' || b.status === 'sent_back_to_hoc'), (b) => b.updatedAt)
   return (
     <>
       <Grid>
@@ -126,8 +126,8 @@ function HeadOfCargoDashboard() {
 
 function DirectorDashboard() {
   const { data } = useStore()
-  const regs = data.applications.filter((a) => a.status === 'pending_director_approval')
-  const bks = data.bookings.filter((b) => b.status === 'pending_director_review')
+  const regs = newestFirst(data.applications.filter((a) => a.status === 'pending_director_approval'), (a) => a.updatedAt)
+  const bks = newestFirst(data.bookings.filter((b) => b.status === 'pending_director_review'), (b) => b.updatedAt)
   const frozenRevenue = data.bookings.filter((b) => b.approved && !REJECTED_STATUSES.includes(b.status)).reduce((s, b) => s + b.approved!.price.totalPayable, 0)
   return (
     <>
@@ -153,8 +153,8 @@ function DirectorDashboard() {
 
 function PortOperationsDashboard() {
   const { data } = useStore()
-  const ready = data.bookings.filter(isReadyForDispatch)
-  const blocked = data.bookings.filter((b) => b.status === 'awaiting_payment')
+  const ready = newestFirst(data.bookings.filter(isReadyForDispatch), (b) => b.updatedAt)
+  const blocked = newestFirst(data.bookings.filter((b) => b.status === 'awaiting_payment'), (b) => b.updatedAt)
   return (
     <>
       <Grid>
@@ -194,7 +194,7 @@ function SuperAdminDashboard() {
         <Card>
           <CardHeader title="Unresolved payment exceptions" description="Simulated reconciliation queue" />
           <ul className="divide-y divide-slate-100">
-            {data.paymentExceptions.filter((p) => !p.resolved).map((p) => (
+            {newestFirst(data.paymentExceptions.filter((p) => !p.resolved), (p) => p.receivedAt).map((p) => (
               <li key={p.id}>
                 <Link to={`/payments/${p.id}`} className="block px-5 py-3 hover:bg-slate-50">
                   <div className="flex items-baseline justify-between gap-3">
@@ -219,10 +219,13 @@ const greeting: Record<string, string> = {
   director_operations: 'Final business approvals, eligibility and payment terms.',
   head_port_operations: 'Physical verification, dispatch and AWB generation.',
   super_admin: 'Platform administration and oversight.',
+  managing_director: 'Management view: performance, applications and customers.',
 }
 
 export function DashboardPage() {
   const { persona, data } = useStore()
+  // The Managing Director's home is Reports & Analytics (with applications and customers below it).
+  if (persona.role === 'managing_director') return <Navigate to="/reports" replace />
   const subtitle = persona.customerId ? `${customerName(data, persona.customerId)} · ${greeting[persona.role]}` : greeting[persona.role]
   return (
     <>

@@ -28,6 +28,38 @@
 - Read-only screens: Bookings list (search + status filter, role-scoped), Registrations list (search + filter + automated check flags), Company Profile + eligibility/credit usage, Customers, Routes & Rates (current rates, history, tax config), Audit Log (search + entity filter).
 - Unbuilt areas show an honest "Scheduled for phase N" page; unauthorized routes show an access-denied state.
 
+## Presentation upgrade — Phase 1 (quick fixes, done)
+
+- Newest first everywhere: lists and dashboard queues now sort by real time (`newestFirst` / `ts` in `app/selectors.ts`), not by text, so a fresh record is first even when seeded +01:00 and live UTC timestamps are mixed. Regression tests in `selectors.test.ts`.
+- Reports: charts first, KPI cards moved just above Detailed records.
+- Director eligibility form: choosing Non-Priority removes the discount, credit and threshold fields (they reappear for Priority).
+- Registration form: no "Fill demo data"; each field shows a grey sample and Tab on an empty field accepts it (or type your own).
+## Presentation upgrade — Phase 2 (login, roles, journey) — done
+
+- Login page (`/login`) with clickable demo accounts that fill the username and password; sign out from the user menu; protected pages redirect to `/login`; the role switcher is gone. Logo and "Back to home page" go to the landing page; a **Home** button is on every signed-in page.
+- Managing Director role (view only): dashboard = reports, then applications and customers; can suspend / blacklist / reactivate customers (A-59).
+- Obinna's journey fixed: he starts with no application (previously he inherited a seeded one), and once approved the same login becomes the company's facilitator (A-60). Verified in the browser: register → supervisor forwards → Director approves → Obinna books as Harbour Link at the Priority price.
+- Login page simplified to a compact list of posts (Director, Head of Port, Cargo Facilitator Priority / Non-Priority, …). "Register your company" is now a public page (no user is signed in); after submitting, "Sign in to track your application" leads to the new-company facilitator account.
+- State version 8. 190 tests (7 new auth / MD tests).
+## Presentation upgrade — Phase 3 (mail and notifications) — done
+
+- `src/lib/mail.ts` derives every simulated email from the audit log (A-61…A-63): addressed to whoever is waiting on the next step, **Managing Director and Director copied on every stage**, each with a "Next step" line.
+- Separate, simplified **Mail Outbox** (`/mail`, blue) with its own sign-in by email address: staff, the two demo customers, any newly registered company's contact email, and the system mailbox (Sent = every email). Webmail layout: list + reading pane, unread / mark read, search, "Open in NRC e-Cargo". Inside the platform: a notification bell (latest updates, mark read, link to the Mail Outbox). The Inbox pages were removed from the platform sidebar. Tabs stay in sync (storage events).
+- Welcome email on activation: username + demo password; the username really signs in. State version 10. 202 tests.
+## Presentation upgrade — Phase 4 (realism) — done
+
+- **Simulated payment page** (`/bookings/:id/pay`): amount, pay via bank transfer, fake account, spinner, green-tick success, back to the booking. Status is committed and survives going back or refreshing (A-64).
+- **Container photos**: Head of Port adds sample or uploaded photos (small, resized in the browser); Facilitator, Director and others view them in a Container photos card like documents (A-65). Seeded samples on two dispatched bookings.
+- **Train timetable autofill** on Dispatch and Amend AWB: a known train number fills time, yard and next running day (A-66).
+- Customer approval emails no longer repeat the Director's reason (A-67).
+- 208 tests (6 new in `phase4.test.ts`).
+- **First sign-in flow** (A-68): approved company signs in with the username + temporary password from its welcome email → forced "Set your password" page → signs in again with the new password. State version 11. 213 tests.
+- Sign-in name for companies is the contact email (A-68); no "Demonstration" tag on the registration page; booking form has no default container type and shows the price only after one is chosen; photo / remark / pricing-detail events no longer email (A-69). 216 tests.
+- Public **Track application** page (`/track`) replaces "Sign in to track" after registering, and replaces the landing header's "Open the platform" button (A-70). The login-page layout no longer squeezes the form.
+- Photos: draft + **Confirm photos** (one timeline entry per confirmation); pay page button reads **Confirm payment**; Director sees one price card; Managing Director signs in straight to Reports & Analytics (no Dashboard item; applications and customers sit under the reports) (A-71). 218 tests.
+- **Return after a decision** (A-72): officers go back to the dashboard / list they came from after a final action, with a confirmation message; photos, remarks and AWB amendments stay on the page. 220 tests.
+- Next: full test run-through, then push.
+
 ## Phase 9 — Reports & Analytics (completed)
 
 - New `/reports` page for the Director and Super Admin only (nav item `reports` + route guard; direct URL access blocked for every other role and the demo applicant).

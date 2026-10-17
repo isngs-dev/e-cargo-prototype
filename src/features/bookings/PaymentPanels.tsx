@@ -1,9 +1,10 @@
+import { Link } from 'react-router'
 import { BellRing, Clock, CreditCard, Landmark, TimerOff } from 'lucide-react'
 import { Notice, PaymentStatusBadge } from '@/components/ui/blocks'
-import { Button, Card, CardHeader } from '@/components/ui/primitives'
+import { Button, buttonClass, Card, CardHeader } from '@/components/ui/primitives'
 import { formatDateTime } from '@/lib/format'
 import { formatKobo } from '@/lib/money'
-import { autoCancelUnpaid, issueCreditPaymentLink, reconcilePayment, sendPaymentReminder, settleCredit, simulatePayment } from '@/lib/workflow/payment'
+import { autoCancelUnpaid, issueCreditPaymentLink, reconcilePayment, sendPaymentReminder } from '@/lib/workflow/payment'
 import type { Actor } from '@/lib/workflow/result'
 import type { Booking } from '@/types/domain'
 import type { Run } from './runTypes'
@@ -11,7 +12,7 @@ import type { Run } from './runTypes'
 const SIM = 'Simulated — the payment gateway (Paystack) is never contacted and no money moves.'
 
 /** Facilitator: pay the simulated payment link, or settle credit when the credit period has ended. */
-export function FacilitatorPaymentPanel({ booking, actor, run }: { booking: Booking; actor: Actor; run: Run }) {
+export function FacilitatorPaymentPanel({ booking }: { booking: Booking }) {
   const b = booking
   if (!b.approved) return null
   const total = formatKobo(b.approved.price.totalPayable)
@@ -33,14 +34,7 @@ export function FacilitatorPaymentPanel({ booking, actor, run }: { booking: Book
           {processing ? (
             <Notice title="Payment processing (simulated)">Waiting for gateway confirmation. Super Admin reconciles it (simulated webhook).</Notice>
           ) : (
-            <div className="space-y-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Choose a simulated outcome</p>
-              <Button className="w-full" onClick={() => run((d) => simulatePayment(d, b.id, 'success', actor), 'Payment confirmed (simulated). The booking is now pending dispatch.')}><CreditCard className="size-4" /> Pay successfully</Button>
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="secondary" onClick={() => run((d) => simulatePayment(d, b.id, 'failure', actor), 'Payment failed (simulated).')}>Payment fails</Button>
-                <Button variant="secondary" onClick={() => run((d) => simulatePayment(d, b.id, 'pending', actor), 'Payment submitted — awaiting confirmation (simulated).')}>Stays pending</Button>
-              </div>
-            </div>
+            <Link to={`/bookings/${b.id}/pay`} className={buttonClass('primary', 'md', 'w-full')}><CreditCard className="size-4" /> Pay now</Link>
           )}
           <p className="text-xs text-slate-500">{SIM}</p>
         </div>
@@ -61,8 +55,7 @@ export function FacilitatorPaymentPanel({ booking, actor, run }: { booking: Book
           {b.payment.linkIssuedAt ? (
             <div className="space-y-2">
               <Notice title="Payment link issued">The credit period has ended. Pay the balance below (simulated).</Notice>
-              <Button className="w-full" onClick={() => run((d) => settleCredit(d, b.id, 'success', actor), 'Credit balance settled (simulated).')}><CreditCard className="size-4" /> Settle balance</Button>
-              <Button className="w-full" variant="secondary" onClick={() => run((d) => settleCredit(d, b.id, 'failure', actor), 'Settlement attempt failed (simulated).')}>Settlement fails</Button>
+              <Link to={`/bookings/${b.id}/pay`} className={buttonClass('primary', 'md', 'w-full')}><CreditCard className="size-4" /> Pay balance</Link>
             </div>
           ) : (
             <p className="text-xs text-slate-500">Your booking proceeds without immediate payment. The payment link is issued at the end of the credit period.</p>

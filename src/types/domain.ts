@@ -16,6 +16,7 @@ export type Role =
   | 'director_operations'
   | 'head_port_operations'
   | 'super_admin'
+  | 'managing_director'
 
 export interface Persona {
   id: string
@@ -62,6 +63,8 @@ export interface Customer {
   accountStatus: CustomerAccountStatus
   activatedAt: ISODateTime
   username: string
+  /** True from activation until the customer sets their own password (forced at first sign-in). */
+  firstLogin?: boolean
   isDemo: true
 }
 
@@ -246,6 +249,17 @@ export interface Awb {
   amendmentReason?: string
 }
 
+/** Photo of the containers taken by the Head of Port during physical verification (small image, stored in this browser). */
+export interface ContainerPhoto {
+  id: string
+  fileName: string
+  /** Data URL (a built-in sample, or an uploaded image resized small). */
+  dataUrl: string
+  caption: string
+  addedAt: ISODateTime
+  addedBy: string
+}
+
 export interface Booking {
   id: string
   reference: string
@@ -287,6 +301,8 @@ export interface Booking {
   awb?: Awb
   /** Earlier (superseded) AWB versions, oldest first. */
   awbHistory?: Awb[]
+  /** Container photos added by the Head of Port; visible to everyone who can see the booking. */
+  photos?: ContainerPhoto[]
   createdAt: ISODateTime
   updatedAt: ISODateTime
   isDemo: true

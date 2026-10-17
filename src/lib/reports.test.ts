@@ -254,14 +254,24 @@ describe('empty and incomplete data', () => {
   })
 })
 
-describe('access to Reports', () => {
-  const roles: Role[] = ['cargo_facilitator', 'district_supervisor', 'head_of_cargo', 'director_operations', 'head_port_operations', 'super_admin']
-  it('only the Director and Super Admin have the reports area', () => {
-    for (const role of roles) expect(canAccess(role, 'reports')).toBe(role === 'director_operations' || role === 'super_admin')
-  })
-  it('every demo persona (including the applicant) is checked, and only Director / Super Admin see the nav item', () => {
+describe('Managing Director home', () => {
+  it('has no separate Dashboard item: Reports & Analytics is the home; everyone else keeps Dashboard', () => {
     for (const p of personas) {
-      const allowed = p.role === 'director_operations' || p.role === 'super_admin'
+      const hasDashboard = navForPersona(p).some((i) => i.path === '/dashboard')
+      expect(hasDashboard).toBe(p.role !== 'managing_director')
+    }
+    expect(navForPersona(personas.find((p) => p.role === 'managing_director')!).some((i) => i.path === '/reports')).toBe(true)
+  })
+})
+
+describe('access to Reports', () => {
+  const roles: Role[] = ['cargo_facilitator', 'district_supervisor', 'head_of_cargo', 'director_operations', 'head_port_operations', 'super_admin', 'managing_director']
+  it('only the Director, Super Admin and Managing Director have the reports area', () => {
+    for (const role of roles) expect(canAccess(role, 'reports')).toBe(role === 'director_operations' || role === 'super_admin' || role === 'managing_director')
+  })
+  it('every demo persona (including the applicant) is checked, and only Director / Super Admin / MD see the nav item', () => {
+    for (const p of personas) {
+      const allowed = p.role === 'director_operations' || p.role === 'super_admin' || p.role === 'managing_director'
       expect(canAccessPersona(p, 'reports')).toBe(allowed)
       expect(navForPersona(p).some((i) => i.path === '/reports')).toBe(allowed)
     }

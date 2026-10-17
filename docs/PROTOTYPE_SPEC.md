@@ -215,6 +215,10 @@ Layout, top to bottom: header (title, last-updated, Clear filters) → one share
 
 Definitions and limits are decisions A-50 … A-57 and open item D-19 in [DECISIONS.md](DECISIONS.md). Money is never invented: indicative, approved-unpaid and credit amounts are not revenue; no payment channel is recorded.
 
-## 16. Unresolved decisions
+## 16. Simulated mail and notifications
+
+Every business stage produces a simulated email derived from the audit log, viewed in a separate simplified **Mail Outbox** (`/mail`, own sign-in by email address; the system mailbox's Sent folder is every email). Inside the platform, a notification bell shows the latest updates. The Managing Director and Director are copied on every stage (except private welcome / credential emails). Nothing is sent. See A-61…A-63, D-21.
+
+## 17. Unresolved decisions
 
 See [DECISIONS.md §3](DECISIONS.md#3-unresolved-business-rules-require-nrc-confirmation).

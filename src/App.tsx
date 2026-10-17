@@ -5,6 +5,7 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { BookingsPage } from '@/features/bookings/BookingsPage'
 import { BookingDetailPage } from '@/features/bookings/BookingDetailPage'
 import { EditBookingPage } from '@/features/bookings/EditBookingPage'
+import { PayPage } from '@/features/bookings/PayPage'
 import { DispatchQueuePage } from '@/features/dispatch/DispatchQueuePage'
 import { AwbPreviewPage } from '@/features/awb/AwbPreviewPage'
 import { AwbRegisterPage } from '@/features/awb/AwbRegisterPage'
@@ -19,13 +20,17 @@ import { LandingPage } from '@/features/landing/LandingPage'
 import { VerifyAwbPage } from '@/features/awb/VerifyAwbPage'
 import { DemoGuidePage } from '@/features/demo/DemoGuidePage'
 import { NewBookingPage } from '@/features/bookings/NewBookingPage'
+import { TrackApplicationPage } from '@/features/registrations/TrackApplicationPage'
 import { RegistrationsPage } from '@/features/registrations/RegistrationsPage'
 import { CustomersPage } from '@/features/customers/CustomersPage'
 import { CompanyProfilePage } from '@/features/customers/CompanyProfilePage'
 import { AuditPage } from '@/features/audit/AuditPage'
 import { ReportsPage } from '@/features/reports/ReportsPage'
+import { LoginPage } from '@/features/auth/LoginPage'
+import { ChangePasswordPage } from '@/features/auth/ChangePasswordPage'
+import { MailLoginPage, MailboxPage } from '@/features/mail/MailApp'
 import { RegistrationDetailPage } from '@/features/registrations/RegistrationDetailPage'
-import { EditRegistrationPage, MyRegistrationRedirect, NewRegistrationPage } from '@/features/registrations/ApplicantPages'
+import { EditRegistrationPage, MyRegistrationRedirect, NewRegistrationPage, RegistrationSubmittedPage } from '@/features/registrations/ApplicantPages'
 import { MasterDataPage } from '@/features/master-data/MasterDataPage'
 import { NotFoundPage, RequireArea } from '@/features/placeholder/PlannedPage'
 import type { Area } from '@/lib/permissions'
@@ -40,18 +45,25 @@ export default function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/verify" element={<VerifyAwbPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/change-password" element={<ChangePasswordPage />} />
+          <Route path="/mail" element={<MailLoginPage />} />
+          <Route path="/mail/inbox" element={<MailboxPage />} />
+          <Route path="/track" element={<TrackApplicationPage />} />
+          <Route path="/register" element={<NewRegistrationPage />} />
+          <Route path="/register/submitted" element={<RegistrationSubmittedPage />} />
           <Route element={<AppShell />}>
             <Route path="demo-guide" element={<DemoGuidePage />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="bookings" element={guarded('bookings', <BookingsPage />)} />
             <Route path="bookings/new" element={guarded('new_booking', <NewBookingPage />)} />
+            <Route path="bookings/:id/pay" element={guarded('bookings', <PayPage />)} />
             <Route path="bookings/:id/edit" element={guarded('new_booking', <EditBookingPage />)} />
             <Route path="bookings/:id" element={guarded('bookings', <BookingDetailPage />)} />
             <Route path="registrations" element={guarded('registrations', <RegistrationsPage />)} />
             <Route path="registrations/:id" element={<RegistrationDetailPage />} />
             <Route path="registrations/:id/edit" element={<EditRegistrationPage />} />
             <Route path="my-registration" element={guarded('my_registration', <MyRegistrationRedirect />)} />
-            <Route path="register" element={guarded('my_registration', <NewRegistrationPage />)} />
             <Route path="company" element={guarded('company_profile', <CompanyProfilePage />)} />
             <Route path="customers" element={guarded('customers', <CustomersPage />)} />
             <Route path="customers/:id" element={guarded('customers', <CustomerDetailPage />)} />

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type KeyboardEvent } from 'react'
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { CheckboxGroup, Field } from '@/components/ui/fields'
@@ -44,6 +44,11 @@ export function RegistrationForm({ initial, submitLabel, onSubmit }: { initial: 
   const [touched, setTouched] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
+  const demo = demoRegistration()
+  /** Tab on an empty field accepts the grey sample value; typing replaces it. */
+  const tabFill = (current: string, fill: () => void) => (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Tab' && !e.shiftKey && !current) fill()
+  }
   const errors = validateRegistration(v, taxRequired)
   const stepErrors = stepFields[step]!.filter((k) => errors[k])
   const show = (k: keyof RegistrationErrors) => (touched ? errors[k] : undefined)
@@ -85,11 +90,11 @@ export function RegistrationForm({ initial, submitLabel, onSubmit }: { initial: 
 
       {step === 0 && (
         <>
-          <CardHeader title="Company details" description="Fields marked * are mandatory." action={<Button size="sm" variant="ghost" onClick={() => setV({ ...demoRegistration(), documents: v.documents })}>Fill demo data</Button>} />
+          <CardHeader title="Company details" description="Fields marked * are mandatory. Grey text is a sample: press Tab to use it, or type your own." />
           <div className="grid gap-4 p-5 sm:grid-cols-2">
-            <Field label="Company name" required error={show('companyName')}><Input value={v.companyName} onChange={(e) => set({ companyName: e.target.value })} autoComplete="organization" /></Field>
-            <Field label="CAC number" required error={show('cacNumber')} hint="e.g. RC 1234567"><Input value={v.cacNumber} onChange={(e) => set({ cacNumber: e.target.value })} /></Field>
-            <Field label="Registered address" required error={show('registeredAddress')} className="sm:col-span-2"><Input value={v.registeredAddress} onChange={(e) => set({ registeredAddress: e.target.value })} /></Field>
+            <Field label="Company name" required error={show('companyName')}><Input value={v.companyName} placeholder={demo.companyName} onKeyDown={tabFill(v.companyName, () => set({ companyName: demo.companyName }))} onChange={(e) => set({ companyName: e.target.value })} autoComplete="organization" /></Field>
+            <Field label="CAC number" required error={show('cacNumber')} hint="e.g. RC 1234567"><Input value={v.cacNumber} placeholder={demo.cacNumber} onKeyDown={tabFill(v.cacNumber, () => set({ cacNumber: demo.cacNumber }))} onChange={(e) => set({ cacNumber: e.target.value })} /></Field>
+            <Field label="Registered address" required error={show('registeredAddress')} className="sm:col-span-2"><Input value={v.registeredAddress} placeholder={demo.registeredAddress} onKeyDown={tabFill(v.registeredAddress, () => set({ registeredAddress: demo.registeredAddress }))} onChange={(e) => set({ registeredAddress: e.target.value })} /></Field>
             <Field label="District" required error={show('district')} hint="Your application is verified by the District Supervisor of this district.">
               <Select value={v.district} onChange={(e) => set({ district: e.target.value as District | '' })}>
                 <option value="">Select a district…</option>
@@ -99,15 +104,15 @@ export function RegistrationForm({ initial, submitLabel, onSubmit }: { initial: 
             <div className="hidden sm:block" />
             <CheckboxGroup legend="Mode of operations" required options={allModes} value={v.modes} onChange={(modes) => set({ modes })} error={show('modes')} />
             <CheckboxGroup legend="Services provided" required options={allServices} value={v.services} onChange={(services) => set({ services })} error={show('services')} />
-            <Field label="Point of contact name" required error={show('pocName')}><Input value={v.poc.name} onChange={(e) => setPoc({ name: e.target.value })} autoComplete="name" /></Field>
-            <Field label="Point of contact email" required error={show('pocEmail')}><Input type="email" value={v.poc.email} onChange={(e) => setPoc({ email: e.target.value })} autoComplete="email" /></Field>
+            <Field label="Point of contact name" required error={show('pocName')}><Input value={v.poc.name} placeholder={demo.poc.name} onKeyDown={tabFill(v.poc.name, () => setPoc({ name: demo.poc.name }))} onChange={(e) => setPoc({ name: e.target.value })} autoComplete="name" /></Field>
+            <Field label="Point of contact email" required error={show('pocEmail')}><Input type="email" value={v.poc.email} placeholder={demo.poc.email} onKeyDown={tabFill(v.poc.email, () => setPoc({ email: demo.poc.email }))} onChange={(e) => setPoc({ email: e.target.value })} autoComplete="email" /></Field>
             <div>
               <span className="block text-sm font-medium text-slate-800">Contact number <span className="text-red-600" aria-hidden>*</span></span>
               <div className="mt-1 flex gap-2">
                 <Select aria-label="Country code" value={v.poc.countryCode} onChange={(e) => setPoc({ countryCode: e.target.value })} className="w-24 shrink-0">
                   {countryCodes.map((c) => <option key={c}>{c}</option>)}
                 </Select>
-                <Input aria-label="Phone number" inputMode="tel" value={v.poc.phone} onChange={(e) => setPoc({ phone: e.target.value })} placeholder="803 000 0000" />
+                <Input aria-label="Phone number" inputMode="tel" value={v.poc.phone} onChange={(e) => setPoc({ phone: e.target.value })} placeholder={demo.poc.phone} onKeyDown={tabFill(v.poc.phone, () => setPoc({ phone: demo.poc.phone }))} />
               </div>
               {show('pocPhone') && <p role="alert" className="mt-1 text-xs text-red-600">{show('pocPhone')}</p>}
             </div>

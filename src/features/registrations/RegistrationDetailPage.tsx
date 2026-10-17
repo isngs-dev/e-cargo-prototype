@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
+import { returnsAfterDecision, returnTarget } from '@/app/returnTarget'
 import { ArrowLeft, CircleAlert, CircleCheck, Eye, FilePen, Send, Undo2, X } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { Notice, PageHeader, RegistrationStatusBadge, Flash } from '@/components/ui/blocks'
@@ -26,6 +27,7 @@ type Dlg = null | 'ds_back' | 'ds_forward' | 'dir_back' | 'dir_reject'
 export function RegistrationDetailPage() {
   const { id } = useParams()
   const location = useLocation()
+  const navigate = useNavigate()
   const { data, persona, applicantAppId, act } = useStore()
   const [flash, setFlash] = useState<string | null>((location.state as { flash?: string } | null)?.flash ?? null)
   const [dialog, setDialog] = useState<Dlg>(null)
@@ -57,8 +59,13 @@ export function RegistrationDetailPage() {
   const dirOpen = app.status === 'pending_director_approval'
 
   const run = <T extends object>(fn: (d: typeof data) => WorkflowResult<T>, success: string): string | null => {
+    const before = app.status
     const r = act(fn)
     if (!r.ok) return r.error
+    if (returnsAfterDecision(persona.role) && r.data.applications.find((a) => a.id === app.id)?.status !== before) {
+      navigate(returnTarget(persona.role), { state: { shellFlash: success } })
+      return null
+    }
     setFlash(success)
     return null
   }

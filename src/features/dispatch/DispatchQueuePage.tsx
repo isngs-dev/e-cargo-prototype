@@ -1,3 +1,4 @@
+import { newestFirst } from '@/app/selectors'
 import { useStore } from '@/app/store'
 import { PageHeader } from '@/components/ui/blocks'
 import { Card, CardHeader } from '@/components/ui/primitives'
@@ -6,7 +7,7 @@ import { AWB_STATUSES, isReadyForDispatch } from '@/lib/status'
 
 export function DispatchQueuePage() {
   const { data } = useStore()
-  const sorted = [...data.bookings].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  const sorted = newestFirst(data.bookings, (b) => b.updatedAt)
   const ready = sorted.filter(isReadyForDispatch)
   const held = sorted.filter((b) => b.status === 'awaiting_payment')
   const done = sorted.filter((b) => AWB_STATUSES.includes(b.status)).slice(0, 6)

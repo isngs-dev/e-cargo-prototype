@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { ChevronRight, Landmark } from 'lucide-react'
 import { useStore } from '@/app/store'
-import { customerName } from '@/app/selectors'
+import { customerName, ts } from '@/app/selectors'
 import { EmptyState, Notice, PageHeader } from '@/components/ui/blocks'
 import { Badge, Card, Select } from '@/components/ui/primitives'
 import { StageTracker } from '@/features/audit/Timeline'
@@ -18,7 +18,7 @@ export function RefundsPage() {
   const [status, setStatus] = useState<RefundStatus | 'all' | 'mine'>('all')
   const isFac = persona.role === 'cargo_facilitator'
   const all = useMemo(
-    () => [...data.refunds].filter((r) => (isFac ? r.customerId === persona.customerId : true)).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    () => [...data.refunds].filter((r) => (isFac ? r.customerId === persona.customerId : true)).sort((a, b) => ts(b.createdAt) - ts(a.createdAt)),
     [data.refunds, isFac, persona.customerId],
   )
   const mine = all.filter((r) => refundActionHint(persona.role, r.status))

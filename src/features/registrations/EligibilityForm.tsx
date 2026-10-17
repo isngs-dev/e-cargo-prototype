@@ -9,7 +9,7 @@ export const categories: CustomerCategory[] = ['Bulk', 'SME', 'Strategic', 'Gove
 
 export const emptyEligibility = (): EligibilityInput => ({ isPriority: false, discountPct: 0, creditMonths: 0, thresholdNaira: 0, category: '' })
 
-/** Director's eligibility inputs. Non-Priority disables discount and credit entirely. */
+/** Director's eligibility inputs. Non-Priority hides discount, credit and threshold entirely. */
 export function EligibilityForm({ value, onChange, error }: { value: EligibilityInput; onChange: (v: EligibilityInput) => void; error?: string }) {
   const set = (patch: Partial<EligibilityInput>) => onChange({ ...value, ...patch })
   const [rawDiscount, setRawDiscount] = useState(String(value.discountPct))
@@ -22,7 +22,7 @@ export function EligibilityForm({ value, onChange, error }: { value: Eligibility
         <div className="grid grid-cols-2 gap-2">
           {([true, false] as const).map((p) => (
             <label key={String(p)} className={cn('flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm', value.isPriority === p ? 'border-brand-600 bg-brand-50 text-brand-800' : 'border-slate-300 bg-white hover:bg-slate-50')}>
-              <input type="radio" name="priority" className="accent-brand-600" checked={value.isPriority === p} onChange={() => set(p ? { isPriority: true } : { isPriority: false, discountPct: 0, creditMonths: 0, thresholdNaira: 0 })} />
+              <input type="radio" name="priority" className="accent-brand-600" checked={value.isPriority === p} onChange={() => { if (p) { setRawDiscount(''); set({ isPriority: true, discountPct: NaN, creditMonths: NaN, thresholdNaira: NaN }) } else set({ isPriority: false, discountPct: 0, creditMonths: 0, thresholdNaira: 0 }) }} />
               {p ? 'Priority' : 'Non-Priority'}
             </label>
           ))}
@@ -31,19 +31,23 @@ export function EligibilityForm({ value, onChange, error }: { value: Eligibility
       </fieldset>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Eligible discount (%)" hint="Maximum grantable on any future booking">
-          <Input
-            type="number" min={0} max={100} step={0.5} disabled={off}
-            value={off ? 0 : rawDiscount}
-            onChange={(e) => { setRawDiscount(e.target.value); set({ discountPct: e.target.value === '' ? NaN : Number(e.target.value) }) }}
-          />
-        </Field>
-        <Field label="Eligible credit period (months)" hint="Maximum grantable on any future booking">
-          <Input type="number" min={0} max={12} step={1} disabled={off} value={off ? 0 : Number.isNaN(value.creditMonths) ? '' : value.creditMonths} onChange={(e) => set({ creditMonths: e.target.value === '' ? NaN : Number(e.target.value) })} />
-        </Field>
-        <Field label="Credit threshold (₦)" hint="Maximum outstanding balance permitted">
-          <Input type="number" min={0} step={100000} disabled={off} value={off ? 0 : Number.isNaN(value.thresholdNaira) ? '' : value.thresholdNaira} onChange={(e) => set({ thresholdNaira: e.target.value === '' ? NaN : Number(e.target.value) })} />
-        </Field>
+        {!off && (
+          <>
+            <Field label="Eligible discount (%)" hint="Maximum grantable on any future booking">
+              <Input
+                type="number" min={0} max={100} step={0.5}
+                value={rawDiscount}
+                onChange={(e) => { setRawDiscount(e.target.value); set({ discountPct: e.target.value === '' ? NaN : Number(e.target.value) }) }}
+              />
+            </Field>
+            <Field label="Eligible credit period (months)" hint="Maximum grantable on any future booking">
+              <Input type="number" min={0} max={12} step={1} value={Number.isNaN(value.creditMonths) ? '' : value.creditMonths} onChange={(e) => set({ creditMonths: e.target.value === '' ? NaN : Number(e.target.value) })} />
+            </Field>
+            <Field label="Credit threshold (₦)" hint="Maximum outstanding balance permitted">
+              <Input type="number" min={0} step={100000} value={Number.isNaN(value.thresholdNaira) ? '' : value.thresholdNaira} onChange={(e) => set({ thresholdNaira: e.target.value === '' ? NaN : Number(e.target.value) })} />
+            </Field>
+          </>
+        )}
         <Field label="Customer category" required>
           <Select value={value.category} onChange={(e) => set({ category: e.target.value as CustomerCategory | '' })}>
             <option value="">Select…</option>

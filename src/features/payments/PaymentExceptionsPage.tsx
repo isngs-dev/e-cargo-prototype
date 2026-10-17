@@ -1,3 +1,4 @@
+import { newestFirst } from '@/app/selectors'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { ChevronRight, CircleCheck } from 'lucide-react'
@@ -14,8 +15,8 @@ export const resolutionLabel = { matched: 'Matched to an invoice', duplicate_ref
 export function PaymentExceptionsPage() {
   const { data } = useStore()
   const [tab, setTab] = useState<'open' | 'resolved'>('open')
-  const open = data.paymentExceptions.filter((p) => !p.resolved)
-  const done = data.paymentExceptions.filter((p) => p.resolved)
+  const open = newestFirst(data.paymentExceptions.filter((p) => !p.resolved), (p) => p.receivedAt)
+  const done = newestFirst(data.paymentExceptions.filter((p) => p.resolved), (p) => p.resolution?.at ?? p.receivedAt)
   const shown = tab === 'open' ? open : done
 
   return (

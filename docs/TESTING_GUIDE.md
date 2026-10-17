@@ -5,7 +5,7 @@ Site: https://nrc-ecargo-prototype.onrender.com (or `npm run dev` → http://loc
 ## Read this first
 
 - **Do Reset demo only ONCE, at the very start.** Parts 1–10 are one continuous story: later parts use records created in earlier parts. Do the Parts in order.
-- Switch role with the **dropdown at the top right** (it shows the current person's name). Every step says **WHO** to be.
+- Change user: top right → your name → **Sign out**; on the sign-in page click the demo account (it fills username and password) → **Sign in**. Every step says **WHO** to be. After a company is approved (Part 1), **Obinna Chukwu** signs in as that company's customer.
 - Everything is simulated. Data lives only in your browser.
 - Lines starting **✅** are what you should see. If something differs, note the Part and step number and tell me.
 - **Dates:** the guide uses November 2026. If your computer's date is later than 10 Nov 2026, the form will refuse dates in the past; add the same number of days to every date you type.
@@ -13,7 +13,7 @@ Site: https://nrc-ecargo-prototype.onrender.com (or `npm run dev` → http://loc
 
 ### People you will use
 
-| Person (dropdown name) | Role | Company |
+| Person (demo account) | Role | Company |
 |---|---|---|
 | Adaeze Okafor | Cargo Facilitator, **Priority** (10% discount, 2 months credit) | Lagoon Freight & Logistics Ltd |
 | Ibrahim Musa | Cargo Facilitator, **Non-Priority** | Apapa Gateway Clearing Services Ltd |
@@ -65,7 +65,7 @@ Site: https://nrc-ecargo-prototype.onrender.com (or `npm run dev` → http://loc
 WHO: **Obinna Chukwu** → sidebar **My Registration**.
 
 1. Don't fill anything. Click **Next**. ✅ Red messages on every required field including **District**.
-2. Click **Fill demo data**. ✅ The form fills with: Harbour Link Logistics Ltd · RC 3412207 · 12 Marine Road, Apapa, Lagos · District **Lagos** · Containerized · Clearance + Multi-modal · Zainab Lawal.
+2. Click **Company name** and press **Tab**; repeat Tab on CAC number, Registered address, Point of contact name, email and phone (grey sample text fills in). Then set District **Lagos**, tick **Containerized** and **Clearance**. ✅ Harbour Link Logistics Ltd · RC 3412207 · 12 Marine Road, Apapa, Lagos · Zainab Lawal.
 3. Click **Next**. Click **Next** again without documents. ✅ Blocked: CAC Certificate and Company Profile are mandatory.
 4. Click **Use sample file** on **CAC Certificate** and on **Company Profile** (leave Tax Certificate empty). Click **Next**.
 5. Review page shows the District. Click **Submit**. ✅ New application **REG-2026-0108**, status **Pending District Verification**, timeline started.
@@ -102,13 +102,13 @@ WHO: **Chukwuemeka Obi** → open **REG-2026-0108** → **Verified — forward t
 WHO: **Aliyu Bello** → **Registrations**. Waiting for the Director: **REG-2026-0103 Trans-Sahel** and **REG-2026-0108 Harbour Link** (plus **REG-2026-0107 Swift Delta** if you forwarded it). Ogun Valley arrives later, in 1G.
 
 13. Open **REG-2026-0103 — Trans-Sahel Freight Nigeria Ltd** → click **Reject**, reason `Test rejection - incomplete trade references`. ✅ Status **Rejected**.
-14. Open **REG-2026-0108 — Harbour Link**. In the eligibility form enter: **Priority**, discount **10**, credit period **2** months, credit threshold **5000000**, category **Strategic**. Click **Approve & activate**.
+14. Open **REG-2026-0108 — Harbour Link**. In the eligibility form choose **Priority** (the discount, credit and threshold fields appear — they are hidden for Non-Priority) and enter: discount **10**, credit period **2** months, credit threshold **5000000**, category **Strategic**. Click **Approve & activate**.
     ✅ Status **Activated**. A username is shown and the credentials email is marked *simulated* (no password shown).
 15. Go to **Customers**. ✅ Harbour Link Logistics Ltd is listed (District Lagos, Priority, Strategic).
 
 ### 1G — Non-Priority approval and the Ibadan flow
 16. WHO **Olumide Adeyemi** → open **REG-2026-0101 Ogun Valley** → **Verified — forward to Director**. ✅ Pending Director Approval. (Ogun Valley has all documents.)
-17. WHO **Aliyu Bello** → open **REG-2026-0101** → choose **Non-Priority**. ✅ Discount and credit fields lock to 0. Category **SME** → **Approve & activate**. ✅ Activated.
+17. WHO **Aliyu Bello** → open **REG-2026-0101** → choose **Non-Priority**. ✅ The discount, credit and threshold fields disappear. Category **SME** → **Approve & activate**. ✅ Activated.
 18. (Optional) Back as Olumide, open **REG-2026-0106 Benin-Ore** (sent back to district by the Director). ✅ Remark shown; you can forward it again.
 
 ### 1H — Audit

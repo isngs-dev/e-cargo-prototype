@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
+import { returnsAfterDecision, returnTarget } from '@/app/returnTarget'
 import { ArrowLeft, CircleCheck, Landmark, Search, Send, Undo2 } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { customerName } from '@/app/selectors'
@@ -21,6 +22,7 @@ import { refundActionHint, refundTone } from './refundUi'
 export function RefundDetailPage() {
   const { id } = useParams()
   const { data, persona, act } = useStore()
+  const navigate = useNavigate()
   const [flash, setFlash] = useState<string | null>(null)
   const [requesting, setRequesting] = useState(false)
   const [reversing, setReversing] = useState(false)
@@ -41,8 +43,14 @@ export function RefundDetailPage() {
   const hint = refundActionHint(persona.role, refund.status)
 
   const run = (fn: Parameters<typeof act>[0], msg: string): string | null => {
+    const before = refund.status
     const r = act(fn)
     if (!r.ok) { setFlash(`Not done: ${r.error}`); return r.error }
+    // The Director triggering a refund is a decision: return to where they came from. Super Admin stays on the page.
+    if (returnsAfterDecision(persona.role) && r.data.refunds.find((x) => x.id === refund.id)?.status !== before) {
+      navigate(returnTarget(persona.role), { state: { shellFlash: msg } })
+      return null
+    }
     setFlash(msg)
     return null
   }

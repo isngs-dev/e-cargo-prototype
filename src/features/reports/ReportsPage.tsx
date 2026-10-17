@@ -12,6 +12,7 @@ import {
 } from '@/lib/reports'
 import { bookingStatusMeta, paymentStatusMeta } from '@/lib/status'
 import { DISTRICTS } from '@/types/domain'
+import { ManagementSections } from './ManagementSections'
 import {
   compactNaira, ComparisonBars, DeltaChip, Donut, LineChart, ReportKpi, SERIES, SplitBar, toneColor,
 } from './charts'
@@ -34,7 +35,8 @@ function Chip({ children }: { children: React.ReactNode }) {
   return <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700">{children}</span>
 }
 
-export function ReportsPage() {
+/** Reports & Analytics body — used by /reports and embedded in the Managing Director dashboard. */
+export function ReportsView() {
   const { data } = useStore()
   const [filters, setFilters] = useState<ReportFilters>(DEFAULT_FILTERS)
   const [tab, setTab] = useState<Tab>('bookings')
@@ -161,40 +163,6 @@ export function ReportsPage() {
         </Card>
       )}
 
-      {/* ------------------------------------------------ KPIs */}
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <ReportKpi label="AWBs generated" value={kpis.awbs.current} icon={QrCode} tone="success"
-          footer={<DeltaChip delta={kpis.awbs} comparable={model.comparable} />}>
-          <span>{kpis.bookings.awbConversionPct === null ? 'No bookings in period' : `${kpis.bookings.awbConversionPct}% of bookings created in the period have an AWB`}</span>
-        </ReportKpi>
-        <ReportKpi label="Registrations" value={kpis.registrations.current} icon={Users} tone="accent"
-          footer={<DeltaChip delta={kpis.registrations} comparable={model.comparable} />}>
-          <span><strong className="text-slate-900">{kpis.registrations.pending}</strong> pending NRC</span>
-          <span><strong className="text-slate-900">{kpis.registrations.approved}</strong> approved</span>
-          <span><strong className="text-slate-900">{kpis.registrations.awaitingApplicant}</strong> with applicant</span>
-          <span><strong className="text-slate-900">{kpis.registrations.rejected}</strong> rejected</span>
-        </ReportKpi>
-        <ReportKpi label="Bookings" value={kpis.bookings.current} icon={Package} tone="info"
-          footer={<DeltaChip delta={kpis.bookings} comparable={model.comparable} />}>
-          <span><strong className="text-slate-900">{kpis.bookings.pending}</strong> pending approval</span>
-          <span><strong className="text-slate-900">{kpis.bookings.approvedOrCompleted}</strong> approved / completed</span>
-          <span><strong className="text-slate-900">{kpis.bookings.completed}</strong> completed</span>
-        </ReportKpi>
-        <ReportKpi label="Revenue received" value={fmtMoney(kpis.gross.current)} icon={Banknote} tone="success"
-          footer={<DeltaChip delta={kpis.gross} comparable={model.comparable} money />}>
-          <span>Paid and credit-settled bookings only (simulated payments)</span>
-        </ReportKpi>
-        <ReportKpi label="Net revenue" value={fmtMoney(kpis.net.current)} icon={Scale} tone="neutral"
-          footer={<DeltaChip delta={kpis.net} comparable={model.comparable} money />}>
-          <span>Received {fmtMoney(kpis.gross.current)} − refunds {fmtMoney(kpis.refunds.current)}</span>
-        </ReportKpi>
-        <ReportKpi label="Receivables (not revenue)" value={fmtMoney(receivables)} icon={BarChart3} tone="warning"
-          footer={<span className="text-slate-400">Position as at the latest data; the period does not apply</span>}>
-          <span><strong className="text-slate-900">{fmtMoney(kpis.awaitingPayment.amount)}</strong> awaiting payment ({kpis.awaitingPayment.count})</span>
-          <span><strong className="text-slate-900">{fmtMoney(kpis.creditExposure.amount)}</strong> approved credit outstanding ({kpis.creditExposure.count})</span>
-        </ReportKpi>
-      </div>
-
       {/* ------------------------------------------------ trends */}
       <div className="mb-6 grid gap-6 xl:grid-cols-2">
         <Card>
@@ -294,6 +262,40 @@ export function ReportsPage() {
             <div className="flex justify-between"><dt className="text-slate-600">Approved credit outstanding ({kpis.creditExposure.count})</dt><dd className="tabular-nums">{fmtMoney(kpis.creditExposure.amount)}</dd></div>
           </dl>
         </Card>
+      </div>
+
+      {/* ------------------------------------------------ KPIs (summary just above the records) */}
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ReportKpi label="AWBs generated" value={kpis.awbs.current} icon={QrCode} tone="success"
+          footer={<DeltaChip delta={kpis.awbs} comparable={model.comparable} />}>
+          <span>{kpis.bookings.awbConversionPct === null ? 'No bookings in period' : `${kpis.bookings.awbConversionPct}% of bookings created in the period have an AWB`}</span>
+        </ReportKpi>
+        <ReportKpi label="Registrations" value={kpis.registrations.current} icon={Users} tone="accent"
+          footer={<DeltaChip delta={kpis.registrations} comparable={model.comparable} />}>
+          <span><strong className="text-slate-900">{kpis.registrations.pending}</strong> pending NRC</span>
+          <span><strong className="text-slate-900">{kpis.registrations.approved}</strong> approved</span>
+          <span><strong className="text-slate-900">{kpis.registrations.awaitingApplicant}</strong> with applicant</span>
+          <span><strong className="text-slate-900">{kpis.registrations.rejected}</strong> rejected</span>
+        </ReportKpi>
+        <ReportKpi label="Bookings" value={kpis.bookings.current} icon={Package} tone="info"
+          footer={<DeltaChip delta={kpis.bookings} comparable={model.comparable} />}>
+          <span><strong className="text-slate-900">{kpis.bookings.pending}</strong> pending approval</span>
+          <span><strong className="text-slate-900">{kpis.bookings.approvedOrCompleted}</strong> approved / completed</span>
+          <span><strong className="text-slate-900">{kpis.bookings.completed}</strong> completed</span>
+        </ReportKpi>
+        <ReportKpi label="Revenue received" value={fmtMoney(kpis.gross.current)} icon={Banknote} tone="success"
+          footer={<DeltaChip delta={kpis.gross} comparable={model.comparable} money />}>
+          <span>Paid and credit-settled bookings only (simulated payments)</span>
+        </ReportKpi>
+        <ReportKpi label="Net revenue" value={fmtMoney(kpis.net.current)} icon={Scale} tone="neutral"
+          footer={<DeltaChip delta={kpis.net} comparable={model.comparable} money />}>
+          <span>Received {fmtMoney(kpis.gross.current)} − refunds {fmtMoney(kpis.refunds.current)}</span>
+        </ReportKpi>
+        <ReportKpi label="Receivables (not revenue)" value={fmtMoney(receivables)} icon={BarChart3} tone="warning"
+          footer={<span className="text-slate-400">Position as at the latest data; the period does not apply</span>}>
+          <span><strong className="text-slate-900">{fmtMoney(kpis.awaitingPayment.amount)}</strong> awaiting payment ({kpis.awaitingPayment.count})</span>
+          <span><strong className="text-slate-900">{fmtMoney(kpis.creditExposure.amount)}</strong> approved credit outstanding ({kpis.creditExposure.count})</span>
+        </ReportKpi>
       </div>
 
       {/* ------------------------------------------------ records */}
@@ -404,6 +406,16 @@ export function ReportsPage() {
         <p className="mt-2 text-xs text-slate-500">Periods are measured back from the latest activity in the demo data ({formatDateTime(model.asOf)}).</p>
         <ul className="mt-2 list-disc space-y-1.5 pl-5 text-xs">{model.notes.map((n) => <li key={n}>{n}</li>)}</ul>
       </details>
+    </>
+  )
+}
+
+export function ReportsPage() {
+  const { persona } = useStore()
+  return (
+    <>
+      <ReportsView />
+      {persona.role === 'managing_director' && <ManagementSections />}
     </>
   )
 }

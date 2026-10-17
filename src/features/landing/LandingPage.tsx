@@ -123,7 +123,6 @@ function useLineAnimation(wrapRef: RefObject<HTMLDivElement | null>) {
 }
 
 export function LandingPage() {
-  const { switchPersona } = useStore()
   const heroRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -132,7 +131,6 @@ export function LandingPage() {
   const [pastHero, setPastHero] = useState(false)
 
   /** "Register your company" opens the registration form as the demo applicant. */
-  const startRegistration = () => switchPersona('p-fac-applicant')
 
   useEffect(() => {
     const previous = document.title
@@ -196,8 +194,8 @@ export function LandingPage() {
                 <h1 id="hero-title">Book rail cargo online — from registration to Air Waybill.</h1>
                 <p className="hero-lead">Register your company, book capacity on NRC freight trains, get approvals, pay and receive your Air Waybill — in one platform.</p>
                 <div className="hero-actions">
-                  <Link className="btn btn--light btn--lg" to="/register" onClick={startRegistration}>Register your company</Link>
-                  <Link className="btn btn--ghost btn--lg" to="/dashboard">Open the demo platform</Link>
+                  <Link className="btn btn--light btn--lg" to="/register">Register your company</Link>
+                  <Link className="btn btn--ghost btn--lg" to="/track">Track application</Link>
                   <Link className="hero-link" to="/verify">Verify an AWB
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
                   </Link>

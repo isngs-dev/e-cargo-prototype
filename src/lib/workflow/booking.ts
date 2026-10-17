@@ -46,7 +46,7 @@ export const requiredBookingDocs = (hazardous: boolean): DocumentKind[] =>
   hazardous ? [...MANDATORY_BOOKING_DOCS, 'hazardous_compliance'] : MANDATORY_BOOKING_DOCS
 
 export const emptyBooking = (): BookingInput => ({
-  bookingDate: '', cargoType: 'Containerized', routeId: '', containers: [{ containerType: '20ft', quantity: 1 }],
+  bookingDate: '', cargoType: 'Containerized', routeId: '', containers: [{ containerType: '' as ContainerType, quantity: 1 }],
   weightTons: NaN, commodity: '', hazardous: false, specialHandling: '', remarks: '', documents: [], declaration: false,
 })
 
@@ -64,6 +64,7 @@ export function validateBooking(v: BookingInput, today = todayISO()): BookingErr
   if (!v.routeId) e.routeId = 'Select a route.'
   const allowed = containerTypesFor(v.cargoType)
   if (v.containers.length === 0) e.containers = 'Add at least one container or wagon line.'
+  else if (v.containers.some((c) => !c.containerType)) e.containers = `Select the ${v.cargoType === 'Containerized' ? 'container' : 'wagon'} type.`
   else if (v.containers.some((c) => !allowed.includes(c.containerType))) e.containers = `${v.cargoType} bookings accept ${allowed.join(' / ')} only.`
   else if (v.containers.some((c) => !Number.isInteger(c.quantity) || c.quantity <= 0)) e.containers = 'Quantities must be whole numbers above zero.'
   else if (new Set(v.containers.map((c) => c.containerType)).size !== v.containers.length) e.containers = 'Each container type can appear only once — combine the quantities.'

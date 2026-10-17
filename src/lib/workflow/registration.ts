@@ -154,7 +154,7 @@ export function directorApprove(
   for (let n = 2; next.customers.some((c) => c.username === username); n++) username = `${base}${n}`
   const customer: Customer = {
     id: `cus-${username}`, companyName: app.companyName, cacNumber: app.cacNumber, registeredAddress: app.registeredAddress, district: app.district,
-    modes: app.modes, services: app.services, poc: app.poc, eligibility, accountStatus: 'active', activatedAt: now, username, isDemo: true,
+    modes: app.modes, services: app.services, poc: app.poc, eligibility, accountStatus: 'active', activatedAt: now, username, firstLogin: true, isDemo: true,
   }
   next.customers.push(customer)
   app.customerId = customer.id

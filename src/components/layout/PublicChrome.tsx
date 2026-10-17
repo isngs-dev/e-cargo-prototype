@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { useStore } from '@/app/store'
 
 /**
  * Header, footer and wrapper shared by the public pages (landing, AWB verification).
@@ -80,7 +79,6 @@ export function PublicHeader({ pastHero }: { pastHero: boolean }) {
 }
 
 export function PublicFooter() {
-  const { switchPersona } = useStore()
   return (
     <footer className="site-footer on-dark">
       <div className="scale-bar" aria-hidden="true" />
@@ -94,7 +92,7 @@ export function PublicFooter() {
             <ul className="footer-links">
               <li><Link to="/dashboard">Open the platform</Link></li>
               <li><a href="/#services">Services</a></li>
-              <li><Link to="/register" onClick={() => switchPersona('p-fac-applicant')}>Register your company</Link></li>
+              <li><Link to="/register">Register your company</Link></li>
               <li><a href="/#how">How it works</a></li>
               <li><Link to="/verify">Verify an AWB</Link></li>
               <li><a href="/#availability">Train availability</a></li>

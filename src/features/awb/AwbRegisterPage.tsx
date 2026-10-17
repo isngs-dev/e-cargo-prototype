@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { Search } from 'lucide-react'
 import { useStore } from '@/app/store'
-import { customerName, routeLabel, visibleBookings } from '@/app/selectors'
+import { customerName, routeLabel, ts, visibleBookings } from '@/app/selectors'
 import { BookingStatusBadge, EmptyState, PageHeader } from '@/components/ui/blocks'
 import { Card, Input, Table, Td, Th } from '@/components/ui/primitives'
 import { formatDate, formatDateTime } from '@/lib/format'
@@ -11,7 +11,7 @@ export function AwbRegisterPage() {
   const { data, persona } = useStore()
   const [query, setQuery] = useState('')
   const isFacilitator = persona.role === 'cargo_facilitator'
-  const all = visibleBookings(data, persona).filter((b) => b.awb).sort((a, b) => b.awb!.generatedAt.localeCompare(a.awb!.generatedAt))
+  const all = visibleBookings(data, persona).filter((b) => b.awb).sort((a, b) => ts(b.awb!.generatedAt) - ts(a.awb!.generatedAt))
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()

@@ -6,6 +6,7 @@ import { Button, Card, CardHeader, Input } from '@/components/ui/primitives'
 import { ReasonDialog } from '@/features/registrations/ReasonDialog'
 import type { Run } from '@/features/bookings/runTypes'
 import { todayISO } from '@/lib/workflow/booking'
+import { findTrain, trainDefaults, trains } from '@/lib/trains'
 import { approveDispatch, emptyChecks, emptyDispatch, failPhysicalVerification, validateDispatch, type PhysicalChecks } from '@/lib/workflow/dispatch'
 import type { Actor } from '@/lib/workflow/result'
 import type { Booking } from '@/types/domain'
@@ -17,6 +18,14 @@ export function DispatchPanel({ booking, actor, run }: { booking: Booking; actor
   const [touched, setTouched] = useState(false)
   const [error, setError] = useState('')
   const [failOpen, setFailOpen] = useState(false)
+  const [autoFilled, setAutoFilled] = useState('')
+  const notBefore = booking.bookingDate > todayISO() ? booking.bookingDate : todayISO()
+  /** A known train number fills in departure date (next running day), time and loading yard. */
+  const onTrain = (v: string) => {
+    const t = trainDefaults(v, notBefore)
+    set({ trainNumber: v, ...(t ?? {}) })
+    setAutoFilled(t ? v.trim().toUpperCase() : '')
+  }
 
   const errors = validateDispatch(form, checks, booking.hazardous)
   const show = (k: keyof typeof errors) => (touched ? errors[k] : undefined)
@@ -41,6 +50,7 @@ export function DispatchPanel({ booking, actor, run }: { booking: Booking; actor
     <Card>
       <CardHeader title="Physical verification & dispatch" description="Inspect the consignment, record dispatch details, then approve to generate the AWB." />
       <div className="space-y-4 p-5">
+        <p className="text-xs text-slate-500">Add photos of the containers in the <a href="#container-photos" className="font-medium text-brand-700 underline">Container photos</a> card — the Director and the customer can view them.</p>
         <fieldset>
           <legend className="mb-2 text-sm font-medium text-slate-800">Physical verification <span className="text-red-600" aria-hidden>*</span></legend>
           <div className="space-y-2">
@@ -57,7 +67,10 @@ export function DispatchPanel({ booking, actor, run }: { booking: Booking; actor
 
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Wagon number" required error={show('wagonNumber')}><Input value={form.wagonNumber} onChange={(e) => set({ wagonNumber: e.target.value })} placeholder="NRC-FW-30001" /></Field>
-          <Field label="Train number" required error={show('trainNumber')}><Input value={form.trainNumber} onChange={(e) => set({ trainNumber: e.target.value })} placeholder="LI-FR-09" /></Field>
+          <Field label="Train number" required error={show('trainNumber')} hint={autoFilled ? `Autofilled from the timetable (${findTrain(autoFilled)?.note}). Edit if different.` : 'Pick a train to fill in the date, time and yard.'}>
+            <Input value={form.trainNumber} onChange={(e) => onTrain(e.target.value)} placeholder="LI-FR-09" list="train-list" autoComplete="off" />
+            <datalist id="train-list">{trains.map((t) => <option key={t.trainNumber} value={t.trainNumber}>{t.note}</option>)}</datalist>
+          </Field>
           <Field label="Departure date" required error={show('departureDate')}><Input type="date" min={todayISO()} value={form.departureDate} onChange={(e) => set({ departureDate: e.target.value })} /></Field>
           <Field label="Departure time" required error={show('departureTime')}><Input type="time" value={form.departureTime} onChange={(e) => set({ departureTime: e.target.value })} /></Field>
           <Field label="Loading yard" className="sm:col-span-2"><Input value={form.loadingYard} onChange={(e) => set({ loadingYard: e.target.value })} placeholder="Apapa Yard A" /></Field>

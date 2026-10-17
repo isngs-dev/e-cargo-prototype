@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router'
-import { BookOpen, Menu, PanelLeftClose, PanelLeftOpen, RotateCcw, TrainFront, X } from 'lucide-react'
+import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router'
+import { BookOpen, House, Menu, PanelLeftClose, PanelLeftOpen, RotateCcw, TrainFront, X } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { navForPersona, navLabel } from '@/app/navigation'
+import { rememberBase } from '@/app/returnTarget'
+import { Flash } from '@/components/ui/blocks'
 import { cn } from '@/lib/cn'
 import { roleLabels } from '@/lib/permissions'
 import { Button, buttonClass } from '@/components/ui/primitives'
 import { Dialog } from '@/components/ui/dialog'
-import { RoleSwitcher } from './RoleSwitcher'
+import { UserMenu } from './UserMenu'
+import { MailBell } from './MailBell'
 
 /** `collapsed` renders a slim icon-only rail (desktop). The mobile drawer always renders the full sidebar. */
 const SIDEBAR_KEY = 'nrc-ecargo-prototype:sidebar-collapsed'
@@ -77,7 +80,7 @@ function Sidebar({ onNavigate, collapsed = false, onToggle }: { onNavigate?: () 
 }
 
 export function AppShell() {
-  const { resetDemo } = useStore()
+  const { resetDemo, signedIn, persona, data } = useStore()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [collapsed, setCollapsed] = useState(() => {
@@ -91,6 +94,10 @@ export function AppShell() {
     return next
   })
 
+  useEffect(() => { rememberBase(location.pathname) }, [location.pathname])
+  const [dismissedKey, setDismissedKey] = useState<string | null>(null)
+  const shellFlash = (location.state as { shellFlash?: string } | null)?.shellFlash ?? null
+
   useEffect(() => {
     const titles: Record<string, string> = {
       dashboard: 'Dashboard', bookings: 'Bookings', registrations: 'Registrations', customers: 'Customers', company: 'Company profile', dispatch: 'Dispatch queue',
@@ -100,6 +107,10 @@ export function AppShell() {
     const seg = location.pathname.split('/')[1] ?? ''
     document.title = `${titles[seg] ?? 'NRC e-Cargo'} · NRC e-Cargo Prototype`
   }, [location.pathname])
+
+  if (!signedIn) return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  // A newly approved company must replace its temporary password before using the platform.
+  if (data.customers.find((c) => c.id === persona.customerId)?.firstLogin) return <Navigate to="/change-password" replace />
 
   return (
     <div className="min-h-dvh">
@@ -126,13 +137,16 @@ export function AppShell() {
             <Menu className="size-5" />
           </button>
           <div className="flex-1" />
+          <Link to="/" className={buttonClass('ghost', 'sm')} title="Back to the home page"><House className="size-3.5" /> <span className="hidden sm:inline">Home</span></Link>
           <Link to="/demo-guide" className={buttonClass('ghost', 'sm')} title="Stakeholder walk-through"><BookOpen className="size-3.5" /> <span className="hidden sm:inline">Demo guide</span></Link>
           <Button variant="ghost" size="sm" onClick={() => setConfirmReset(true)} title="Restore seeded demo data">
             <RotateCcw className="size-3.5" /> <span className="hidden sm:inline">Reset demo</span>
           </Button>
-          <RoleSwitcher />
+          <MailBell />
+          <UserMenu />
         </header>
         <main id="main" tabIndex={-1} key={location.pathname} className={cn('mx-auto px-4 py-6 outline-none transition-[max-width] duration-200 sm:px-6 lg:py-8', collapsed ? 'max-w-none lg:px-8' : 'max-w-7xl')}>
+          {shellFlash && dismissedKey !== location.key && <Flash message={shellFlash} onDismiss={() => setDismissedKey(location.key)} />}
           <Outlet />
         </main>
       </div>

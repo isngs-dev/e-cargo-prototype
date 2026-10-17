@@ -13,6 +13,7 @@ import {
 import type { CargoType, Customer, DocumentKind, UploadedDocument } from '@/types/domain'
 import { DocumentUploader } from '@/features/registrations/DocumentUploader'
 import { PriceBreakdown } from './PriceBreakdown'
+import type { ContainerLine } from '@/types/domain'
 
 const COMMODITIES = ['Packaged beverages', 'Bagged cement', 'Bagged maize', 'Building materials', 'Consumer electronics', 'Steel billets', 'Textiles', 'Agro-chemicals']
 const steps = ['Shipment', 'Documents', 'Review & submit']
@@ -41,16 +42,19 @@ export function BookingForm({ customer, initial, onSubmit, submitLabel = 'Submit
   const isPriority = customer.eligibility.isPriority
   const activeRoutes = data.routes.filter((r) => r.active)
 
-  const price = useMemo(() => indicativePrice(data, customer, v), [data, customer, v])
-  const priceError = !price.ok && v.routeId ? price.error : undefined
+  /** Lines with a container / wagon type chosen. The price card appears only once one is selected. */
+  const typed = v.containers.filter((c) => !!c.containerType)
+  const hasType = typed.length > 0
+  const price = useMemo(() => indicativePrice(data, customer, { ...v, containers: typed }), [data, customer, v, typed])
+  const priceError = hasType && !price.ok && v.routeId ? price.error : undefined
 
-  const usable = v.containers.filter((c) => Number.isInteger(c.quantity) && c.quantity > 0)
+  const usable = typed.filter((c) => Number.isInteger(c.quantity) && c.quantity > 0)
   const avail = v.routeId && v.bookingDate ? availability(data, v.routeId, v.bookingDate, excludeBookingId) : null
   const cap = v.routeId && v.bookingDate ? checkCapacity(data, v.routeId, v.bookingDate, usable, excludeBookingId) : null
   const capBlocked = !!cap && !cap.ok
   const [waitError, setWaitError] = useState('')
 
-  const setCargo = (cargoType: CargoType) => set({ cargoType, containers: [{ containerType: containerTypesFor(cargoType)[0]!, quantity: 1 }] })
+  const setCargo = (cargoType: CargoType) => set({ cargoType, containers: [{ containerType: '' as ContainerLine['containerType'], quantity: 1 }] })
   const setLine = (i: number, patch: Partial<BookingInput['containers'][number]>) => set({ containers: v.containers.map((c, j) => (j === i ? { ...c, ...patch } : c)) })
   const unusedTypes = containerTypesFor(v.cargoType).filter((t) => !v.containers.some((c) => c.containerType === t))
   const setDoc = (kind: DocumentKind, doc: UploadedDocument | undefined) => set({ documents: [...v.documents.filter((d) => d.kind !== kind), ...(doc ? [doc] : [])] })
@@ -130,7 +134,8 @@ export function BookingForm({ customer, initial, onSubmit, submitLabel = 'Submit
                 <div className="space-y-2">
                   {v.containers.map((c, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <Select aria-label="Container type" value={c.containerType} onChange={(e) => setLine(i, { containerType: e.target.value as typeof c.containerType })} className="w-40" disabled={v.cargoType !== 'Containerized'}>
+                      <Select aria-label="Container type" value={c.containerType} onChange={(e) => setLine(i, { containerType: e.target.value as typeof c.containerType })} className="w-40" >
+                        <option value="">Select type…</option>
                         {containerTypesFor(v.cargoType).filter((t) => t === c.containerType || unusedTypes.includes(t)).map((t) => <option key={t}>{t}</option>)}
                       </Select>
                       <Input aria-label="Quantity" type="number" min={1} step={1} value={Number.isNaN(c.quantity) ? '' : c.quantity} onChange={(e) => setLine(i, { quantity: e.target.value === '' ? NaN : Number(e.target.value) })} className="w-28" />
@@ -139,8 +144,8 @@ export function BookingForm({ customer, initial, onSubmit, submitLabel = 'Submit
                     </div>
                   ))}
                 </div>
-                {v.cargoType === 'Containerized' && unusedTypes.length > 0 && (
-                  <Button size="sm" variant="secondary" className="mt-2" onClick={() => set({ containers: [...v.containers, { containerType: unusedTypes[0]!, quantity: 1 }] })}><Plus className="size-3.5" /> Add container type</Button>
+                {v.cargoType === 'Containerized' && unusedTypes.length > 0 && v.containers.every((c) => !!c.containerType) && (
+                  <Button size="sm" variant="secondary" className="mt-2" onClick={() => set({ containers: [...v.containers, { containerType: '' as ContainerLine['containerType'], quantity: 1 }] })}><Plus className="size-3.5" /> Add container type</Button>
                 )}
                 {show('containers') && <p role="alert" className="mt-1 text-xs text-red-600">{show('containers')}</p>}
               </div>
@@ -213,7 +218,14 @@ export function BookingForm({ customer, initial, onSubmit, submitLabel = 'Submit
       </Card>
 
       <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-        <PriceBreakdown price={price.ok ? price.price : undefined} error={priceError} showDiscount={isPriority} mode="indicative" />
+        {hasType ? (
+          <PriceBreakdown price={price.ok ? price.price : undefined} error={priceError} showDiscount={isPriority} mode="indicative" />
+        ) : (
+          <Card>
+            <CardHeader title="Price breakdown" />
+            <p className="px-5 py-4 text-sm text-slate-500">Select a {v.cargoType === 'Containerized' ? 'container' : 'wagon'} type to see the indicative price.</p>
+          </Card>
+        )}
         {isPriority ? (
           <Notice title={`Priority — eligible discount ${customer.eligibility.eligibleDiscountBp / 100}%`}>The Director sets your final discount (never above this) and chooses payment terms at approval.</Notice>
         ) : (

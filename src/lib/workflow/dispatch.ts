@@ -181,3 +181,46 @@ export function amendAwb(data: AppData, id: string, input: DispatchInput, reason
   })
   return { ok: true, data: next, version }
 }
+
+// ---------------------------------------------------------------- container photos
+
+export const MAX_PHOTOS = 8
+const MAX_PHOTO_CHARS = 450_000
+const PHOTO_STAGES = ['pending_dispatch', 'credit_approved', 'awb_generated']
+
+export interface PhotoInput { fileName: string; dataUrl: string; caption: string }
+
+export interface PhotoChange { add: PhotoInput[]; removeIds: string[] }
+
+/**
+ * Head of Port confirms a set of photo changes in one go: nothing is saved until this is called, and the booking's
+ * timeline gets a single entry ("2 added, 1 removed") instead of one per picture. Simulated storage; small images only.
+ */
+export function saveContainerPhotos(data: AppData, id: string, change: PhotoChange, actor: Actor, now = new Date().toISOString()): WorkflowResult {
+  const loaded = loadForPort(data, id, actor, 'confirm container photos')
+  if ('error' in loaded) return loaded
+  const { next, booking: b } = loaded
+  if (!PHOTO_STAGES.includes(b.status)) return fail('Photos can be changed while the booking is awaiting dispatch or after the AWB is issued, until it is completed.')
+  if (change.add.length === 0 && change.removeIds.length === 0) return fail('There are no photo changes to confirm.')
+  const existing = b.photos ?? []
+  const missing = change.removeIds.find((rid) => !existing.some((p) => p.id === rid))
+  if (missing) return fail('A photo you removed no longer exists. Reload the page and try again.')
+  for (const p of change.add) {
+    if (!p.dataUrl.startsWith('data:image/')) return fail('Choose image files only.')
+    if (p.dataUrl.length > MAX_PHOTO_CHARS) return fail('An image is too large for the demo. Choose a smaller picture.')
+  }
+  const kept = existing.filter((p) => !change.removeIds.includes(p.id))
+  if (kept.length + change.add.length > MAX_PHOTOS) return fail(`A booking can hold up to ${MAX_PHOTOS} photos.`)
+  const stamp = Date.parse(now)
+  const added = change.add.map((p, i) => ({
+    id: `ph-${b.id}-${stamp}-${i + 1}`, fileName: p.fileName.trim() || 'container-photo', dataUrl: p.dataUrl, caption: p.caption.trim() || 'Container photo', addedAt: now, addedBy: actor.name,
+  }))
+  b.photos = [...kept, ...added]
+  b.updatedAt = now
+  const parts = [change.add.length ? `${change.add.length} added` : '', change.removeIds.length ? `${change.removeIds.length} removed` : ''].filter(Boolean)
+  appendAudit(next, {
+    at: now, actorName: actor.name, actorRole: actor.role, entityType: 'booking', entityId: b.id, entityRef: b.reference,
+    action: `Container photos confirmed (${parts.join(', ')}; ${b.photos.length} on file)`,
+  })
+  return { ok: true, data: next }
+}
