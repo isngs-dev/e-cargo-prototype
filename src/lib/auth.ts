@@ -1,5 +1,5 @@
-import { personas } from '@/data/personas'
-import type { AppData, Persona } from '@/types/domain'
+import { findPersona, personas } from '@/data/personas'
+import type { AppData, Customer, Persona } from '@/types/domain'
 
 /**
  * Demonstration sign-in. These are PUBLISHED demo credentials shown on the login page — not real authentication.
@@ -19,7 +19,6 @@ export interface DemoAccount {
 export const demoAccounts: DemoAccount[] = [
   { personaId: 'p-fac-priority', username: 'adaeze', password: DEMO_PASSWORD, label: 'Cargo Facilitator (Priority)' },
   { personaId: 'p-fac-standard', username: 'ibrahim', password: DEMO_PASSWORD, label: 'Cargo Facilitator (Non-Priority)' },
-  { personaId: 'p-fac-applicant', username: 'obinna', password: DEMO_PASSWORD, label: 'Cargo Facilitator (new company)' },
   { personaId: 'p-ds', username: 'c.obi', password: DEMO_PASSWORD, label: 'District Supervisor (Lagos)' },
   { personaId: 'p-ds-ibadan', username: 'o.adeyemi', password: DEMO_PASSWORD, label: 'District Supervisor (Ibadan)' },
   { personaId: 'p-hoc', username: 'f.adebayo', password: DEMO_PASSWORD, label: 'Head of Cargo' },
@@ -29,17 +28,19 @@ export const demoAccounts: DemoAccount[] = [
   { personaId: 'p-sa', username: 't.bakare', password: DEMO_PASSWORD, label: 'Super Admin' },
 ]
 
-/**
- * Returns the persona id for valid credentials, otherwise null. Usernames are not case-sensitive.
- * Once the demo applicant's company is activated, the applicant alias stops working: the company signs in with the
- * username and temporary password from its welcome email.
- */
-export function authenticate(username: string, password: string, data?: AppData, applicantAppId = ''): string | null {
+/** Returns the persona id for valid credentials, otherwise null. Usernames are not case-sensitive. */
+export function authenticate(username: string, password: string): string | null {
   const u = username.trim().toLowerCase()
   const account = demoAccounts.find((a) => a.username === u)
-  if (!account || account.password !== password) return null
-  if (account.personaId === 'p-fac-applicant' && data && applicantCompany(data, applicantAppId)) return null
-  return account.personaId
+  return account && account.password === password ? account.personaId : null
+}
+
+/** Companies that registered through the public form (created at Director approval) — each has its own facilitator login. */
+export const registeredCompanies = (data: AppData): Customer[] => data.customers.filter((c) => c.firstLogin !== undefined)
+
+/** The facilitator account of a registered company: the contact person, acting for the company. */
+export function companyPersona(c: Customer): Persona {
+  return { id: `p-cus-${c.id}`, name: c.poc.name, role: 'cargo_facilitator', title: `${c.companyName} · ${c.eligibility.isPriority ? 'Priority' : 'Non-Priority'}`, customerId: c.id }
 }
 
 /** The company created for the demo applicant, once the Director has activated the application. */
@@ -53,17 +54,15 @@ export const expectedPassword = (username: string, passwords: Record<string, str
 
 /**
  * A customer company signs in with its contact email address (as in its welcome email) and its password: the temporary one
- * until it sets its own at first sign-in.
- * The new company registered in this browser signs in as the demo applicant, who then acts for it.
+ * until it sets its own at first sign-in. A company registered in this browser signs in as its own contact person.
  */
-export function authenticateCustomer(username: string, password: string, data: AppData, applicantAppId: string, passwords: Record<string, string> = {}): string | null {
+export function authenticateCustomer(username: string, password: string, data: AppData, passwords: Record<string, string> = {}): string | null {
   const u = username.trim().toLowerCase()
   const c = data.customers.find((x) => x.poc.email.toLowerCase() === u || x.username === u)
   if (!c || password !== expectedPassword(c.username, passwords)) return null
-  const p = personas.find((x) => x.customerId === c.id)
-  if (p) return p.id
-  const app = data.applications.find((a) => a.id === applicantAppId)
-  return app?.customerId === c.id ? 'p-fac-applicant' : null
+  const seeded = personas.find((x) => x.customerId === c.id)
+  if (seeded) return seeded.id
+  return c.firstLogin !== undefined ? companyPersona(c).id : null
 }
 
 /**
@@ -74,11 +73,15 @@ export function resolvePersona(persona: Persona, data: AppData, applicantAppId: 
   if (!persona.isApplicant) return persona
   const app = data.applications.find((a) => a.id === applicantAppId)
   const customer = app?.status === 'activated' && app.customerId ? data.customers.find((c) => c.id === app.customerId) : undefined
-  if (!customer) return persona
-  return {
-    ...persona,
-    isApplicant: false,
-    customerId: customer.id,
-    title: `${customer.companyName} · ${customer.eligibility.isPriority ? 'Priority' : 'Non-Priority'}`,
+  if (!customer) return app ? { ...persona, name: app.poc.name, title: `${app.companyName} · registration in progress` } : persona
+  return { ...companyPersona(customer), id: persona.id, isApplicant: false }
+}
+
+/** Any account by id, including the dynamic per-company facilitator accounts (`p-cus-…`). */
+export function personaFor(id: string, data: AppData, applicantAppId: string): Persona {
+  if (id.startsWith('p-cus-')) {
+    const c = data.customers.find((x) => `p-cus-${x.id}` === id)
+    if (c) return companyPersona(c)
   }
+  return resolvePersona(findPersona(id), data, applicantAppId)
 }

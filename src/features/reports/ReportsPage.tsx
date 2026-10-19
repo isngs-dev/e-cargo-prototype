@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { BarChart3, Banknote, Download, FileSearch, Package, QrCode, RotateCcw, Scale, Search, Users } from 'lucide-react'
+import { BarChart3, Banknote, Table2, Download, FileSearch, Package, QrCode, RotateCcw, Scale, Search, Users } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { BookingStatusBadge, EmptyState, PageHeader, PaymentStatusBadge, RegistrationStatusBadge } from '@/components/ui/blocks'
 import { Badge, Button, Card, CardHeader, Input, Select, Table, Td, Th } from '@/components/ui/primitives'
@@ -36,8 +36,9 @@ function Chip({ children }: { children: React.ReactNode }) {
 }
 
 /** Reports & Analytics body — used by /reports and embedded in the Managing Director dashboard. */
-export function ReportsView() {
+export function ReportsView({ recordsExtra }: { recordsExtra?: ReactNode } = {}) {
   const { data } = useStore()
+  const [section, setSection] = useState<'graphs' | 'records'>('graphs')
   const [filters, setFilters] = useState<ReportFilters>(DEFAULT_FILTERS)
   const [tab, setTab] = useState<Tab>('bookings')
   const [query, setQuery] = useState('')
@@ -106,6 +107,16 @@ export function ReportsView() {
         }
       />
 
+      {/* ------------------------------------------------ section switch: graphs open by default, KPIs and records beside it */}
+      <div role="tablist" aria-label="Report section" className="mb-4 inline-flex rounded-lg border border-slate-200 bg-white p-1 shadow-xs">
+        {([['graphs', 'Graphs', BarChart3], ['records', 'KPIs & records', Table2]] as const).map(([id, label, Icon]) => (
+          <button key={id} type="button" role="tab" aria-selected={section === id} onClick={() => setSection(id)}
+            className={`inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium ${section === id ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>
+            <Icon className="size-4" aria-hidden /> {label}
+          </button>
+        ))}
+      </div>
+
       {/* ------------------------------------------------ global filters */}
       <Card className="mb-6">
         <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
@@ -163,35 +174,8 @@ export function ReportsView() {
         </Card>
       )}
 
-      {/* ------------------------------------------------ trends */}
-      <div className="mb-6 grid gap-6 xl:grid-cols-2">
-        <Card>
-          <CardHeader title="Activity over time" description={`AWBs, registrations and bookings · per ${model.unit}`} />
-          <div className="p-4">
-            {activityHasData ? (
-              <LineChart labels={labels} integer format={(n) => String(n)} ariaLabel="Line chart of AWBs generated, registrations and bookings over time"
-                series={[
-                  { key: 'bookings', label: 'Bookings', color: SERIES.bookings, values: model.series.map((p) => p.bookings) },
-                  { key: 'registrations', label: 'Registrations', color: SERIES.registrations, values: model.series.map((p) => p.registrations) },
-                  { key: 'awbs', label: 'AWBs', color: SERIES.awbs, values: model.series.map((p) => p.awbs) },
-                ]} />
-            ) : <EmptyState title="No activity in this period" description="No AWBs, registrations or bookings fall in the selected period and filters." />}
-          </div>
-        </Card>
-        <Card>
-          <CardHeader title="Revenue over time" description={`Money received and refunded · per ${model.unit}`} />
-          <div className="p-4">
-            {revenueHasData ? (
-              <LineChart labels={labels} format={fmtMoney} axisFormat={compactNaira} ariaLabel="Line chart of revenue received and refunds over time"
-                series={[
-                  { key: 'revenue', label: 'Revenue received', color: SERIES.revenue, values: model.series.map((p) => p.revenue) },
-                  { key: 'refunds', label: 'Refunds processed', color: SERIES.refunds, values: model.series.map((p) => p.refunds) },
-                ]} />
-            ) : <EmptyState title="No payments received in this period" description="Unpaid bookings and outstanding credit are not revenue, so they never appear here." />}
-          </div>
-        </Card>
-      </div>
-
+      {section === 'graphs' && (
+        <>
       {/* ------------------------------------------------ composition */}
       <div className="mb-6 grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
         <Card>
@@ -219,6 +203,35 @@ export function ReportsView() {
             <SplitBar label="Bookings" a={model.priority.bookings.priority} b={model.priority.bookings.nonPriority} aLabel="Priority" bLabel="Non-Priority" />
             <SplitBar label="Revenue received" a={model.priority.revenue.priority} b={model.priority.revenue.nonPriority} aLabel="Priority" bLabel="Non-Priority" format={compactNaira} />
             {model.priority.customersApproved.unclassified > 0 && <p className="text-xs text-slate-500">{model.priority.customersApproved.unclassified} approved registration(s) have no linked customer record.</p>}
+          </div>
+        </Card>
+      </div>
+
+      {/* ------------------------------------------------ trends */}
+      <div className="mb-6 grid gap-6 xl:grid-cols-2">
+        <Card>
+          <CardHeader title="Activity over time" description={`AWBs, registrations and bookings · per ${model.unit}`} />
+          <div className="p-4">
+            {activityHasData ? (
+              <LineChart labels={labels} integer format={(n) => String(n)} ariaLabel="Line chart of AWBs generated, registrations and bookings over time"
+                series={[
+                  { key: 'bookings', label: 'Bookings', color: SERIES.bookings, values: model.series.map((p) => p.bookings) },
+                  { key: 'registrations', label: 'Registrations', color: SERIES.registrations, values: model.series.map((p) => p.registrations) },
+                  { key: 'awbs', label: 'AWBs', color: SERIES.awbs, values: model.series.map((p) => p.awbs) },
+                ]} />
+            ) : <EmptyState title="No activity in this period" description="No AWBs, registrations or bookings fall in the selected period and filters." />}
+          </div>
+        </Card>
+        <Card>
+          <CardHeader title="Revenue over time" description={`Money received and refunded · per ${model.unit}`} />
+          <div className="p-4">
+            {revenueHasData ? (
+              <LineChart labels={labels} format={fmtMoney} axisFormat={compactNaira} ariaLabel="Line chart of revenue received and refunds over time"
+                series={[
+                  { key: 'revenue', label: 'Revenue received', color: SERIES.revenue, values: model.series.map((p) => p.revenue) },
+                  { key: 'refunds', label: 'Refunds processed', color: SERIES.refunds, values: model.series.map((p) => p.refunds) },
+                ]} />
+            ) : <EmptyState title="No payments received in this period" description="Unpaid bookings and outstanding credit are not revenue, so they never appear here." />}
           </div>
         </Card>
       </div>
@@ -264,6 +277,11 @@ export function ReportsView() {
         </Card>
       </div>
 
+        </>
+      )}
+
+      {section === 'records' && (
+        <>
       {/* ------------------------------------------------ KPIs (summary just above the records) */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <ReportKpi label="AWBs generated" value={kpis.awbs.current} icon={QrCode} tone="success"
@@ -406,16 +424,14 @@ export function ReportsView() {
         <p className="mt-2 text-xs text-slate-500">Periods are measured back from the latest activity in the demo data ({formatDateTime(model.asOf)}).</p>
         <ul className="mt-2 list-disc space-y-1.5 pl-5 text-xs">{model.notes.map((n) => <li key={n}>{n}</li>)}</ul>
       </details>
+          {recordsExtra}
+        </>
+      )}
     </>
   )
 }
 
 export function ReportsPage() {
   const { persona } = useStore()
-  return (
-    <>
-      <ReportsView />
-      {persona.role === 'managing_director' && <ManagementSections />}
-    </>
-  )
+  return <ReportsView recordsExtra={persona.role === 'managing_director' ? <ManagementSections /> : null} />
 }

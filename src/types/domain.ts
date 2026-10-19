@@ -258,6 +258,8 @@ export interface ContainerPhoto {
   caption: string
   addedAt: ISODateTime
   addedBy: string
+  /** Upload round: 1 = first upload, 2+ = re-uploads. Photos are never deleted — a re-upload adds to the record. */
+  batch?: number
 }
 
 export interface Booking {

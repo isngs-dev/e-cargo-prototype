@@ -101,8 +101,8 @@ describe('the new-company journey produces mail at every stage', () => {
     expect(welcome.body.some((l) => l === `Sign-in email: ${customer.poc.email}`)).toBe(true)
     expect(welcome.body.some((l) => l.startsWith('Username'))).toBe(false)
     // the username in the email really signs in (as the new company's facilitator)
-    expect(authenticateCustomer(customer.username, 'demo1234', ok.data, appId)).toBe('p-fac-applicant')
-    expect(authenticateCustomer(customer.username, 'wrong', ok.data, appId)).toBeNull()
+    expect(authenticateCustomer(customer.username, 'demo1234', ok.data)).toBe(`p-cus-${customer.id}`)
+    expect(authenticateCustomer(customer.username, 'wrong', ok.data)).toBeNull()
     // the record copy goes to the supervisor, with MD and Director copied; the applicant gets only the welcome
     const record = buildMail(ok.data).find((m) => m.entityId === appId && /approved/i.test(m.subject) && !m.id.endsWith('-welcome'))!
     expect(record.to.some((r) => r.kind === 'applicant')).toBe(false)
@@ -175,7 +175,7 @@ describe('mail carries stages, not routine detail', () => {
   })
   it('no mailbox has a photo email, after a photo is actually added', () => {
     const d = createSeedData()
-    const r = saveContainerPhotos(d, 'bk-0398', { add: [{ fileName: 'a.jpg', dataUrl: 'data:image/jpeg;base64,AAAA', caption: 'x' }], removeIds: [] }, { name: 'Grace Etim', role: 'head_port_operations' })
+    const r = saveContainerPhotos(d, 'bk-0398', { add: [{ fileName: 'a.jpg', dataUrl: 'data:image/jpeg;base64,AAAA', caption: 'x' }] }, { name: 'Grace Etim', role: 'head_port_operations' })
     if (!r.ok) throw new Error(r.error)
     expect(buildMail(r.data).some((m) => /photo/i.test(m.subject))).toBe(false)
     expect(r.data.audit.at(-1)!.action).toContain('Container photo') // still on the audit record

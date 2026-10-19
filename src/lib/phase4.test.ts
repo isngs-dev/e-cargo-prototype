@@ -24,9 +24,9 @@ describe('train timetable autofill', () => {
   })
 })
 
-describe('container photos (draft, then confirm)', () => {
+describe('container photos (append-only: confirm, then re-upload)', () => {
   const d = createSeedData()
-  const add = (...ns: number[]) => ({ add: ns.map((n) => photo(n)), removeIds: [] as string[] })
+  const add = (...ns: number[]) => ({ add: ns.map((n) => photo(n)) })
   it('seed has sample photos on dispatched bookings, as inline images', () => {
     expect(d.bookings.find((b) => b.id === 'bk-0390')!.photos!.length).toBe(3)
     expect(sampleContainerPhoto(2)).toMatch(/^data:image\/svg\+xml/)
@@ -37,7 +37,7 @@ describe('container photos (draft, then confirm)', () => {
     if (!ok.ok) return
     const b = ok.data.bookings.find((x) => x.id === 'bk-0398')!
     expect(b.photos).toHaveLength(2)
-    expect(b.photos![0]).toMatchObject({ addedBy: 'Grace Etim', caption: 'Photo 1' })
+    expect(b.photos![0]).toMatchObject({ addedBy: 'Grace Etim', caption: 'Photo 1', batch: 1 })
     for (const role of ['cargo_facilitator', 'head_of_cargo', 'director_operations', 'managing_director', 'super_admin'] as const) {
       expect(saveContainerPhotos(d, 'bk-0398', add(1), { name: 'x', role }).ok).toBe(false)
     }
@@ -45,33 +45,31 @@ describe('container photos (draft, then confirm)', () => {
     expect(saveContainerPhotos(d, 'bk-0377', add(1), hop).ok).toBe(false) // completed
     expect(saveContainerPhotos(d, 'bk-0390', add(1), hop).ok).toBe(true) // AWB generated
   })
-  it('one confirmation is one timeline entry, however many pictures changed, and it counts added and removed', () => {
+  it('photos are never deleted: a re-upload adds a new batch and keeps every earlier photo; one timeline entry per confirmation', () => {
     const before = d.audit.length
-    const first = saveContainerPhotos(d, 'bk-0398', add(1, 2, 3), hop)
+    const first = saveContainerPhotos(d, 'bk-0398', add(1, 2), hop)
     if (!first.ok) throw new Error(first.error)
     expect(first.data.audit).toHaveLength(before + 1)
-    expect(first.data.audit.at(-1)).toMatchObject({ entityId: 'bk-0398', action: 'Container photos confirmed (3 added; 3 on file)' })
-    const ids = first.data.bookings.find((b) => b.id === 'bk-0398')!.photos!.map((p) => p.id)
-    const second = saveContainerPhotos(first.data, 'bk-0398', { add: [photo(4), photo(5)], removeIds: [ids[0]!] }, hop)
+    expect(first.data.audit.at(-1)).toMatchObject({ entityId: 'bk-0398', action: 'Container photos uploaded (2 photos; 2 on file)' })
+    const second = saveContainerPhotos(first.data, 'bk-0398', add(3), hop)
     if (!second.ok) throw new Error(second.error)
     expect(second.data.audit).toHaveLength(before + 2)
-    expect(second.data.audit.at(-1)!.action).toBe('Container photos confirmed (2 added, 1 removed; 4 on file)')
-    expect(second.data.bookings.find((b) => b.id === 'bk-0398')!.photos!.map((p) => p.caption)).toEqual(['Photo 2', 'Photo 3', 'Photo 4', 'Photo 5'])
-    const removeOnly = saveContainerPhotos(second.data, 'bk-0398', { add: [], removeIds: [ids[1]!] }, hop)
-    expect(removeOnly.ok && removeOnly.data.audit.at(-1)!.action).toBe('Container photos confirmed (1 removed; 3 on file)')
+    expect(second.data.audit.at(-1)!.action).toBe('Container photos re-uploaded (1 new; 2 earlier kept; 3 on file)')
+    const photos = second.data.bookings.find((b) => b.id === 'bk-0398')!.photos!
+    expect(photos.map((p) => p.caption)).toEqual(['Photo 1', 'Photo 2', 'Photo 3'])
+    expect(photos.map((p) => p.batch)).toEqual([1, 1, 2])
+    const third = saveContainerPhotos(second.data, 'bk-0398', add(4, 5), hop)
+    expect(third.ok && third.data.bookings.find((b) => b.id === 'bk-0398')!.photos!.map((p) => p.batch)).toEqual([1, 1, 2, 3, 3])
+    // seeded photos (batch 1) count as the first upload, so a re-upload on them is batch 2
+    const reup = saveContainerPhotos(d, 'bk-0390', add(9), hop)
+    expect(reup.ok && reup.data.bookings.find((b) => b.id === 'bk-0390')!.photos!.at(-1)!.batch).toBe(2)
   })
-  it('rejects empty confirmations, non-images, oversized images, over-the-limit and unknown removals', () => {
-    expect(saveContainerPhotos(d, 'bk-0398', { add: [], removeIds: [] }, hop).ok).toBe(false)
-    expect(saveContainerPhotos(d, 'bk-0398', { add: [{ fileName: 'a.pdf', dataUrl: 'data:application/pdf;base64,AAAA', caption: '' }], removeIds: [] }, hop).ok).toBe(false)
-    expect(saveContainerPhotos(d, 'bk-0398', { add: [{ fileName: 'big.jpg', dataUrl: `data:image/jpeg;base64,${'A'.repeat(500_000)}`, caption: '' }], removeIds: [] }, hop).ok).toBe(false)
+  it('there is no way to remove a photo, and bad confirmations are refused', () => {
+    expect(saveContainerPhotos(d, 'bk-0398', { add: [] }, hop).ok).toBe(false)
+    expect(saveContainerPhotos(d, 'bk-0398', { add: [{ fileName: 'a.pdf', dataUrl: 'data:application/pdf;base64,AAAA', caption: '' }] }, hop).ok).toBe(false)
+    expect(saveContainerPhotos(d, 'bk-0398', { add: [{ fileName: 'big.jpg', dataUrl: `data:image/jpeg;base64,${'A'.repeat(500_000)}`, caption: '' }] }, hop).ok).toBe(false)
     expect(saveContainerPhotos(d, 'bk-0398', add(...Array.from({ length: MAX_PHOTOS + 1 }, (_, i) => i)), hop).ok).toBe(false)
-    expect(saveContainerPhotos(d, 'bk-0398', { add: [], removeIds: ['nope'] }, hop).ok).toBe(false)
-    // removing one and adding one at the limit is fine
-    const full = saveContainerPhotos(d, 'bk-0398', add(...Array.from({ length: MAX_PHOTOS }, (_, i) => i)), hop)
-    if (!full.ok) throw new Error(full.error)
-    const firstId = full.data.bookings.find((b) => b.id === 'bk-0398')!.photos![0]!.id
-    expect(saveContainerPhotos(full.data, 'bk-0398', add(99), hop).ok).toBe(false)
-    expect(saveContainerPhotos(full.data, 'bk-0398', { add: [photo(99)], removeIds: [firstId] }, hop).ok).toBe(true)
+    expect(Object.keys({ ...saveContainerPhotos }).length).toBe(0)
   })
 })
 

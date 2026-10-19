@@ -58,6 +58,7 @@
 - Public **Track application** page (`/track`) replaces "Sign in to track" after registering, and replaces the landing header's "Open the platform" button (A-70). The login-page layout no longer squeezes the form.
 - Photos: draft + **Confirm photos** (one timeline entry per confirmation); pay page button reads **Confirm payment**; Director sees one price card; Managing Director signs in straight to Reports & Analytics (no Dashboard item; applications and customers sit under the reports) (A-71). 218 tests.
 - **Return after a decision** (A-72): officers go back to the dashboard / list they came from after a final action, with a confirmation message; photos, remarks and AWB amendments stay on the page. 220 tests.
+- Companies are their own facilitator accounts named after the contact person; the sign-in list is grouped NRC staff / Cargo facilitators and grows as companies are approved (A-73). Photos are append-only with re-upload batches (A-74). Reports: Graphs (default) and KPIs & records sections (A-75). 223 tests.
 - Next: full test run-through, then push.
 
 ## Phase 9 — Reports & Analytics (completed)

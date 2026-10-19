@@ -430,7 +430,7 @@ for (const [id, count] of [['bk-0390', 3], ['bk-0377', 2]] as const) {
   const b = bookings.find((x) => x.id === id)!
   b.photos = Array.from({ length: count }, (_, i) => ({
     id: `ph-${id}-${i + 1}`, fileName: `container_${i + 1}.jpg`, dataUrl: sampleContainerPhoto(i + (id === 'bk-0377' ? 3 : 0)),
-    caption: SAMPLE_CAPTIONS[i % SAMPLE_CAPTIONS.length]!, addedAt: b.awb?.generatedAt ?? b.updatedAt, addedBy: 'Grace Etim',
+    caption: SAMPLE_CAPTIONS[i % SAMPLE_CAPTIONS.length]!, addedAt: b.awb?.generatedAt ?? b.updatedAt, addedBy: 'Grace Etim', batch: 1,
   }))
 }
 

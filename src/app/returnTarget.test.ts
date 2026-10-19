@@ -34,7 +34,7 @@ describe('only final decisions change a status (so only they return the officer)
     const remark = addBookingRemark(d, 'bk-0418', hoc, 'Looks fine')
     expect(remark.ok && statusOf(remark.data, 'bk-0418')).toBe(statusOf(d, 'bk-0418'))
     // not final: confirming container photos
-    const photos = saveContainerPhotos(d, 'bk-0398', { add: [{ fileName: 'a.jpg', dataUrl: 'data:image/jpeg;base64,AAAA', caption: 'x' }], removeIds: [] }, hop)
+    const photos = saveContainerPhotos(d, 'bk-0398', { add: [{ fileName: 'a.jpg', dataUrl: 'data:image/jpeg;base64,AAAA', caption: 'x' }] }, hop)
     expect(photos.ok && statusOf(photos.data, 'bk-0398')).toBe(statusOf(d, 'bk-0398'))
     // not final: amending an issued AWB (stays on the page for now)
     const b = d.bookings.find((x) => x.id === 'bk-0390')!

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createSeedData } from '@/app/state'
 import { personas } from '@/data/personas'
-import { authenticate, authenticateCustomer, demoAccounts, DEMO_PASSWORD, expectedPassword, resolvePersona } from '@/lib/auth'
+import { authenticate, authenticateCustomer, demoAccounts, DEMO_PASSWORD, expectedPassword, companyPersona, personaFor, registeredCompanies, resolvePersona } from '@/lib/auth'
 import { buildMail } from '@/lib/mail'
 import { canAccess, hasFullVisibility } from '@/lib/permissions'
 import { changeCustomerEligibility, completeFirstLogin, correctCustomerRecord, setCustomerAccountStatus } from '@/lib/workflow/customerAdmin'
@@ -30,8 +30,8 @@ describe('demo sign-in', () => {
     expect(new Set(demoAccounts.map((a) => a.username)).size).toBe(demoAccounts.length)
     for (const a of demoAccounts) expect(personas.some((p) => p.id === a.personaId)).toBe(true)
   })
-  it('lists only the two seeded customer logins plus the new-company applicant', () => {
-    expect(demoAccounts.filter((a) => a.personaId.startsWith('p-fac')).map((a) => a.personaId)).toEqual(['p-fac-priority', 'p-fac-standard', 'p-fac-applicant'])
+  it('lists only the two seeded customer logins (registered companies join the list once approved)', () => {
+    expect(demoAccounts.filter((a) => a.personaId.startsWith('p-fac')).map((a) => a.personaId)).toEqual(['p-fac-priority', 'p-fac-standard'])
     expect(demoAccounts.some((a) => a.personaId === 'p-md')).toBe(true)
   })
 })
@@ -103,22 +103,22 @@ describe('first sign-in: temporary password, then the customer’s own', () => {
     expect(customer.firstLogin).toBe(true)
     expect(data.customers.filter((c) => c.firstLogin).map((c) => c.id)).toEqual([customer.id])
   })
-  it('signs in with the username and temporary password; the applicant alias stops working once approved', () => {
+  it('signs in with the contact email and temporary password, as a facilitator named after the contact person', () => {
     const { data, appId, customer } = approved()
-    expect(authenticate('obinna', 'demo1234', createSeedData(), '')).toBe('p-fac-applicant') // before approval
-    expect(authenticate('obinna', 'demo1234', data, appId)).toBeNull() // after approval
-    expect(authenticateCustomer(customer.username, 'demo1234', data, appId, {})).toBe('p-fac-applicant')
+    expect(appId).toBeTruthy()
+    expect(authenticate('obinna', 'demo1234')).toBeNull() // there is no shared \"new company\" alias any more
+    expect(authenticateCustomer(customer.username, 'demo1234', data, {})).toBe(companyPersona(customer).id)
     // the contact email is the sign-in name, in any case
-    expect(authenticateCustomer(customer.poc.email, 'demo1234', data, appId, {})).toBe('p-fac-applicant')
-    expect(authenticateCustomer(customer.poc.email.toUpperCase(), 'demo1234', data, appId, {})).toBe('p-fac-applicant')
-    expect(authenticateCustomer(customer.poc.email, 'wrong', data, appId, {})).toBeNull()
-    expect(authenticateCustomer(customer.username, 'wrong', data, appId, {})).toBeNull()
+    expect(authenticateCustomer(customer.poc.email, 'demo1234', data, {})).toBe(companyPersona(customer).id)
+    expect(authenticateCustomer(customer.poc.email.toUpperCase(), 'demo1234', data, {})).toBe(companyPersona(customer).id)
+    expect(authenticateCustomer(customer.poc.email, 'wrong', data, {})).toBeNull()
+    expect(authenticateCustomer(customer.username, 'wrong', data, {})).toBeNull()
   })
   it('after the change only the new password works', () => {
-    const { data, appId, customer } = approved()
+    const { data, customer } = approved()
     const passwords = { [customer.username]: 'Harbour#2026' }
-    expect(authenticateCustomer(customer.poc.email, 'Harbour#2026', data, appId, passwords)).toBe('p-fac-applicant')
-    expect(authenticateCustomer(customer.username, 'demo1234', data, appId, passwords)).toBeNull()
+    expect(authenticateCustomer(customer.poc.email, 'Harbour#2026', data, passwords)).toBe(companyPersona(customer).id)
+    expect(authenticateCustomer(customer.username, 'demo1234', data, passwords)).toBeNull()
     expect(expectedPassword(customer.username, passwords)).toBe('Harbour#2026')
     expect(expectedPassword('adaeze', passwords)).toBe(DEMO_PASSWORD)
   })
@@ -142,5 +142,37 @@ describe('first sign-in: temporary password, then the customer’s own', () => {
     const { data, appId } = approved()
     const w = buildMail(data).find((m) => m.entityId === appId && m.id.endsWith('-welcome'))!
     expect(w.body.join(' ')).toContain('set your own password')
+  })
+})
+
+describe('each registered company is its own facilitator account', () => {
+  it('the new company acts as its contact person, not as a fixed demo name', () => {
+    const { data, customer } = (() => {
+      const d0 = createSeedData()
+      const doc = (kind: 'cac_certificate' | 'company_profile') => ({ id: `d-${kind}`, kind, fileName: `${kind}.pdf`, sizeKb: 1, uploadedAt: '2026-10-14T09:00:00+01:00' })
+      const reg = { ...demoRegistration(), poc: { name: 'Amaka Eze', email: 'amaka@sunrise.demo', countryCode: '+234', phone: '803 000 0000' }, companyName: 'Sunrise Haulage Ltd', cacNumber: 'RC 7788991', documents: [doc('cac_certificate'), doc('company_profile')] }
+      const sub = submitRegistration(d0, reg, { name: 'Amaka Eze', role: 'cargo_facilitator' }, '2099-01-01T09:00:00+01:00')
+      if (!sub.ok) throw new Error(sub.error)
+      const id = (sub as unknown as { applicationId: string }).applicationId
+      const fwd = districtForward(sub.data, id, ds, '', '2099-01-01T10:00:00+01:00')
+      if (!fwd.ok) throw new Error(fwd.error)
+      const ok = directorApprove(fwd.data, id, dir, { isPriority: false, discountPct: 0, creditMonths: 0, thresholdNaira: 0, category: 'SME' }, '', '2099-01-01T11:00:00+01:00')
+      if (!ok.ok) throw new Error(ok.error)
+      return { data: ok.data, customer: ok.data.customers.find((c) => c.companyName === 'Sunrise Haulage Ltd')! }
+    })()
+    const me = personaFor(authenticateCustomer('amaka@sunrise.demo', 'demo1234', data)!, data, '')
+    expect(me).toMatchObject({ name: 'Amaka Eze', role: 'cargo_facilitator', customerId: customer.id })
+    expect(me.title).toContain('Sunrise Haulage Ltd')
+    expect(registeredCompanies(data).map((c) => c.id)).toEqual([customer.id])
+    expect(registeredCompanies(createSeedData())).toEqual([])
+  })
+  it('before approval, the demo applicant carries the application contact’s name (never a fixed one)', () => {
+    const d0 = createSeedData()
+    const applicant = personas.find((p) => p.isApplicant)!
+    const doc = (kind: 'cac_certificate' | 'company_profile') => ({ id: `d-${kind}`, kind, fileName: `${kind}.pdf`, sizeKb: 1, uploadedAt: '2026-10-14T09:00:00+01:00' })
+    const sub = submitRegistration(d0, { ...demoRegistration(), poc: { name: 'Amaka Eze', email: 'amaka@sunrise.demo', countryCode: '+234', phone: '803 000 0000' }, documents: [doc('cac_certificate'), doc('company_profile')] }, { name: 'Amaka Eze', role: 'cargo_facilitator' }, '2099-01-01T09:00:00+01:00')
+    if (!sub.ok) throw new Error(sub.error)
+    const appId = (sub as unknown as { applicationId: string }).applicationId
+    expect(resolvePersona(applicant, sub.data, appId).name).toBe('Amaka Eze')
   })
 })

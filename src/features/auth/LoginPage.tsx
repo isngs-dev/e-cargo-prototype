@@ -3,13 +3,13 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { ArrowLeft, ChevronRight, KeyRound, LogIn, ShieldCheck, TrainFront } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { Button, Input } from '@/components/ui/primitives'
-import { applicantCompany, demoAccounts, DEMO_PASSWORD } from '@/lib/auth'
+import { demoAccounts, DEMO_PASSWORD, registeredCompanies } from '@/lib/auth'
 import { findPersona } from '@/data/personas'
 import { cn } from '@/lib/cn'
 
 /** Sign-in page. The demo accounts beside the form fill the username and password when clicked. */
 export function LoginPage() {
-  const { signIn, signedIn, data, applicantAppId } = useStore()
+  const { signIn, signedIn, data } = useStore()
   const navigate = useNavigate()
   const location = useLocation()
   const notice = (location.state as { notice?: string; username?: string } | null)?.notice
@@ -17,7 +17,15 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const formRef = useRef<HTMLFormElement>(null)
-  const company = applicantCompany(data, applicantAppId)
+  const staff = demoAccounts.filter((a) => !a.personaId.startsWith('p-fac')).map((a) => ({ key: a.username, title: a.label, sub: `${findPersona(a.personaId).name} · ${a.username}`, fill: a.username, password: a.password }))
+  const seeded = demoAccounts.filter((a) => a.personaId.startsWith('p-fac')).map((a) => {
+    const p = findPersona(a.personaId)
+    const c = data.customers.find((x) => x.id === p.customerId)
+    return { key: a.username, title: `${c?.companyName ?? p.title} (${c?.eligibility.isPriority ? 'Priority' : 'Non-Priority'})`, sub: `${p.name} · ${a.username}`, fill: a.username, password: a.password }
+  })
+  // Companies registered in this browser join the list once approved; each signs in with its contact email.
+  const registered = registeredCompanies(data).map((c) => ({ key: c.id, title: `${c.companyName} (${c.eligibility.isPriority ? 'Priority' : 'Non-Priority'}, new)`, sub: `${c.poc.name} · ${c.poc.email}`, fill: c.poc.email, password: '' }))
+  const groups = [{ title: 'NRC staff', rows: staff }, { title: 'Cargo facilitators', rows: [...seeded, ...registered] }]
 
   if (signedIn) return <Navigate to="/dashboard" replace />
 
@@ -71,29 +79,35 @@ export function LoginPage() {
 
           <section className="min-w-0 border-t border-slate-200 bg-slate-50 p-6 sm:p-8 lg:border-l lg:border-t-0" aria-label="Demo accounts">
             <h2 className="text-sm font-semibold text-slate-900">Demo accounts</h2>
-            <p className="mt-1 text-xs text-slate-500">Click a post to fill in the sign-in form, then press <strong>Sign in</strong>. Password for all: <span className="rounded bg-white px-1.5 py-0.5 font-mono text-slate-700 ring-1 ring-slate-200">{DEMO_PASSWORD}</span></p>
-            <ul className="mt-4 divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white">
-              {demoAccounts.map((a) => {
-                const active = username.trim().toLowerCase() === (a.personaId === 'p-fac-applicant' && company ? company.poc.email.toLowerCase() : a.username)
-                return (
-                  <li key={a.username}>
-                    <button type="button"
-                      onClick={() => {
-                        const newCompany = a.personaId === 'p-fac-applicant' && company
-                        setUsername(newCompany ? company.poc.email : a.username); setPassword(newCompany ? '' : a.password); setError('')
-                        formRef.current?.querySelector<HTMLInputElement>(newCompany ? 'input[type=password]' : 'button[type=submit]')?.focus()
-                      }}
-                      className={cn('group flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-brand-50/60', active && 'bg-brand-50')}>
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium text-slate-900">{a.label}</span>
-                        <span className="block truncate text-xs text-slate-500">{a.personaId === 'p-fac-applicant' && company ? `${company.companyName} — use your email and the temporary password from the welcome email` : findPersona(a.personaId).name}</span>
-                      </span>
-                      <ChevronRight className={cn('size-4 shrink-0 text-slate-300 group-hover:text-brand-600', active && 'text-brand-600')} aria-hidden />
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
+            <p className="mt-1 text-xs text-slate-500">Click an account to fill in the sign-in form, then press <strong>Sign in</strong>. Password for the demo accounts: <span className="rounded bg-white px-1.5 py-0.5 font-mono text-slate-700 ring-1 ring-slate-200">{DEMO_PASSWORD}</span>. A company that registers appears under Facilitators once it is approved.</p>
+            <div className="mt-4 space-y-4">
+              {groups.map((g) => (
+                <div key={g.title}>
+                  <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{g.title}</p>
+                  <ul className="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                    {g.rows.map((r) => {
+                      const active = username.trim().toLowerCase() === r.fill.toLowerCase()
+                      return (
+                        <li key={r.key}>
+                          <button type="button"
+                            onClick={() => {
+                              setUsername(r.fill); setPassword(r.password); setError('')
+                              formRef.current?.querySelector<HTMLInputElement | HTMLButtonElement>(r.password ? 'button[type=submit]' : 'input[type=password]')?.focus()
+                            }}
+                            className={cn('group flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-brand-50/60', active && 'bg-brand-50')}>
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-medium text-slate-900">{r.title}</span>
+                              <span className="block truncate text-xs text-slate-500">{r.sub}</span>
+                            </span>
+                            <ChevronRight className={cn('size-4 shrink-0 text-slate-300 group-hover:text-brand-600', active && 'text-brand-600')} aria-hidden />
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </section>
         </div>
       </main>

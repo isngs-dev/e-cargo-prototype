@@ -184,43 +184,43 @@ export function amendAwb(data: AppData, id: string, input: DispatchInput, reason
 
 // ---------------------------------------------------------------- container photos
 
-export const MAX_PHOTOS = 8
+export const MAX_PHOTOS = 16
 const MAX_PHOTO_CHARS = 450_000
 const PHOTO_STAGES = ['pending_dispatch', 'credit_approved', 'awb_generated']
 
 export interface PhotoInput { fileName: string; dataUrl: string; caption: string }
 
-export interface PhotoChange { add: PhotoInput[]; removeIds: string[] }
-
 /**
- * Head of Port confirms a set of photo changes in one go: nothing is saved until this is called, and the booking's
- * timeline gets a single entry ("2 added, 1 removed") instead of one per picture. Simulated storage; small images only.
+ * Head of Port confirms a set of NEW photos in one go. Saved photos are a permanent, view-only record: nothing is ever deleted,
+ * a later correction is a re-upload that adds to the earlier photos. Nothing is saved until this is called, and the booking's
+ * timeline gets a single entry per confirmation. Simulated storage; small images only.
  */
-export function saveContainerPhotos(data: AppData, id: string, change: PhotoChange, actor: Actor, now = new Date().toISOString()): WorkflowResult {
+export function saveContainerPhotos(data: AppData, id: string, change: { add: PhotoInput[] }, actor: Actor, now = new Date().toISOString()): WorkflowResult {
   const loaded = loadForPort(data, id, actor, 'confirm container photos')
   if ('error' in loaded) return loaded
   const { next, booking: b } = loaded
-  if (!PHOTO_STAGES.includes(b.status)) return fail('Photos can be changed while the booking is awaiting dispatch or after the AWB is issued, until it is completed.')
-  if (change.add.length === 0 && change.removeIds.length === 0) return fail('There are no photo changes to confirm.')
-  const existing = b.photos ?? []
-  const missing = change.removeIds.find((rid) => !existing.some((p) => p.id === rid))
-  if (missing) return fail('A photo you removed no longer exists. Reload the page and try again.')
+  if (!PHOTO_STAGES.includes(b.status)) return fail('Photos can be uploaded while the booking is awaiting dispatch or after the AWB is issued, until it is completed.')
+  if (change.add.length === 0) return fail('Add at least one photo before confirming.')
   for (const p of change.add) {
     if (!p.dataUrl.startsWith('data:image/')) return fail('Choose image files only.')
     if (p.dataUrl.length > MAX_PHOTO_CHARS) return fail('An image is too large for the demo. Choose a smaller picture.')
   }
-  const kept = existing.filter((p) => !change.removeIds.includes(p.id))
-  if (kept.length + change.add.length > MAX_PHOTOS) return fail(`A booking can hold up to ${MAX_PHOTOS} photos.`)
+  const existing = b.photos ?? []
+  if (existing.length + change.add.length > MAX_PHOTOS) return fail(`A booking can hold up to ${MAX_PHOTOS} photos.`)
+  const batch = existing.reduce((m, p) => Math.max(m, p.batch ?? 1), 0) + 1
   const stamp = Date.parse(now)
   const added = change.add.map((p, i) => ({
-    id: `ph-${b.id}-${stamp}-${i + 1}`, fileName: p.fileName.trim() || 'container-photo', dataUrl: p.dataUrl, caption: p.caption.trim() || 'Container photo', addedAt: now, addedBy: actor.name,
+    id: `ph-${b.id}-${stamp}-${i + 1}`, fileName: p.fileName.trim() || 'container-photo', dataUrl: p.dataUrl, caption: p.caption.trim() || 'Container photo', addedAt: now, addedBy: actor.name, batch,
   }))
-  b.photos = [...kept, ...added]
+  b.photos = [...existing, ...added]
   b.updatedAt = now
-  const parts = [change.add.length ? `${change.add.length} added` : '', change.removeIds.length ? `${change.removeIds.length} removed` : ''].filter(Boolean)
+  const n = added.length
+  const noun = `${n} photo${n === 1 ? '' : 's'}`
   appendAudit(next, {
     at: now, actorName: actor.name, actorRole: actor.role, entityType: 'booking', entityId: b.id, entityRef: b.reference,
-    action: `Container photos confirmed (${parts.join(', ')}; ${b.photos.length} on file)`,
+    action: existing.length === 0
+      ? `Container photos uploaded (${noun}; ${b.photos.length} on file)`
+      : `Container photos re-uploaded (${n} new; ${existing.length} earlier kept; ${b.photos.length} on file)`,
   })
   return { ok: true, data: next }
 }

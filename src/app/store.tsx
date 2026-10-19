@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, type ReactNode } from 'react'
 import type { AppData, Persona } from '@/types/domain'
 import * as seed from '@/data/seed'
-import { findPersona, DEFAULT_PERSONA_ID } from '@/data/personas'
-import { authenticate, authenticateCustomer, expectedPassword, resolvePersona } from '@/lib/auth'
+import { DEFAULT_PERSONA_ID } from '@/data/personas'
+import { authenticate, authenticateCustomer, expectedPassword, personaFor } from '@/lib/auth'
 import { completeFirstLogin } from '@/lib/workflow/customerAdmin'
 import { mailSignIn as checkMailSignIn } from '@/lib/mail'
 import { createSeedState, type AppState } from './state'
@@ -62,7 +62,8 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, [action.box]: { ...box, seenUntil: { ...box.seenUntil, [action.key]: action.at } } }
     }
     case 'reset_demo':
-      return createSeedState(state.personaId, state.mailUser)
+      // Companies registered during a run disappear with the reset, so their accounts are signed out too.
+      return createSeedState(state.personaId?.startsWith('p-cus-') ? null : state.personaId, state.mailUser)
     case 'hydrate':
       return action.state
     case 'set_data':
@@ -132,7 +133,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const switchPersona = useCallback((personaId: string) => dispatch({ type: 'switch_persona', personaId }), [])
   const signIn = useCallback((username: string, password: string) => {
     const s = latest.current
-    const id = authenticate(username, password, s.data, s.applicantAppId) ?? authenticateCustomer(username, password, s.data, s.applicantAppId, s.passwords)
+    const id = authenticate(username, password) ?? authenticateCustomer(username, password, s.data, s.passwords)
     if (!id) return 'Incorrect username or password.'
     dispatch({ type: 'switch_persona', personaId: id })
     return null
@@ -140,7 +141,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => dispatch({ type: 'sign_out' }), [])
   const changePassword = useCallback((current: string, next: string) => {
     const s = latest.current
-    const me = resolvePersona(findPersona(s.personaId ?? DEFAULT_PERSONA_ID), s.data, s.applicantAppId)
+    const me = personaFor(s.personaId ?? DEFAULT_PERSONA_ID, s.data, s.applicantAppId)
     const customer = s.data.customers.find((c) => c.id === me.customerId)
     if (!customer) return 'No company account is signed in.'
     if (current !== expectedPassword(customer.username, s.passwords)) return 'The current (temporary) password is not correct.'
@@ -180,7 +181,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<StoreValue>(
     () => ({
-      state, persona: resolvePersona(findPersona(state.personaId ?? DEFAULT_PERSONA_ID), state.data, state.applicantAppId), signedIn: state.personaId !== null,
+      state, persona: personaFor(state.personaId ?? DEFAULT_PERSONA_ID, state.data, state.applicantAppId), signedIn: state.personaId !== null,
       data: state.data, applicantAppId: state.applicantAppId, switchPersona, signIn, signOut, changePassword,
       markNotificationsRead, markAllNotificationsRead,
       mailUser: state.mailUser, mailSignIn, mailSignOut, markMailRead, markAllMailRead, resetDemo, act,

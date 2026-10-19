@@ -15,7 +15,7 @@ Two journeys:
 2. On the sign-in page click the **post** you want, e.g. *Director of Operations*. Username and password fill in by themselves.
 3. Click **Sign in**.
 
-*Exception: once the new company is approved, its row (**Cargo Facilitator (new company)**) fills only the company's **email address** — you type the password yourself.*
+*The sign-in list has two groups: **NRC staff**, then **Cargo facilitators**. A company that registers is added to the facilitators once the Director approves it — as **Harbour Link Logistics Ltd (Priority, new)**, showing the contact person's name. Its row fills only the **email address**; you type the password yourself.*
 
 **Mail Outbox (emails)** — a separate, simple blue page
 - Open it in a **second browser tab**: https://nrc-ecargo-prototype.onrender.com/mail
@@ -89,7 +89,7 @@ Scroll through **Services**, **How it works**, **Train availability** and **FAQ*
 
 ## A5. First sign-in: set a new password
 1. Main tab: **Sign out**.
-2. Click **Cargo Facilitator (new company)** — the company's **email address** fills in as the sign-in name.
+2. Under **Cargo facilitators** click **Harbour Link Logistics Ltd (Priority, new)** — the company's **email address** fills in as the sign-in name.
 3. Type the **temporary password** from the welcome email → **Sign in**.
 4. The **Set your password** page opens:
    - **Current (temporary) password** → the temporary password
@@ -141,7 +141,7 @@ Scroll through **Services**, **How it works**, **Train availability** and **FAQ*
 > *"The Director can give less than the entitlement, never more, and must say why. Then the price is locked."*
 
 ## A9. The company pays
-1. Sign in as **Cargo Facilitator (new company)** — click the row, type `Harbour2026`.
+1. Sign in as the new company — click **Harbour Link Logistics Ltd (Priority, new)**, type `Harbour2026`.
 2. Open https://nrc-ecargo-prototype.onrender.com/bookings/bk-421 → click **Pay now**.
 3. Click **Pay via bank transfer** — the (demo) bank account and amount appear.
 4. Click **Confirm payment** → spinner → green tick **Payment successful**.
@@ -153,8 +153,8 @@ Scroll through **Services**, **How it works**, **Train availability** and **FAQ*
 ## A10. Port checks the cargo and issues the AWB
 1. Sign in as **Head of Port Operations**.
 2. Open https://nrc-ecargo-prototype.onrender.com/bookings/bk-421
-3. **Container photos** → click **Add sample photo** twice (they show a yellow **Not saved** tag), then click **Confirm photos**. ✅ They are saved, and the timeline gets one entry: "Container photos confirmed (2 added; 2 on file)".
-   *(Optional: remove one, add another, **Confirm photos** again → "1 added, 1 removed".)*
+3. **Container photos** → click **Add sample photo** twice (they show a yellow **Not saved** tag), then click **Confirm photos**. ✅ They are saved and become a **view-only** record; the timeline gets one entry: "Container photos uploaded (2 photos; 2 on file)".
+   *(Optional: to change something, the Head of Port re-uploads — **Add sample photo** → **Confirm re-upload** → "Container photos re-uploaded (1 new; 2 earlier kept; 3 on file)". Nothing is ever deleted.)*
 4. **Physical verification & dispatch** → tick all **3** boxes.
 5. **Train number** → pick `LI-FR-11`. ✅ Departure date, time and loading yard fill in by themselves.
 6. **Wagon number** → `NRC-FW-30001`.
@@ -164,7 +164,7 @@ Scroll through **Services**, **How it works**, **Train availability** and **FAQ*
 > *"The port confirms the cargo, adds photos, and assigns train and wagon. An AWB is never issued twice."*
 
 ## A11. The company sees its AWB
-1. Sign in as **Cargo Facilitator (new company)** (`Harbour2026`).
+1. Sign in as the new company (`Harbour2026`).
 2. Open https://nrc-ecargo-prototype.onrender.com/bookings/bk-421
 3. Show **Container photos** — click one to enlarge.
 4. Click **View AWB** — QR code, train, wagon, departure.
@@ -179,7 +179,7 @@ Scroll through **Services**, **How it works**, **Train availability** and **FAQ*
 # Journey B — A booking is rejected and the company is told
 
 ## B1. The company makes a second booking
-1. Signed in as **Cargo Facilitator (new company)**, open https://nrc-ecargo-prototype.onrender.com/bookings/new
+1. Signed in as the new company, open https://nrc-ecargo-prototype.onrender.com/bookings/new
 2. Same values as A6, except: Booking date `13 Nov 2026` · Commodity type `Used auto parts`.
 3. Sample files → tick the box → **Submit booking**.
 
@@ -194,7 +194,7 @@ Scroll through **Services**, **How it works**, **Train availability** and **FAQ*
 > *"A rejection always needs a reason, and the customer is told straight away."*
 
 ## B3. The company is notified
-1. Sign in as **Cargo Facilitator (new company)** (`Harbour2026`).
+1. Sign in as the new company (`Harbour2026`).
 2. Top bar **bell** → ✅ a new notification about the rejection. Click it.
 3. ✅ The booking page shows **Rejected** with the reason at the top.
 
