@@ -5,7 +5,8 @@ import { createSeedData } from '@/app/state'
 import { navForPersona } from '@/app/navigation'
 import { personas } from '@/data/personas'
 import { canAccess, canAccessPersona } from '@/lib/permissions'
-import { addDays, buildReport, DEFAULT_FILTERS, dayKey, latestActivity, pctChange, resolveRange, type ReportFilters } from '@/lib/reports'
+import { formatKobo } from '@/lib/money'
+import { addDays, buildReport, DEFAULT_FILTERS, dayKey, latestActivity, pctChange, resolveRange, summarize, type ReportFilters } from '@/lib/reports'
 import type { AppData, Booking, Role } from '@/types/domain'
 
 const ALL: ReportFilters = { ...DEFAULT_FILTERS, range: 'all' }
@@ -285,5 +286,35 @@ describe('access to Reports', () => {
     expect(canAccess('head_port_operations', 'dispatch')).toBe(true)
     expect(canAccess('cargo_facilitator', 'audit')).toBe(false)
     expect(canAccess('head_of_cargo', 'payments')).toBe(false)
+  })
+})
+
+describe('written summary', () => {
+  const d = createSeedData()
+  const text = (m: ReturnType<typeof buildReport>) => summarize(m, 'All time, all districts').flatMap((s) => s.lines).join('\n')
+  it('states the real figures in words, and never invents a comparison', () => {
+    const m = buildReport(d, ALL)
+    const t = text(m)
+    expect(t).toContain(`${m.kpis.bookings.current} bookings were created`)
+    expect(t).toContain(formatKobo(m.kpis.gross.current))
+    expect(t).toContain(formatKobo(m.kpis.awaitingPayment.amount))
+    expect(t).not.toContain('previous period') // "All time" has no comparison period
+    const week = buildReport(d, f({ range: 'custom', from: '2026-09-01', to: '2026-09-30' }))
+    expect(text(week)).toContain('on the previous period')
+  })
+  it('covers every part of the report, and flags what needs attention', () => {
+    const s = summarize(buildReport(d, ALL), 'All time')
+    expect(s.map((x) => x.title)).toEqual(['At a glance', 'Registrations', 'Bookings', 'Air Waybills', 'Revenue', 'Money still to collect', 'Needs attention'])
+    const attention = s.find((x) => x.title === 'Needs attention')!.lines.join(' ')
+    expect(attention).toMatch(/waiting/)
+  })
+  it('says so plainly when the scope is empty', () => {
+    const empty = text(buildReport(d, f({ range: 'custom', from: '2000-01-01', to: '2000-01-31' })))
+    expect(empty).toContain('There is no activity in this scope')
+    expect(empty).toContain('No payments were received in this scope.')
+    expect(empty).not.toMatch(/NaN|undefined/)
+  })
+  it('never counts unpaid money as revenue in its own wording', () => {
+    expect(text(buildReport(d, ALL))).toContain('never do')
   })
 })

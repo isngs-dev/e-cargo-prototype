@@ -10,6 +10,7 @@ import {
   type RegistrationApplication,
   type RegistrationStatus,
 } from '@/types/domain'
+import { formatKobo } from '@/lib/money'
 import { bookingStatusMeta, PENDING_APPROVAL, registrationStatusMeta, type Tone } from '@/lib/status'
 
 /**
@@ -443,4 +444,83 @@ export function buildReport(data: AppData, f: ReportFilters, asOf: string = late
     },
     awbRows, registrationRows, bookingRows, paymentRows, notes,
   }
+}
+
+// ---------------------------------------------------------------- written summary
+
+export interface SummarySection { title: string; lines: string[] }
+
+/** "up 33.3% on the previous period (6)" — only when an honest comparison exists, otherwise empty. */
+function change(d: Delta, comparable: boolean, money = false): string {
+  if (!comparable || d.previous === null) return ''
+  const prev = money ? formatKobo(d.previous) : String(d.previous)
+  if (d.pct === null) return d.previous === 0 && d.current === 0 ? '' : ` (previous period: ${prev})`
+  if (d.pct === 0) return ` (unchanged from the previous period, ${prev})`
+  return ` (${d.pct > 0 ? 'up' : 'down'} ${Math.abs(d.pct)}% on the previous period, ${prev})`
+}
+
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+
+/**
+ * The report in words: what happened in the selected period, what money came in, what is still to collect, and what
+ * needs attention. Every sentence comes from the figures in the model — nothing is estimated.
+ */
+export function summarize(m: ReportModel, scope: string): SummarySection[] {
+  const k = m.kpis
+  const c = m.comparable
+  const money = (n: number) => formatKobo(n)
+  const out: SummarySection[] = []
+
+  const total = k.registrations.current + k.bookings.current + k.awbs.current + k.gross.current
+  out.push({ title: 'At a glance', lines: [
+    `Scope: ${scope}.`,
+    total === 0
+      ? 'There is no activity in this scope. Widen the period or clear a filter.'
+      : `${plural(k.bookings.current, 'booking')} ${k.bookings.current === 1 ? 'was' : 'were'} created${change(k.bookings, c)}, ${plural(k.registrations.current, 'company', 'companies')} applied to register${change(k.registrations, c)} and ${plural(k.awbs.current, 'AWB')} ${k.awbs.current === 1 ? 'was' : 'were'} issued${change(k.awbs, c)}. ${money(k.gross.current)} was received${k.refunds.current ? `, ${money(k.refunds.current)} was refunded, leaving ${money(k.net.current)} net` : ''}.`,
+  ] })
+
+  const reg = k.registrations
+  const prio = m.priority.customersApproved
+  out.push({ title: 'Registrations', lines: reg.current === 0 ? ['No applications were submitted in this scope.'] : [
+    `${plural(reg.current, 'application')} submitted${change(reg, c)}: ${reg.approved} approved, ${reg.pending} with NRC staff (district check or Director), ${reg.awaitingApplicant} with the applicant for corrections and ${reg.rejected} rejected.`,
+    ...(prio.priority + prio.nonPriority > 0 ? [`Of the approved companies, ${prio.priority} ${prio.priority === 1 ? 'is' : 'are'} Priority and ${prio.nonPriority} Non-Priority.`] : []),
+    ...(m.byDistrict.some((d) => d.registrations) ? [`By district: ${m.byDistrict.map((d) => `${d.district} ${d.registrations}`).join(', ')}.`] : []),
+  ] })
+
+  const pay = m.paymentSummary
+  const bk = k.bookings
+  out.push({ title: 'Bookings', lines: bk.current === 0 ? ['No bookings were created in this scope.'] : [
+    `${plural(bk.current, 'booking')} created${change(bk, c)}: ${bk.pending} waiting for approval, ${bk.approvedOrCompleted} approved or completed (${bk.completed} completed).`,
+    `Payments: ${pay.paid} paid, ${pay.unpaid} unpaid, ${pay.credit} on credit, ${pay.cancelled} cancelled, ${pay.notDue} not yet due.`,
+    `${m.priority.bookings.priority} ${m.priority.bookings.priority === 1 ? 'booking is' : 'bookings are'} from Priority customers and ${m.priority.bookings.nonPriority} from Non-Priority customers.`,
+    ...(bk.awbConversionPct !== null ? [`${bk.awbConversionPct}% of these bookings have already reached an AWB.`] : []),
+    ...(m.byRoute.some((r) => r.bookings) ? [`Busiest route: ${[...m.byRoute].sort((a, b) => b.bookings - a.bookings)[0]!.label} (${[...m.byRoute].sort((a, b) => b.bookings - a.bookings)[0]!.bookings}).`] : []),
+  ] })
+
+  out.push({ title: 'Air Waybills', lines: k.awbs.current === 0 ? ['No AWBs were issued in this scope.'] : [
+    `${plural(k.awbs.current, 'AWB')} issued${change(k.awbs, c)}. By district: ${m.byDistrict.map((d) => `${d.district} ${d.awbs}`).join(', ')}.`,
+    'An amended AWB is the same AWB with a new version, so amendments are not counted again.',
+  ] })
+
+  out.push({ title: 'Revenue', lines: k.gross.current === 0 && k.refunds.current === 0 ? ['No payments were received in this scope.'] : [
+    `${money(k.gross.current)} was received${change(k.gross, c, true)}. Refunds processed: ${money(k.refunds.current)}. Net received: ${money(k.net.current)}${change(k.net, c, true)}.`,
+    `By payment terms: ${money(m.revenueByTerms.payNow)} from pay-now bookings and ${money(m.revenueByTerms.credit)} from credit bookings settled.`,
+    `By district: ${m.byDistrict.map((d) => `${d.district} ${money(d.revenue)}`).join(', ')}.`,
+    'Only paid and credit-settled bookings count as revenue; approved but unpaid bookings and outstanding credit never do.',
+  ] })
+
+  out.push({ title: 'Money still to collect', lines: [
+    `${money(k.awaitingPayment.amount)} is awaiting payment across ${plural(k.awaitingPayment.count, 'booking')}.`,
+    `${money(k.creditExposure.amount)} of approved credit is outstanding across ${plural(k.creditExposure.count, 'booking')}.`,
+    'These are positions as at the latest data. The period does not apply to them, and they are not revenue.',
+  ] })
+
+  const attention: string[] = []
+  if (reg.pending) attention.push(`${plural(reg.pending, 'registration')} waiting on NRC staff.`)
+  if (reg.awaitingApplicant) attention.push(`${plural(reg.awaitingApplicant, 'application')} waiting for the applicant to correct and resubmit.`)
+  if (bk.pending) attention.push(`${plural(bk.pending, 'booking')} waiting for approval or correction.`)
+  if (pay.unpaid) attention.push(`${plural(pay.unpaid, 'booking')} with an unpaid or failed payment.`)
+  if (k.creditExposure.count) attention.push(`${plural(k.creditExposure.count, 'credit booking')} with a balance still outstanding.`)
+  out.push({ title: 'Needs attention', lines: attention.length ? attention : ['Nothing is waiting in this scope.'] })
+  return out
 }

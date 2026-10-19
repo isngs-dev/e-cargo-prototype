@@ -31,7 +31,7 @@ const kpiAccent: Record<Tone, string> = {
 
 export function KpiCard({ label, value, hint, icon: Icon, tone = 'neutral', to }: { label: string; value: ReactNode; hint?: ReactNode; icon: LucideIcon; tone?: Tone; to?: string }) {
   const card = (
-    <Card className={cn('p-4', to && 'transition-colors group-hover:border-brand-300 group-hover:shadow-sm')}>
+    <Card className={cn('flex h-full flex-col p-4', to && 'transition-colors group-hover:border-brand-300 group-hover:shadow-sm')}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
@@ -41,10 +41,10 @@ export function KpiCard({ label, value, hint, icon: Icon, tone = 'neutral', to }
           <Icon className="size-4.5" aria-hidden />
         </span>
       </div>
-      {hint && <p className="mt-2 text-xs text-slate-500">{hint}</p>}
+      {hint ? <p className="mt-auto pt-2 text-xs text-slate-500">{hint}</p> : null}
     </Card>
   )
-  return to ? <Link to={to} className="group block rounded-lg">{card}</Link> : card
+  return to ? <Link to={to} className="group block h-full rounded-lg">{card}</Link> : card
 }
 
 export function EmptyState({ title, description, icon: Icon = Inbox, action }: { title: string; description?: ReactNode; icon?: LucideIcon; action?: ReactNode }) {

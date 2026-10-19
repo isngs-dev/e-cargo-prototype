@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { BarChart3, Banknote, Table2, Download, FileSearch, Package, QrCode, RotateCcw, Scale, Search, Users } from 'lucide-react'
+import { BarChart3, Banknote, FileText, Package, QrCode, Scale, Users, Download, FileSearch, RotateCcw, Search } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { BookingStatusBadge, EmptyState, PageHeader, PaymentStatusBadge, RegistrationStatusBadge } from '@/components/ui/blocks'
 import { Badge, Button, Card, CardHeader, Input, Select, Table, Td, Th } from '@/components/ui/primitives'
@@ -8,7 +8,7 @@ import { toCsv } from '@/lib/csv'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { formatKobo } from '@/lib/money'
 import {
-  buildReport, DEFAULT_FILTERS, isDefaultFilters, rangePresetLabels, type RangePreset, type ReportFilters,
+  buildReport, DEFAULT_FILTERS, isDefaultFilters, rangePresetLabels, summarize, type RangePreset, type ReportFilters,
 } from '@/lib/reports'
 import { bookingStatusMeta, paymentStatusMeta } from '@/lib/status'
 import { DISTRICTS } from '@/types/domain'
@@ -38,7 +38,7 @@ function Chip({ children }: { children: React.ReactNode }) {
 /** Reports & Analytics body — used by /reports and embedded in the Managing Director dashboard. */
 export function ReportsView({ recordsExtra }: { recordsExtra?: ReactNode } = {}) {
   const { data } = useStore()
-  const [section, setSection] = useState<'graphs' | 'records'>('graphs')
+  const [section, setSection] = useState<'graphs' | 'summary'>('graphs')
   const [filters, setFilters] = useState<ReportFilters>(DEFAULT_FILTERS)
   const [tab, setTab] = useState<Tab>('bookings')
   const [query, setQuery] = useState('')
@@ -53,6 +53,9 @@ export function ReportsView({ recordsExtra }: { recordsExtra?: ReactNode } = {})
   const spanText = range.fromDate && range.toDate ? `${formatDate(range.fromDate)} – ${formatDate(range.toDate)}`
     : range.fromDate ? `from ${formatDate(range.fromDate)}` : range.toDate ? `until ${formatDate(range.toDate)}` : 'all dates'
   const routeName = data.routes.find((r) => r.id === filters.routeId)
+  const scopeText = `${range.label}${range.fromDate || range.toDate ? ` (${spanText})` : ''}, ${filters.district === 'all' ? 'all districts' : `${filters.district} district`}${filters.routeId !== 'all' && routeName ? `, route ${routeName.origin} → ${routeName.destination}` : ''}${filters.bookingStatus !== 'all' ? `, booking status ${bookingStatusMeta[filters.bookingStatus].label}` : ''}${filters.paymentStatus !== 'all' ? `, payment status ${paymentStatusMeta[filters.paymentStatus].label}` : ''}`
+  const summary = useMemo(() => summarize(model, scopeText), [model, scopeText])
+  const receivables = kpis.awaitingPayment.amount + kpis.creditExposure.amount
   const totalRecords = model.awbRows.length + model.registrationRows.length + model.bookingRows.length + model.paymentRows.length
 
   const labels = model.series.map((p) => p.label)
@@ -92,7 +95,6 @@ export function ReportsView({ recordsExtra }: { recordsExtra?: ReactNode } = {})
 
   const bookingSlices = model.bookingStatus.map((s) => ({ key: s.key, label: s.label, value: s.count, color: toneColor[s.tone] }))
   const regSlices = model.registrationStatus.map((s) => ({ key: s.key, label: s.label, value: s.count, color: toneColor[s.tone] }))
-  const receivables = kpis.awaitingPayment.amount + kpis.creditExposure.amount
 
   return (
     <>
@@ -109,7 +111,7 @@ export function ReportsView({ recordsExtra }: { recordsExtra?: ReactNode } = {})
 
       {/* ------------------------------------------------ section switch: graphs open by default, KPIs and records beside it */}
       <div role="tablist" aria-label="Report section" className="mb-4 inline-flex rounded-lg border border-slate-200 bg-white p-1 shadow-xs">
-        {([['graphs', 'Graphs', BarChart3], ['records', 'KPIs & records', Table2]] as const).map(([id, label, Icon]) => (
+        {([['graphs', 'Graphs', BarChart3], ['summary', 'Summary', FileText]] as const).map(([id, label, Icon]) => (
           <button key={id} type="button" role="tab" aria-selected={section === id} onClick={() => setSection(id)}
             className={`inline-flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium ${section === id ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>
             <Icon className="size-4" aria-hidden /> {label}
@@ -280,41 +282,53 @@ export function ReportsView({ recordsExtra }: { recordsExtra?: ReactNode } = {})
         </>
       )}
 
-      {section === 'records' && (
+      {section === 'summary' && (
         <>
-      {/* ------------------------------------------------ KPIs (summary just above the records) */}
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <ReportKpi label="AWBs generated" value={kpis.awbs.current} icon={QrCode} tone="success"
-          footer={<DeltaChip delta={kpis.awbs} comparable={model.comparable} />}>
-          <span>{kpis.bookings.awbConversionPct === null ? 'No bookings in period' : `${kpis.bookings.awbConversionPct}% of bookings created in the period have an AWB`}</span>
-        </ReportKpi>
-        <ReportKpi label="Registrations" value={kpis.registrations.current} icon={Users} tone="accent"
-          footer={<DeltaChip delta={kpis.registrations} comparable={model.comparable} />}>
-          <span><strong className="text-slate-900">{kpis.registrations.pending}</strong> pending NRC</span>
-          <span><strong className="text-slate-900">{kpis.registrations.approved}</strong> approved</span>
-          <span><strong className="text-slate-900">{kpis.registrations.awaitingApplicant}</strong> with applicant</span>
-          <span><strong className="text-slate-900">{kpis.registrations.rejected}</strong> rejected</span>
-        </ReportKpi>
-        <ReportKpi label="Bookings" value={kpis.bookings.current} icon={Package} tone="info"
-          footer={<DeltaChip delta={kpis.bookings} comparable={model.comparable} />}>
-          <span><strong className="text-slate-900">{kpis.bookings.pending}</strong> pending approval</span>
-          <span><strong className="text-slate-900">{kpis.bookings.approvedOrCompleted}</strong> approved / completed</span>
-          <span><strong className="text-slate-900">{kpis.bookings.completed}</strong> completed</span>
-        </ReportKpi>
-        <ReportKpi label="Revenue received" value={fmtMoney(kpis.gross.current)} icon={Banknote} tone="success"
-          footer={<DeltaChip delta={kpis.gross} comparable={model.comparable} money />}>
-          <span>Paid and credit-settled bookings only (simulated payments)</span>
-        </ReportKpi>
-        <ReportKpi label="Net revenue" value={fmtMoney(kpis.net.current)} icon={Scale} tone="neutral"
-          footer={<DeltaChip delta={kpis.net} comparable={model.comparable} money />}>
-          <span>Received {fmtMoney(kpis.gross.current)} − refunds {fmtMoney(kpis.refunds.current)}</span>
-        </ReportKpi>
-        <ReportKpi label="Receivables (not revenue)" value={fmtMoney(receivables)} icon={BarChart3} tone="warning"
-          footer={<span className="text-slate-400">Position as at the latest data; the period does not apply</span>}>
-          <span><strong className="text-slate-900">{fmtMoney(kpis.awaitingPayment.amount)}</strong> awaiting payment ({kpis.awaitingPayment.count})</span>
-          <span><strong className="text-slate-900">{fmtMoney(kpis.creditExposure.amount)}</strong> approved credit outstanding ({kpis.creditExposure.count})</span>
-        </ReportKpi>
-      </div>
+          <details className="mb-6 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700">
+            <summary className="cursor-pointer font-medium text-slate-900">Read this summary in words</summary>
+            <div className="mt-3 space-y-4">
+              {summary.map((sec) => (
+                <div key={sec.title}>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{sec.title}</p>
+                  <div className="mt-1 space-y-1.5 leading-relaxed">{sec.lines.map((l, i) => <p key={i}>{l}</p>)}</div>
+                </div>
+              ))}
+            </div>
+          </details>
+
+          {/* ---- KPI cards */}
+          <div className="mb-6 grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ReportKpi label="AWBs generated" value={kpis.awbs.current} icon={QrCode} tone="success"
+              footer={<DeltaChip delta={kpis.awbs} comparable={model.comparable} />}>
+              <span>{kpis.bookings.awbConversionPct === null ? 'No bookings in period' : `${kpis.bookings.awbConversionPct}% of bookings created in the period have an AWB`}</span>
+            </ReportKpi>
+            <ReportKpi label="Registrations" value={kpis.registrations.current} icon={Users} tone="accent"
+              footer={<DeltaChip delta={kpis.registrations} comparable={model.comparable} />}>
+              <span><strong className="text-slate-900">{kpis.registrations.pending}</strong> pending NRC</span>
+              <span><strong className="text-slate-900">{kpis.registrations.approved}</strong> approved</span>
+              <span><strong className="text-slate-900">{kpis.registrations.awaitingApplicant}</strong> with applicant</span>
+              <span><strong className="text-slate-900">{kpis.registrations.rejected}</strong> rejected</span>
+            </ReportKpi>
+            <ReportKpi label="Bookings" value={kpis.bookings.current} icon={Package} tone="info"
+              footer={<DeltaChip delta={kpis.bookings} comparable={model.comparable} />}>
+              <span><strong className="text-slate-900">{kpis.bookings.pending}</strong> pending approval</span>
+              <span><strong className="text-slate-900">{kpis.bookings.approvedOrCompleted}</strong> approved / completed</span>
+              <span><strong className="text-slate-900">{kpis.bookings.completed}</strong> completed</span>
+            </ReportKpi>
+            <ReportKpi label="Revenue received" value={fmtMoney(kpis.gross.current)} icon={Banknote} tone="success"
+              footer={<DeltaChip delta={kpis.gross} comparable={model.comparable} money />}>
+              <span>Paid and credit-settled bookings only (simulated payments)</span>
+            </ReportKpi>
+            <ReportKpi label="Net revenue" value={fmtMoney(kpis.net.current)} icon={Scale} tone="neutral"
+              footer={<DeltaChip delta={kpis.net} comparable={model.comparable} money />}>
+              <span>Received {fmtMoney(kpis.gross.current)} − refunds {fmtMoney(kpis.refunds.current)}</span>
+            </ReportKpi>
+            <ReportKpi label="Receivables (not revenue)" value={fmtMoney(receivables)} icon={BarChart3} tone="warning"
+              footer={<span className="text-slate-400">Position as at the latest data; the period does not apply</span>}>
+              <span><strong className="text-slate-900">{fmtMoney(kpis.awaitingPayment.amount)}</strong> awaiting payment ({kpis.awaitingPayment.count})</span>
+              <span><strong className="text-slate-900">{fmtMoney(kpis.creditExposure.amount)}</strong> approved credit outstanding ({kpis.creditExposure.count})</span>
+            </ReportKpi>
+          </div>
 
       {/* ------------------------------------------------ records */}
       <Card className="mb-6">
@@ -419,12 +433,12 @@ export function ReportsView({ recordsExtra }: { recordsExtra?: ReactNode } = {})
         </div>
       </Card>
 
-      <details className="mb-2 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+          {recordsExtra}
+          <details className="mb-2 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
         <summary className="cursor-pointer font-medium text-slate-900">How these figures are calculated, and what is not available</summary>
         <p className="mt-2 text-xs text-slate-500">Periods are measured back from the latest activity in the demo data ({formatDateTime(model.asOf)}).</p>
         <ul className="mt-2 list-disc space-y-1.5 pl-5 text-xs">{model.notes.map((n) => <li key={n}>{n}</li>)}</ul>
       </details>
-          {recordsExtra}
         </>
       )}
     </>
