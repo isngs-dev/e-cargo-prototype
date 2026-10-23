@@ -16,6 +16,7 @@ import {
 } from '@/lib/registration'
 import { DISTRICTS, type District, type DocumentKind, type UploadedDocument } from '@/types/domain'
 import { DocumentUploader } from './DocumentUploader'
+import { liveConfigured } from '@/lib/liveNotify'
 
 export const emptyRegistration = (): RegistrationInput => ({
   companyName: '', cacNumber: '', registeredAddress: '', district: '', modes: [], services: [],
@@ -146,6 +147,11 @@ export function RegistrationForm({ initial, submitLabel, onSubmit }: { initial: 
               <div key={k}><dt className="text-xs text-slate-500">{k}</dt><dd className="font-medium text-slate-900">{val}</dd></div>
             ))}
           </dl>
+          <p className="mx-5 mb-4 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">
+            {liveConfigured()
+              ? <>By submitting you agree that NRC e-Cargo sends <strong>real email and SMS</strong> updates about this application to <strong>{v.poc.email}</strong> and <strong>{v.poc.countryCode} {v.poc.phone}</strong>.</>
+              : <>Status updates for this application are sent to {v.poc.email} and {v.poc.countryCode} {v.poc.phone} (simulated in this demo).</>}
+          </p>
           {submitError && <p role="alert" className="mx-5 mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{submitError}</p>}
         </>
       )}

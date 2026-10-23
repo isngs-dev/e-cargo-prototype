@@ -22,7 +22,26 @@ The rewrite is required so that refreshing or opening deep links (e.g. `/booking
 
 ## Environment variables
 
-None required. Do not commit `.env` files; `.gitignore` excludes them.
+None are required for the simulated demo. Do not commit `.env` files; `.gitignore` excludes them.
+
+### Optional: live email + SMS (SendGrid + KudiSMS)
+
+Every Mail Outbox message can also be delivered for real. Applicants and customers are messaged at the email and phone they typed; NRC officers at the contacts the presenter enters on **Live delivery setup** (`/live-setup`, also in the user menu; stored in that browser only, survives Reset demo). Seeded `.demo` addresses and their made-up phone numbers are never contacted. Payments stay simulated.
+
+A small dependency-free service in `server/` (`npm run notify`) holds the provider keys; the browser never sees them. Without `VITE_NOTIFY_URL` the app keeps simulating and says so.
+
+| Where | Variable | Purpose |
+|---|---|---|
+| Static site | `VITE_NOTIFY_URL` | Public URL of the notification service (set before the build) |
+| Service | `BREVO_API_KEY` (free, 300/day) or `SENDGRID_API_KEY` (paid), `MAIL_FROM`, `MAIL_FROM_NAME` | Email; Brevo is used if both are set; `MAIL_FROM` must be a verified sender |
+| Service | `KUDISMS_TOKEN`, `KUDISMS_SENDER` | SMS via KudiSMS; sender ID must be approved in the account |
+| Service | `KUDISMS_GATEWAY` | Optional, default `2` |
+| Service | `ALLOWED_ORIGINS` | Comma-separated site origins allowed to call it |
+| Service | `DAILY_CAP`, `RECIPIENT_HOURLY_CAP` | Abuse limits (default 300/day, 30/hour per recipient) |
+
+Steps: create the `nrc-ecargo-notify` service from `render.yaml`, fill the keys in the Render dashboard, set `VITE_NOTIFY_URL` on the static site and redeploy it. `<service-url>/api/health` should show email and SMS `true`. Free Render services sleep, so the first message after idle can take about 30 seconds.
+
+Credits: KudiSMS balance shows on the setup page after the first SMS, or run `npm run credits` with `KUDISMS_TOKEN` set. SendGrid's free plan allows 100 emails/day; check usage in its dashboard.
 
 ## Steps
 

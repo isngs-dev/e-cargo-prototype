@@ -4,6 +4,7 @@ import * as seed from '@/data/seed'
 import { DEFAULT_PERSONA_ID } from '@/data/personas'
 import { authenticate, authenticateCustomer, expectedPassword, personaFor } from '@/lib/auth'
 import { completeFirstLogin } from '@/lib/workflow/customerAdmin'
+import { LIVE_URL, loadLiveSettings, pendingLive, sendLive, type LiveDelivery } from '@/lib/liveNotify'
 import { mailSignIn as checkMailSignIn } from '@/lib/mail'
 import { createSeedState, type AppState } from './state'
 import type { WorkflowResult } from '@/lib/workflow/result'
@@ -35,6 +36,7 @@ type Action =
   | { type: 'sign_out' }
   | { type: 'mail_session'; email: string | null }
   | { type: 'set_password'; username: string; password: string }
+  | { type: 'live_delivery'; id: string; delivery: LiveDelivery }
   | { type: 'read'; box: Box; key: string; ids: string[] }
   | { type: 'seen_all'; box: Box; key: string; at: string }
   | { type: 'reset_demo' }
@@ -49,6 +51,8 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, personaId: null }
     case 'mail_session':
       return { ...state, mailUser: action.email }
+    case 'live_delivery':
+      return { ...state, liveDelivery: { ...state.liveDelivery, [action.id]: action.delivery } }
     case 'set_password':
       return { ...state, passwords: { ...state.passwords, [action.username]: action.password } }
     case 'read': {
@@ -170,11 +174,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const resetDemo = useCallback(() => dispatch({ type: 'reset_demo' }), [])
 
   const act = useCallback<StoreValue['act']>((fn, opts) => {
-    const result = fn(latest.current.data)
+    const before = latest.current.data
+    const result = fn(before)
     if (result.ok) {
       const next = { ...latest.current, data: result.data, applicantAppId: opts?.claimApplication && 'applicationId' in result && typeof result.applicationId === 'string' ? result.applicationId : latest.current.applicantAppId }
       latest.current = next
       dispatch({ type: 'set_data', data: result.data, applicantAppId: next.applicantAppId })
+      // Every new Mail Outbox message is also sent as real email / SMS when the notification service is configured.
+      if (LIVE_URL) {
+        for (const n of pendingLive(before, result.data, window.location.origin, loadLiveSettings())) {
+          const at = new Date().toISOString()
+          const base = { appId: n.appId, kind: n.kind, email: n.email, phone: n.phone, at }
+          dispatch({ type: 'live_delivery', id: n.id, delivery: { ...base, emailStatus: 'pending', smsStatus: 'pending' } })
+          void sendLive(n).then((r) => dispatch({ type: 'live_delivery', id: n.id, delivery: { ...base, emailStatus: r.email, smsStatus: r.sms } }))
+        }
+      }
     }
     return result
   }, [])

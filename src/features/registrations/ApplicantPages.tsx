@@ -7,6 +7,7 @@ import { Notice, PageHeader } from '@/components/ui/blocks'
 import { resubmitRegistration, submitRegistration } from '@/lib/workflow/registration'
 import type { Actor } from '@/lib/workflow/result'
 import { emptyRegistration, RegistrationForm } from './RegistrationForm'
+import { deliveryLine, liveConfigured } from '@/lib/liveNotify'
 
 /** `/my-registration` — send the demo applicant to their application, or to the form if they have none. */
 export function MyRegistrationRedirect() {
@@ -42,9 +43,10 @@ export function NewRegistrationPage() {
 
 /** `/register/submitted` — public confirmation after applying. */
 export function RegistrationSubmittedPage() {
-  const { data, applicantAppId } = useStore()
+  const { data, applicantAppId, state } = useStore()
   const app = data.applications.find((a) => a.id === applicantAppId)
   if (!app) return <Navigate to="/register" replace />
+  const live = Object.values(state.liveDelivery).filter((d) => d.appId === app.id && d.kind === 'registration_received').sort((a, b) => b.at.localeCompare(a.at))[0]
   return (
     <PublicLayout>
       <section className="mx-auto max-w-xl px-4 py-12 sm:px-6">
@@ -53,6 +55,11 @@ export function RegistrationSubmittedPage() {
           <h1 className="mt-3 text-xl font-semibold text-slate-900">Application submitted</h1>
           <p className="mt-1 font-mono text-sm text-slate-500">{app.reference}</p>
           <p className="mt-3 text-sm text-slate-600">{app.companyName} is now with the District Supervisor ({app.district}) for document verification, then the Director of Operations. Keep your reference — you can track the application any time. Sign-in details are emailed once the Director approves it.</p>
+          {liveConfigured() ? (
+            <p role="status" className="mt-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{live ? deliveryLine(live) : 'Sending your confirmation…'}</p>
+          ) : (
+            <p className="mt-4 text-xs text-slate-500">Email and SMS are simulated in this demo — see the Mail Outbox.</p>
+          )}
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <Link to={`/track?ref=${app.reference}`} className={buttonClass('primary')}>Track your application</Link>
             <Link to="/" className={buttonClass('secondary')}>Back to home page</Link>

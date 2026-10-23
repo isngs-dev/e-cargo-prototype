@@ -159,3 +159,9 @@ There is no further planned build phase. Recommended next steps:
 1. **Stakeholder walkthrough** using `/demo-guide`, then record feedback.
 2. **Get NRC to decide the open items** in `docs/DECISIONS.md §3` (tax basis D-1, refund policy D-2/D-3, payment window D-4, capacity D-6, documents D-7, SLAs D-9, AWB format D-10, Super Admin eligibility D-14, …). Until then every "assumption" (A-n) stays labelled as unconfirmed.
 3. **Production scoping:** the prototype has no backend, authentication, Paystack, email, database-trigger auditing or real file storage — see `docs/PROTOTYPE_SPEC.md §13`. Convert confirmed rules from `src/lib/workflow/*` into server-side logic.
+
+## Live email + SMS for all stages
+
+- `server/` notification service now uses SendGrid + KudiSMS (reports the SMS balance); `src/lib/liveNotify.ts` expands every new Mail Outbox message into per-recipient notices (To and Cc); `/live-setup` page for officers' real email/phone, email/SMS switches and a Test button.
+- Registration confirmation and Mail Outbox show per-recipient delivery status. Without the service everything stays simulated. See DEPLOYMENT.md and DECISIONS A-76.
+- Pending: real names for designations (awaiting list from the client).

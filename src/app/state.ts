@@ -1,6 +1,7 @@
 import type { AppData } from '@/types/domain'
 import * as seed from '@/data/seed'
 import { emptyMailState, type MailState } from '@/lib/mail'
+import type { LiveDelivery } from '@/lib/liveNotify'
 
 export interface AppState {
   version: number
@@ -12,6 +13,8 @@ export interface AppState {
   mailUser: string | null
   /** Passwords customers chose at first sign-in (demo only, kept in this browser). Everyone else uses the published demo password. */
   passwords: Record<string, string>
+  /** Live email / SMS sent for the customer registration stages, by Mail Outbox message id. */
+  liveDelivery: Record<string, LiveDelivery>
   mail: MailState
   /** In-app notification bell: what each account has seen. Mail and notifications are derived from the audit log. */
   notifications: MailState
@@ -49,5 +52,5 @@ function mailEpoch(): string {
 
 export function createSeedState(personaId: string | null = null, mailUser: string | null = null): AppState {
   const epoch = mailEpoch()
-  return { version: seed.SEED_VERSION, personaId, applicantAppId: DEFAULT_APPLICANT_APP_ID, mailUser, passwords: {}, mail: emptyMailState(epoch), notifications: emptyMailState(epoch), data: createSeedData() }
+  return { version: seed.SEED_VERSION, personaId, applicantAppId: DEFAULT_APPLICANT_APP_ID, mailUser, passwords: {}, liveDelivery: {}, mail: emptyMailState(epoch), notifications: emptyMailState(epoch), data: createSeedData() }
 }

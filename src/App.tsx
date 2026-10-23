@@ -20,6 +20,7 @@ import { LandingPage } from '@/features/landing/LandingPage'
 import { VerifyAwbPage } from '@/features/awb/VerifyAwbPage'
 import { DemoGuidePage } from '@/features/demo/DemoGuidePage'
 import { NewBookingPage } from '@/features/bookings/NewBookingPage'
+import { LiveSetupPage } from '@/features/live/LiveSetupPage'
 import { TrackApplicationPage } from '@/features/registrations/TrackApplicationPage'
 import { RegistrationsPage } from '@/features/registrations/RegistrationsPage'
 import { CustomersPage } from '@/features/customers/CustomersPage'
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/change-password" element={<ChangePasswordPage />} />
           <Route path="/mail" element={<MailLoginPage />} />
           <Route path="/mail/inbox" element={<MailboxPage />} />
+          <Route path="/live-setup" element={<LiveSetupPage />} />
           <Route path="/track" element={<TrackApplicationPage />} />
           <Route path="/register" element={<NewRegistrationPage />} />
           <Route path="/register/submitted" element={<RegistrationSubmittedPage />} />

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { ChevronDown, House, LogOut, Mail } from 'lucide-react'
+import { ChevronDown, House, LogOut, Mail, Send } from 'lucide-react'
 import { useStore } from '@/app/store'
 import { roleLabels } from '@/lib/permissions'
 
@@ -44,6 +44,7 @@ export function UserMenu() {
           </div>
           <Link to="/" role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"><House className="size-4" aria-hidden /> Back to home page</Link>
           <Link to="/mail" target="_blank" rel="noopener" role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"><Mail className="size-4" aria-hidden /> Open mail outbox</Link>
+          <Link to="/live-setup" target="_blank" rel="noopener" role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"><Send className="size-4" aria-hidden /> Live delivery setup</Link>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); signOut(); navigate('/login') }} className="flex w-full items-center gap-2 border-t border-slate-100 px-4 py-2.5 text-left text-sm text-red-700 hover:bg-red-50">
             <LogOut className="size-4" aria-hidden /> Sign out
           </button>

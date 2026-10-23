@@ -8,6 +8,9 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 22.12.0
+      # URL of the notification service below (live registration email/SMS). Leave empty to keep everything simulated.
+      - key: VITE_NOTIFY_URL
+        sync: false
     routes:
       - type: rewrite
         source: /*
@@ -16,3 +19,29 @@ services:
       - path: /assets/*
         name: Cache-Control
         value: public, max-age=31536000, immutable
+
+  # Live email + SMS for every workflow stage (SendGrid + KudiSMS). Holds the provider keys; the site never sees them.
+  - type: web
+    name: nrc-ecargo-notify
+    runtime: node
+    plan: free
+    buildCommand: echo "no build"
+    startCommand: node server/index.mjs
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.12.0
+      - key: ALLOWED_ORIGINS
+        value: https://nrc-ecargo-prototype.onrender.com
+      - key: BREVO_API_KEY
+        sync: false
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: NRC e-Cargo
+      - key: KUDISMS_TOKEN
+        sync: false
+      - key: KUDISMS_SENDER
+        sync: false

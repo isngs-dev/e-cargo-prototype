@@ -11,7 +11,10 @@
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "notify": "node server/index.mjs",
+    "credits": "node server/credits.mjs",
+    "credits": "node server/credits.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

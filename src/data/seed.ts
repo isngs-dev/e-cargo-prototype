@@ -34,7 +34,7 @@ import { indicativeDiscountBp } from '@/lib/eligibility'
 import { demoVerificationRef, formatAwbNumber } from '@/lib/awb'
 import { sampleContainerPhoto, SAMPLE_CAPTIONS } from '@/lib/photos'
 
-export const SEED_VERSION = 11
+export const SEED_VERSION = 12
 
 export const config: PlatformConfig = {
   tax: { vatBp: 750, stampDutyBp: 75, insuranceBp: 150, basis: 'net' },
