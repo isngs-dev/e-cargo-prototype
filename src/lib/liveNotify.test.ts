@@ -58,8 +58,20 @@ describe('pendingLive (every mail, to officers too)', () => {
     expect(withDs?.text).not.toContain('simulated email')
   })
 
+  it('sends messages for demo people to the demo inbox, tagged with who they were for', () => {
+    const settings = { ...defaultLiveSettings(), inbox: 'info@team.ng' }
+    const out = pendingLive(base, after, 'https://x.test', settings)
+    const ds = out.find((n) => n.subject.includes('District Supervisor'))
+    expect(ds?.email).toBe('info@team.ng')
+    expect(ds?.subject).toMatch(/^\[For District Supervisor/)
+    expect(ds?.text).toContain('c.obi@nrc.demo')
+    expect(ds?.phone).toBe('') // fake seeded phones are never texted
+    expect(out.every((n) => n.email === 'info@team.ng')).toBe(true)
+    expect(out.length).toBeGreaterThan(2) // applicant, supervisor and the copied MD / Director each get their tagged copy
+  })
+
   it('respects the email and SMS switches', () => {
-    const settings = { emailOn: false, smsOn: true, contacts: { 'c.obi@nrc.demo': { email: 'sup@real.ng', phone: '+2348031112222' } } }
+    const settings = { emailOn: false, smsOn: true, inbox: '', contacts: { 'c.obi@nrc.demo': { email: 'sup@real.ng', phone: '+2348031112222' } } }
     const out = pendingLive(base, after, 'https://x.test', settings)
     expect(out.every((n) => n.email === '')).toBe(true)
     expect(out.some((n) => n.phone === '+2348031112222')).toBe(true)

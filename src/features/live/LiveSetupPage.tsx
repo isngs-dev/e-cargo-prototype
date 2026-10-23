@@ -37,17 +37,17 @@ export function LiveSetupPage() {
   const save = () => {
     const contacts: LiveSettings['contacts'] = {}
     for (const [k, c] of Object.entries(settings.contacts)) if (c.email.trim() || c.phone.trim()) contacts[k] = { email: c.email.trim(), phone: normalisePhone(c.phone) }
-    const next = { ...settings, contacts }
+    const next = { ...settings, inbox: settings.inbox.trim(), contacts }
     setSettings(next)
     saveLiveSettings(next)
     setSaved(true)
   }
   const test = async (key: string, name: string) => {
-    const c = settings.contacts[key]
-    if (!c) return
+    const c = settings.contacts[key] ?? { email: '', phone: '' }
+    const email = c.email.trim() || settings.inbox.trim()
     setTested((t) => ({ ...t, [key]: 'Sending…' }))
     const r = await sendLive({
-      id: `test-${key}`, appId: '', kind: 'test', email: c.email.trim(), phone: normalisePhone(c.phone), name,
+      id: `test-${key}`, appId: '', kind: 'test', email, phone: normalisePhone(c.phone), name,
       subject: 'NRC e-Cargo — test message', text: 'This is a test message from the NRC e-Cargo prototype. If you can read this, live delivery to you works.',
       sms: 'NRC e-Cargo: test message. Live delivery to this number works.',
     })
@@ -66,7 +66,7 @@ export function LiveSetupPage() {
       <section className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Live delivery setup</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Every email in the Mail Outbox can also be sent for real. Enter the email and phone of the person playing each role. Seeded <span className="font-mono">.demo</span> addresses are never contacted. Companies that register are messaged at the details they typed.
+          Every email in the Mail Outbox can also be sent for real. Messages for demo officers and demo companies go to the demo inbox; companies that register with a real email are messaged at the details they typed. Seeded <span className="font-mono">.demo</span> addresses and phone numbers are never contacted. SMS goes only to phones entered below or typed at registration.
         </p>
 
         <Card className="mt-6 p-4">
@@ -82,6 +82,11 @@ export function LiveSetupPage() {
                   <span>SMS balance: <strong>{health.smsBalance ? `₦${health.smsBalance}` : 'shown after the first SMS'}</strong></span>
                 </p>
               )}
+          <div className="mt-3 border-t border-slate-100 pt-3">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="demo-inbox">Demo inbox</label>
+            <p className="text-xs text-slate-500">Receives every email meant for a demo officer or demo company, with the subject showing who it was for. Leave a row below empty to use it; fill a row to send that role somewhere else.</p>
+            <Input id="demo-inbox" type="email" className="mt-1.5 max-w-sm" placeholder="info@yourcompany.com" value={settings.inbox} onChange={(e) => { setSaved(false); setSettings((s) => ({ ...s, inbox: e.target.value })) }} />
+          </div>
           <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 border-t border-slate-100 pt-3">
             {toggle('emailOn', 'Send emails')}
             {toggle('smsOn', 'Send SMS (uses credits)')}
@@ -97,9 +102,9 @@ export function LiveSetupPage() {
                   <p className="text-sm font-medium text-slate-900">{r.label}</p>
                   <p className="truncate text-xs text-slate-500">{r.name}</p>
                 </div>
-                <Input type="email" placeholder="real email address" aria-label={`Email for ${r.label}`} value={c.email} onChange={(e) => edit(r.key, { email: e.target.value })} />
+                <Input type="email" placeholder={settings.inbox.trim() ? `→ ${settings.inbox.trim()}` : 'real email address'} aria-label={`Email for ${r.label}`} value={c.email} onChange={(e) => edit(r.key, { email: e.target.value })} />
                 <Input type="tel" placeholder="0803 123 4567" aria-label={`Phone for ${r.label}`} value={c.phone} onChange={(e) => edit(r.key, { phone: e.target.value })} />
-                <Button variant="secondary" disabled={!LIVE_URL || (!c.email && !c.phone)} onClick={() => void test(r.key, r.name)}><Send className="size-4" aria-hidden /> Test</Button>
+                <Button variant="secondary" disabled={!LIVE_URL || (!c.email && !c.phone && !settings.inbox.trim())} onClick={() => void test(r.key, r.name)}><Send className="size-4" aria-hidden /> Test</Button>
                 {tested[r.key] && <p className="text-xs text-slate-600 md:col-span-4" role="status">{tested[r.key]}</p>}
               </div>
             )

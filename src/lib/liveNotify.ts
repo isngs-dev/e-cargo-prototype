@@ -1,5 +1,6 @@
 import type { AppData, RegistrationApplication } from '@/types/domain'
 import { buildMail, envelope } from '@/lib/mail'
+import { roleLabels } from '@/lib/permissions'
 
 /**
  * Live email + SMS. Every Mail Outbox message can also be delivered for real: customers and applicants at the address
@@ -128,15 +129,17 @@ export const applicationOf = (data: AppData, id: string): RegistrationApplicatio
 // ---------------------------------------------------------------- presenter settings (this browser only, survives Reset demo)
 
 export interface LiveContact { email: string; phone: string }
-export interface LiveSettings { emailOn: boolean; smsOn: boolean; contacts: Record<string, LiveContact> }
+/** `inbox`: one team mailbox that receives every message meant for a seeded `.demo` person, tagged with who it was for. */
+export interface LiveSettings { emailOn: boolean; smsOn: boolean; inbox: string; contacts: Record<string, LiveContact> }
 const SETTINGS_KEY = 'nrc-ecargo-prototype:live-settings'
-export const defaultLiveSettings = (): LiveSettings => ({ emailOn: true, smsOn: true, contacts: {} })
+export const DEFAULT_INBOX: string = ((import.meta.env.VITE_DEMO_INBOX as string | undefined) ?? '').trim()
+export const defaultLiveSettings = (): LiveSettings => ({ emailOn: true, smsOn: true, inbox: DEFAULT_INBOX, contacts: {} })
 const norm = (e: string) => e.trim().toLowerCase()
 
 export function loadLiveSettings(): LiveSettings {
   try {
     const raw = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? 'null') as Partial<LiveSettings> | null
-    return { ...defaultLiveSettings(), ...(raw ?? {}), contacts: { ...(raw?.contacts ?? {}) } }
+    return { ...defaultLiveSettings(), ...(raw ?? {}), inbox: raw?.inbox ?? DEFAULT_INBOX, contacts: { ...(raw?.contacts ?? {}) } }
   } catch { return defaultLiveSettings() }
 }
 export function saveLiveSettings(s: LiveSettings): void {
@@ -151,12 +154,37 @@ function phoneFor(email: string, data: AppData): string {
   return poc ? toE164(poc.countryCode, poc.phone) : ''
 }
 
-/** Email and phone to use for one in-app address, or empty strings when nothing real is known. */
-export function contactFor(email: string, data: AppData, settings: LiveSettings): LiveContact {
+/** Who an in-app address belongs to, for tagging demo-inbox copies: "Director of Operations — Aliyu Bello". */
+export function whoIs(email: string, data: AppData): string {
+  const s = data.staff.find((x) => norm(x.email) === norm(email))
+  if (s) return `${roleLabels[s.role]}${s.district ? ` (${s.district})` : ''} — ${s.name}`
+  const c = data.customers.find((x) => norm(x.poc.email) === norm(email))
+  if (c) return `${c.companyName} — ${c.poc.name}`
+  const a = data.applications.find((x) => norm(x.poc.email) === norm(email))
+  return a ? `${a.companyName} — ${a.poc.name}` : email
+}
+
+/**
+ * Email and phone to use for one in-app address. Real addresses are used as typed; a presenter-entered contact wins;
+ * a seeded `.demo` address goes to the demo inbox (with `forLabel` saying who it was for), or nowhere if none is set.
+ */
+export function contactFor(email: string, data: AppData, settings: LiveSettings): LiveContact & { forLabel?: string } {
   const set = settings.contacts[norm(email)]
-  if (set && (set.email || set.phone)) return { email: set.email.trim(), phone: set.phone.trim() }
-  if (isDemoAddress(email)) return { email: '', phone: '' }
-  return { email: norm(email), phone: phoneFor(email, data) }
+  const demo = isDemoAddress(email)
+  const realEmail = set?.email.trim() || (demo ? '' : norm(email))
+  const phone = set?.phone.trim() || (demo ? '' : phoneFor(email, data))
+  if (realEmail || !demo || !settings.inbox.trim()) return { email: realEmail, phone }
+  return { email: settings.inbox.trim(), phone, forLabel: whoIs(email, data) }
+}
+
+/** Points a notice at the resolved contact; demo-inbox copies say who they were meant for. */
+function routed(n: LiveNotice, c: LiveContact & { forLabel?: string }, original: string): LiveNotice {
+  if (!c.forLabel) return { ...n, email: c.email, phone: c.phone }
+  return {
+    ...n, email: c.email, phone: c.phone, name: c.forLabel,
+    subject: `[For ${c.forLabel}] ${n.subject}`.slice(0, 150),
+    text: `Demo copy — this message was addressed to ${c.forLabel} <${original}>.\n\n${n.text}`.slice(0, 2000),
+  }
 }
 
 /** Every new Mail Outbox message, expanded to one notice per real recipient (To and Cc). */
@@ -173,12 +201,12 @@ export function mailNotices(before: AppData, after: AppData, origin: string, set
       const c = contactFor(a.email, after, settings)
       if (!c.email && !c.phone) continue
       const lines = m.body.filter((l) => !l.startsWith('This is a simulated email'))
-      out.push({
-        id: `${m.id}|${norm(a.email)}`, appId: m.entityId, kind: 'notification', email: c.email, phone: c.phone, name: a.name,
+      out.push(routed({
+        id: `${m.id}|${norm(a.email)}`, appId: m.entityId, kind: 'notification', email: '', phone: '', name: a.name,
         subject: `NRC e-Cargo — ${m.subject}`,
         text: [...lines, direct.has(norm(a.email)) ? '' : 'You are receiving this message as a copy.', m.link ? `Open: ${origin}${m.link}` : ''].filter(Boolean).join('\n\n'),
         sms: `NRC e-Cargo: ${m.subject}`.slice(0, SMS_MAX),
-      })
+      }, c, a.email))
     }
   }
   return out
@@ -186,7 +214,12 @@ export function mailNotices(before: AppData, after: AppData, origin: string, set
 
 /** Everything to deliver after one successful action, with the presenter's email / SMS switches applied. */
 export function pendingLive(before: AppData, after: AppData, origin: string, settings: LiveSettings): LiveNotice[] {
-  const own = registrationNotices(before, after, origin).filter((n) => !isDemoAddress(n.email)) // seeded applicants are not real people
+  // Seeded applicants are not real people: their copies go to the demo inbox (or nowhere) like any other `.demo` address.
+  const own = registrationNotices(before, after, origin).flatMap((n) => {
+    if (!isDemoAddress(n.email)) return [n]
+    const c = contactFor(n.email, after, settings)
+    return c.email || c.phone ? [routed(n, c, n.email)] : []
+  })
   return [...own, ...mailNotices(before, after, origin, settings)]
     .map((n) => ({ ...n, email: settings.emailOn ? n.email : '', phone: settings.smsOn ? n.phone : '' }))
     .filter((n) => n.email || n.phone)

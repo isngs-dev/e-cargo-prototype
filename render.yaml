@@ -11,6 +11,9 @@ services:
       # URL of the notification service below (live email/SMS). Remove to keep everything simulated.
       - key: VITE_NOTIFY_URL
         value: https://nrc-ecargo-notify.onrender.com
+      # Team mailbox that receives every message meant for a demo officer or demo company.
+      - key: VITE_DEMO_INBOX
+        value: info@gsds.com.ng
     routes:
       - type: rewrite
         source: /*
@@ -33,6 +36,11 @@ services:
         value: 22.12.0
       - key: ALLOWED_ORIGINS
         value: https://nrc-ecargo-prototype.onrender.com
+      # The demo inbox receives several copies per stage, so its per-recipient limit is generous.
+      - key: RECIPIENT_HOURLY_CAP
+        value: "400"
+      - key: DAILY_CAP
+        value: "1500"
       - key: BREVO_API_KEY
         sync: false
       - key: SENDGRID_API_KEY
