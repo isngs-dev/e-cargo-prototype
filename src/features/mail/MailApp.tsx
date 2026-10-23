@@ -254,7 +254,7 @@ function MessageView({ m, viewer, isSystem, onBack }: { m: MailMessage; viewer: 
           </div>
           <p className="mt-0.5 text-xs text-slate-600"><span className="text-slate-400">To:</span> {env.to.length ? env.to.map(fmtAddress).join(', ') : '—'}</p>
           {env.cc.length > 0 && <p className="text-xs text-slate-600"><span className="text-slate-400">Cc:</span> {env.cc.map(fmtAddress).join(', ')}</p>}
-          {lives.map((live, i) => <p key={i} className="mt-1 rounded bg-emerald-50 px-2 py-1 text-[11px] text-emerald-800">Also delivered live: {deliveryLine(live)}</p>)}
+          {lives.filter((live) => deliveryLine(live)).map((live, i) => <p key={i} className="mt-1 rounded bg-emerald-50 px-2 py-1 text-[11px] text-emerald-800">Also delivered live: {deliveryLine(live)}</p>)}
           {copied && <p className="mt-1 inline-block rounded bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">You are copied for information</p>}
         </div>
       </div>

@@ -55,8 +55,8 @@ export function RegistrationSubmittedPage() {
           <h1 className="mt-3 text-xl font-semibold text-slate-900">Application submitted</h1>
           <p className="mt-1 font-mono text-sm text-slate-500">{app.reference}</p>
           <p className="mt-3 text-sm text-slate-600">{app.companyName} is now with the District Supervisor ({app.district}) for document verification, then the Director of Operations. Keep your reference — you can track the application any time. Sign-in details are emailed once the Director approves it.</p>
-          {liveConfigured() ? (
-            <p role="status" className="mt-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{live ? deliveryLine(live) : 'Sending your confirmation…'}</p>
+          {liveConfigured() && live && deliveryLine(live) ? (
+            <p role="status" className="mt-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{deliveryLine(live)}</p>
           ) : (
             <p className="mt-4 text-xs text-slate-500">Email and SMS are simulated in this demo — see the Mail Outbox.</p>
           )}
