@@ -42,13 +42,14 @@ export function LiveSetupPage() {
     saveLiveSettings(next)
     setSaved(true)
   }
-  const test = async (key: string, name: string) => {
+  const test = async (key: string, name: string, label: string) => {
     const c = settings.contacts[key] ?? { email: '', phone: '' }
     const email = c.email.trim() || settings.inbox.trim()
     setTested((t) => ({ ...t, [key]: 'Sending…' }))
     const r = await sendLive({
       id: `test-${key}`, appId: '', kind: 'test', email, phone: normalisePhone(c.phone), name,
-      subject: 'NRC e-Cargo — test message', text: 'This is a test message from the NRC e-Cargo prototype. If you can read this, live delivery to you works.',
+      subject: `[For ${label} — ${name}] NRC e-Cargo — test message`.slice(0, 150),
+      text: `This is a test message from the NRC e-Cargo prototype for ${label}. If you can read this, live delivery for this role works.`,
       sms: 'NRC e-Cargo: test message. Live delivery to this number works.',
     })
     const part = (w: string, s: string) => (s === 'skipped' ? '' : `${w} ${s}`)
@@ -104,7 +105,7 @@ export function LiveSetupPage() {
                 </div>
                 <Input type="email" placeholder={settings.inbox.trim() ? `→ ${settings.inbox.trim()}` : 'real email address'} aria-label={`Email for ${r.label}`} value={c.email} onChange={(e) => edit(r.key, { email: e.target.value })} />
                 <Input type="tel" placeholder="0803 123 4567" aria-label={`Phone for ${r.label}`} value={c.phone} onChange={(e) => edit(r.key, { phone: e.target.value })} />
-                <Button variant="secondary" disabled={!LIVE_URL || (!c.email && !c.phone && !settings.inbox.trim())} onClick={() => void test(r.key, r.name)}><Send className="size-4" aria-hidden /> Test</Button>
+                <Button variant="secondary" disabled={!LIVE_URL || (!c.email && !c.phone && !settings.inbox.trim())} onClick={() => void test(r.key, r.name, r.label)}><Send className="size-4" aria-hidden /> Test</Button>
                 {tested[r.key] && <p className="text-xs text-slate-600 md:col-span-4" role="status">{tested[r.key]}</p>}
               </div>
             )

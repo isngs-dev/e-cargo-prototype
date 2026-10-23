@@ -52,7 +52,7 @@ export function buildHtml(name, text) {
 <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0">
 <tr><td style="background:#04301f;color:#fff;padding:18px 24px;font-size:16px;font-weight:bold">NRC e-Cargo <span style="font-weight:normal;font-size:12px;color:#a9d8c1">· Nigerian Railway Corporation</span></td></tr>
 <tr><td style="padding:24px;font-size:14px;line-height:1.55">${name ? `<p style="margin:0 0 14px">Dear ${esc(name)},</p>` : ''}${body}<p style="margin:18px 0 0">Regards,<br>NRC e-Cargo Operations</p></td></tr>
-<tr><td style="background:#f1f5f9;padding:12px 24px;font-size:11px;color:#64748b">Prototype demonstration message about your application. Reply is not monitored.</td></tr>
+<tr><td style="background:#f1f5f9;padding:12px 24px;font-size:11px;color:#64748b">Prototype demonstration message from NRC e-Cargo. Replies are not monitored.</td></tr>
 </table></td></tr></table></body></html>`
 }
 
