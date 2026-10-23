@@ -8,9 +8,9 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 22.12.0
-      # URL of the notification service below (live registration email/SMS). Leave empty to keep everything simulated.
+      # URL of the notification service below (live email/SMS). Remove to keep everything simulated.
       - key: VITE_NOTIFY_URL
-        sync: false
+        value: https://nrc-ecargo-notify.onrender.com
     routes:
       - type: rewrite
         source: /*
@@ -24,7 +24,7 @@ services:
   - type: web
     name: nrc-ecargo-notify
     runtime: node
-    plan: free
+    plan: starter
     buildCommand: echo "no build"
     startCommand: node server/index.mjs
     healthCheckPath: /api/health
