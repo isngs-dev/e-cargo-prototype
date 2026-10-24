@@ -49,6 +49,13 @@ services:
         sync: false
       - key: MAIL_FROM_NAME
         value: NRC e-Cargo
+      # SMS: Nigeria Bulk SMS (used if all three are set) or KudiSMS.
+      - key: NBS_USERNAME
+        sync: false
+      - key: NBS_PASSWORD
+        sync: false
+      - key: NBS_SENDER
+        sync: false
       - key: KUDISMS_TOKEN
         sync: false
       - key: KUDISMS_SENDER

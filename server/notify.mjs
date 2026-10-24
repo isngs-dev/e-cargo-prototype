@@ -1,5 +1,5 @@
 // Live email + SMS for the NRC e-Cargo prototype (every workflow stage, to the contacts the presenter sets).
-// Plain Node, no dependencies. Providers: Brevo or SendGrid (email) and KudiSMS (SMS). Keys come from environment variables only.
+// Plain Node, no dependencies. Providers: Brevo or SendGrid (email); Nigeria Bulk SMS or KudiSMS (SMS). Keys come from environment variables only.
 
 export const ALLOWED_KINDS = ['notification', 'test', 'registration_received', 'registration_resubmitted', 'registration_sent_back', 'registration_approved', 'registration_rejected']
 
@@ -102,6 +102,26 @@ export async function sendSms(cfg, { to, message }, fetchImpl = fetch) {
   return 'sent'
 }
 
+/**
+ * SMS through Nigeria Bulk SMS (portal.nigeriabulksms.com). Its API authenticates with the account username and
+ * password as query parameters; success is { status: 'OK', count, price }, failure { error, errno }.
+ */
+export async function sendSmsNbs(cfg, { to, message }, fetchImpl = fetch) {
+  const q = new URLSearchParams({ username: cfg.nbsUser, password: cfg.nbsPassword, sender: cfg.nbsSender, message, mobiles: to.replace(/^\+/, '') })
+  const res = await fetchImpl(`https://portal.nigeriabulksms.com/api/?${q}`, { method: 'GET' })
+  if (!res.ok) throw new Error(`SMS provider answered ${res.status}`)
+  let body = {}
+  try { body = await res.json() } catch { /* mocked or empty body */ }
+  if (body.error || (body.status && body.status !== 'OK')) throw new Error(`SMS provider said ${body.error ?? body.status} (${body.errno ?? ''})`)
+  return 'sent'
+}
+
+/** Current Nigeria Bulk SMS balance. */
+export async function nbsBalance(cfg, fetchImpl = fetch) {
+  const q = new URLSearchParams({ username: cfg.nbsUser, password: cfg.nbsPassword, action: 'balance' })
+  return (await fetchImpl(`https://portal.nigeriabulksms.com/api/?${q}`)).json()
+}
+
 /** Current KudiSMS balance (used by `npm run credits`). */
 export async function smsBalance(cfg, fetchImpl = fetch) {
   const res = await fetchImpl('https://my.kudisms.net/api/balance', {
@@ -116,6 +136,9 @@ export function readConfig(env = process.env) {
     brevoKey: env.BREVO_API_KEY || '',
     mailFrom: env.MAIL_FROM || '',
     mailFromName: env.MAIL_FROM_NAME || 'NRC e-Cargo',
+    nbsUser: env.NBS_USERNAME || '',
+    nbsPassword: env.NBS_PASSWORD || '',
+    nbsSender: env.NBS_SENDER || '',
     kudiToken: env.KUDISMS_TOKEN || '',
     kudiSender: env.KUDISMS_SENDER || '',
     kudiGateway: env.KUDISMS_GATEWAY || '2',
@@ -126,7 +149,8 @@ export function readConfig(env = process.env) {
   }
 }
 
-export const channelsConfigured = (cfg) => ({ email: !!((cfg.brevoKey || cfg.sendgridKey) && cfg.mailFrom), sms: !!(cfg.kudiToken && cfg.kudiSender) })
+export const channelsConfigured = (cfg) => ({ email: !!((cfg.brevoKey || cfg.sendgridKey) && cfg.mailFrom), sms: !!((cfg.nbsUser && cfg.nbsPassword && cfg.nbsSender) || (cfg.kudiToken && cfg.kudiSender)) })
+const usesNbs = (cfg) => !!(cfg.nbsUser && cfg.nbsPassword && cfg.nbsSender)
 
 /**
  * Handle one validated request. Each channel reports 'sent', 'failed' or 'skipped' (no address, or not configured) —
@@ -142,7 +166,7 @@ export async function deliver(cfg, limiter, value, deps = {}) {
     try { result.email = await (cfg.brevoKey ? sendEmailBrevo : sendEmail)(cfg, { to: value.email, name: value.name, subject: value.subject, text: value.text }, deps.fetch) } catch { result.email = 'failed' }
   }
   if (value.phone && channels.sms) {
-    try { result.sms = await sendSms(cfg, { to: value.phone, message: value.sms }, deps.fetch) } catch { result.sms = 'failed' }
+    try { result.sms = await (usesNbs(cfg) ? sendSmsNbs : sendSms)(cfg, { to: value.phone, message: value.sms }, deps.fetch) } catch { result.sms = 'failed' }
   }
   const anySent = result.email === 'sent' || result.sms === 'sent'
   const anyAttempted = result.email !== 'skipped' || result.sms !== 'skipped'

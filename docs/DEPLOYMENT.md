@@ -35,6 +35,7 @@ A small dependency-free service in `server/` (`npm run notify`) holds the provid
 | Static site | `VITE_NOTIFY_URL` | Public URL of the notification service (set before the build) |
 | Static site | `VITE_DEMO_INBOX` | Team mailbox that receives every message meant for a demo officer or demo company, subject tagged "[For <role — name>]" (editable on the setup page) |
 | Service | `BREVO_API_KEY` (free, 300/day) or `SENDGRID_API_KEY` (paid), `MAIL_FROM`, `MAIL_FROM_NAME` | Email; Brevo is used if both are set; `MAIL_FROM` must be a verified sender |
+| Service | `NBS_USERNAME`, `NBS_PASSWORD`, `NBS_SENDER` | SMS via Nigeria Bulk SMS (preferred when all three are set). Promotional SMS deliver 8 AM–8 PM Nigeria time only |
 | Service | `KUDISMS_TOKEN`, `KUDISMS_SENDER` | SMS via KudiSMS; sender ID must be approved in the account |
 | Service | `KUDISMS_GATEWAY` | Optional, default `2` |
 | Service | `ALLOWED_ORIGINS` | Comma-separated site origins allowed to call it |

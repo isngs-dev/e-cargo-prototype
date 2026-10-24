@@ -92,6 +92,21 @@ describe('helpers', () => {
   })
 })
 
+describe('nigeria bulk sms', () => {
+  it('is used when its credentials are set, and reports provider errors as failed', async () => {
+    const cfg = readConfig({ NBS_USERNAME: 'u', NBS_PASSWORD: 'p', NBS_SENDER: 'GSDS ECARGO', KUDISMS_TOKEN: 't', KUDISMS_SENDER: 'K' })
+    const v = validateRequest({ ...good, email: '' }).value
+    const urls = []
+    const ok = await deliver(cfg, createLimiter(), v, { fetch: async (url) => { urls.push(url); return { ok: true, status: 200, json: async () => ({ status: 'OK', count: 1, price: 4 }) } } })
+    expect(ok.body.sms).toBe('sent')
+    expect(urls[0]).toContain('portal.nigeriabulksms.com/api/')
+    expect(new URL(urls[0]).searchParams.get('mobiles')).toBe('2348031234567')
+    expect(new URL(urls[0]).searchParams.get('sender')).toBe('GSDS ECARGO')
+    const bad = await deliver(cfg, createLimiter(), v, { fetch: async () => ({ ok: true, status: 200, json: async () => ({ error: 'Insufficient funds', errno: '150' }) }) })
+    expect(bad.body.sms).toBe('failed')
+  })
+})
+
 describe('brevo email', () => {
   it('is used when a Brevo key is set', async () => {
     const cfg = readConfig({ BREVO_API_KEY: 'b', MAIL_FROM: 'noreply@x.ng' })
